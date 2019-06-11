@@ -1,0 +1,28 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[dev-packages]
+pygraphviz = "*"
+sympy = "*"
+
+[packages]
+flask = "==1.*"
+flask-restplus = "==0.*"
+atomicfile = "==1.*"
+waitress = "==1.*"
+numpy ="==1.*"
+flask-cors ="==3.*"
+lxml = "==4.*"
+# this is needed to serialize named touples as dicts
+simplejson = "*"
+
+
+networkx = "*"
+pyhull = "*"
+matplotlib = "*"
+
+
+[requires]
+python_version = "3.7"
