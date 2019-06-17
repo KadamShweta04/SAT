@@ -12,7 +12,7 @@ def static_node_order_generation(node_order, node_indexes):
     clauses = []
     # Ensure asymmetry
     for i in node_indexes:
-        for j in node_indexes:
+        for j in range(i):
             if i == j:
                 continue
             # i before j XOR j before i
@@ -80,16 +80,20 @@ def static_to_dimacs(clauses: list, first_line: str) -> str:
 
 
 def encode_same_page(e1_idx, e2_idx, assignment_variables, page_number):
+    # to generate the clauses to add
+    # print(str(sympy.to_cnf((e1_p1 & e2_p1) | (e1_p2 & e2_p2))).translate(str.maketrans({'&': '\n', ' ': None, '~': "-", "|":",","(":'[',')':']'})))
     clauses = []
-    if page_number == 2:
+    if page_number == 1:
+        pass
+    elif page_number == 2:
         e1_p1 = assignment_variables[0, e1_idx]
         e2_p1 = assignment_variables[0, e2_idx]
         e1_p2 = assignment_variables[1, e1_idx]
         e2_p2 = assignment_variables[1, e2_idx]
-        clauses.append([e1_p1, e2_p1])
+        clauses.append([e1_p1, e1_p2])
         clauses.append([e1_p1, e2_p2])
         clauses.append([e1_p2, e2_p1])
-        clauses.append([e1_p2, e2_p2])
+        clauses.append([e2_p1, e2_p2])
     elif page_number == 3:
         e1_p1 = assignment_variables[0, e1_idx]
         e2_p1 = assignment_variables[0, e2_idx]
@@ -133,7 +137,7 @@ def encode_same_page(e1_idx, e2_idx, assignment_variables, page_number):
         clauses.append([e1_p4, e2_p1, e2_p2, e2_p3])
         clauses.append([e2_p1, e2_p2, e2_p3, e2_p4])
     else:
-        abort(501, "The for {} pages it is not possible to create same page constraints".format(page_number))
+        abort(501, "The constraint EDGES_SAME_PAGES for {} pages it is not implemented".format(page_number))
     return clauses
 
 
@@ -320,21 +324,28 @@ class SatModel(object):
         assignment_variables = self._assignment_variables
         node_order = self._node_order
         for page in self.pages:
-            if page['type'] == 'STACK':
-                clauses = self.static_node_constraint_stack(assignment_variables,
-                                                            edges,
-                                                            node_order,
-                                                            self.page_id_to_idx[page['id']],
-                                                            page.get('constraint', "NONE"))
+            page_idx = self.page_id_to_idx[page['id']]
+            page_constraint = page.get('constraint', "NONE")
+            page_constraint_clauses = self.add_page_constraint(assignment_variables, edges, page_constraint, page_idx)
+            self._add_clauses(page_constraint_clauses)
+            page_type = page['type']
+            if page_type == 'STACK':
+                clauses = self.node_constraint_stack(assignment_variables,
+                                                     edges,
+                                                     node_order,
+                                                     page_idx)
                 self._add_clauses(clauses)
 
-            elif page['type'] == 'QUEUE':
-                clauses = self.static_node_constraint_queue(assignment_variables,
-                                                            edges,
-                                                            node_order,
-                                                            self.page_id_to_idx[page['id']],
-                                                            page.get('constraint', "NONE"))
+            elif page_type == 'QUEUE':
+                clauses = self.add_node_constraint_queue(assignment_variables,
+                                                         edges,
+                                                         node_order,
+                                                         page_idx)
                 self._add_clauses(clauses)
+            elif page_type == 'MIXED':
+                continue
+            else:
+                abort(501, "Page type {} is currently not implemented".format(page_type))
 
     def add_constraints(self):
         if not self.constraints:
@@ -492,15 +503,18 @@ class SatModel(object):
                     v_markers.extend(splits_without_leading_v)
             if "0" in v_markers:
                 v_markers.remove("0")
-            assert len(v_markers) == np.size(self._node_order) + np.size(
-                self._assignment_variables), "Cloud not parse back all written variables"
+            assert len(v_markers) == self.max_var, "Could not parse the expected numer of variables from the " \
+                                                   "lingeling result. Expected {} got {}".format(self.max_var,
+                                                                                                 len(v_markers))
             vars = np.array(list(map(int, v_markers)))
             sorted_idx = np.argsort(np.abs(vars))
             vars = vars[sorted_idx]
             self.result['node_order'] = vars[
                                         :np.size(self._node_order)].reshape(self._node_order.shape) > 0
             self.result['page_assignment'] = vars[
-                                             np.size(self._node_order):].reshape(self._assignment_variables.shape) > 0
+                                             np.size(self._node_order):np.size(self._node_order) + np.size(
+                                                 self._assignment_variables)].reshape(
+                self._assignment_variables.shape) > 0
             pass
 
         else:
@@ -536,16 +550,76 @@ class SatModel(object):
                         abort(400, "Multi edges are not allowed")
                     else:
                         continue
+        elif page_constraint == 'TREE':
+            node_len = len(self.node_ids)
+            parents = np.array(self._create_new_vars(node_len ** 2)).reshape((node_len, node_len))
+            ancestors = np.array(self._create_new_vars(node_len ** 2)).reshape((node_len, node_len))
+            is_root = np.array(self._create_new_vars(node_len)).reshape((node_len,))
+            for i in range(edges.shape[0]):
+                e1 = edges[i]
+                e1_idx = e1[0]
+                e1n1 = e1[1]
+                e1n2 = e1[2]
+                edge_on_page = assignment_variables[page_idx, e1_idx]
+                n1_is_parent_of_n2 = parents[e1n1, e1n2]
+                n2_is_parent_of_n1 = parents[e1n2, e1n1]
+
+                # either n1 or n2 is the parent of the other one
+                # sympy.to_cnf(edge_on_page >> (n1_is_parent_of_n2 ^ n2_is_parent_of_n1))
+                clauses.append([-edge_on_page, n1_is_parent_of_n2, n2_is_parent_of_n1])
+                clauses.append([-edge_on_page, -n1_is_parent_of_n2, -n2_is_parent_of_n1])
+
+                # no one is parent if the edge is not on this page
+                # sympy.to_cnf(~edge_on_page >> (~n1_is_parent_of_n2 & ~n2_is_parent_of_n1))
+                clauses.append([edge_on_page, -n1_is_parent_of_n2])
+                clauses.append([edge_on_page, -n2_is_parent_of_n1])
+
+            # at most one parent for each node
+            for i in range(parents.shape[0]):
+                parents_of_i = parents[:, i]
+                for j in range(len(parents_of_i)):
+                    for k in range(j):
+                        clauses.append([-parents[j, i], -parents[k, i]])
+
+            # if i is parent of j then i is also ancestor of j
+            for i in range(parents.shape[0]):
+                for j in range(parents.shape[0]):
+                    clauses.append([-parents[j, i], ancestors[j, i]])
+
+            # ancestor asymmetry
+            for i in range(ancestors.shape[0]):
+                for j in range(ancestors.shape[0]):
+                    if i == j:
+                        continue
+                    clauses.append([ancestors[i, j], ancestors[j, i]])
+                    clauses.append([-ancestors[i, j], -ancestors[j, i]])
+
+                    # ensure transitivity
+                    for k in range(ancestors.shape[0]):
+                        if i == j or j == k or k == i:
+                            continue
+                        # (i_anc_of_j & j_anc_of_k) >> i_anc_of_k
+                        clauses.append([-ancestors[i, j], -ancestors[j, k], ancestors[i, k]])
+
+            # TODO single root seems not to work properly see http://algo.inf.uni-tuebingen.de/linearlayouts/linearlayout.html#100
+            # no_parents_implies is_root
+            for i in range(parents.shape[0]):
+                parents_of_i = list(ancestors[:, i])
+                parents_of_i.append(is_root[i])
+                clauses.append(parents_of_i)
+
+            # single root
+            for i in range(is_root.shape[0]):
+                for j in range(is_root.shape[0]):
+                    clauses.append([-is_root[i], -is_root[j]])
+
         else:
             abort(501, "The page constraint {} is not implemented yet".format(page_constraint))
         return clauses
 
-    def static_node_constraint_stack(self, assignment_variables: ndarray, edges: ndarray, node_order: ndarray,
-                                     page_idx: int,
-                                     page_constraint: str):
+    def node_constraint_stack(self, assignment_variables: ndarray, edges: ndarray, node_order: ndarray,
+                              page_idx: int):
         clauses = []
-        page_constraint_clauses = self.add_page_constraint(assignment_variables, edges, page_constraint, page_idx)
-        clauses.extend(page_constraint_clauses)
         for i in range(edges.shape[0]):
             e1 = edges[i]
             e1_idx = e1[0]
@@ -589,11 +663,9 @@ class SatModel(object):
 
         return clauses
 
-    def static_node_constraint_queue(self, assignment_variables: ndarray, edges: ndarray, node_order: ndarray,
-                                     page_idx: int,
-                                     page_constraint: str):
+    def add_node_constraint_queue(self, assignment_variables: ndarray, edges: ndarray, node_order: ndarray,
+                                  page_idx: int):
         clauses = []
-        clauses.extend(self.add_page_constraint(assignment_variables, edges, page_constraint, page_idx))
         for i in range(edges.shape[0]):
             e1 = edges[i]
             e1_idx = e1[0]

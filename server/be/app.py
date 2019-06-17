@@ -54,15 +54,17 @@ def create_app():
     page_schema = api.model('Page',
                             {
                                 'id': fields.String(required=True, description='The id of this page', example="P1"),
-                                'type': fields.String(description='The type of the page',
-                                                      enum=['QUEUE', 'STACK'],
+                                'type': fields.String(description='The type of the page. '
+                                                                  'MIXED allows all patterns',
+                                                      enum=['QUEUE',
+                                                            'STACK',
+                                                            'MIXED'],
                                                       required=True),
                                 'constraint': fields.String(description='Additional constraints for the page',
                                                             enum=[
                                                                 'NONE',
                                                                 'DISPERSIBLE',
                                                                 'TREE'
-                                                                # FIXME tree
                                                                 # TODO Order of 1(DISPERSIBLE) 2(2edges per node)
                                                             ])
                             })
