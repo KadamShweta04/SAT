@@ -574,24 +574,39 @@ class SatModel(object):
                 clauses.append([edge_on_page, -n1_is_parent_of_n2])
                 clauses.append([edge_on_page, -n2_is_parent_of_n1])
 
+            # make sure every unused parent var is false and take away the dont care variable from the solver
+            used_ids = {np.abs(item) for sublist in clauses for item in sublist}
+            for i in range(parents.shape[0]):
+                for j in range(parents.shape[0]):
+                    if parents[j, i] not in used_ids:
+                        clauses.append([-parents[j, i]])
+
             # at most one parent for each node
             for i in range(parents.shape[0]):
                 parents_of_i = parents[:, i]
                 for j in range(len(parents_of_i)):
+                    if j == i:
+                        continue
                     for k in range(j):
+                        if k == i or j == k:
+                            continue
                         clauses.append([-parents[j, i], -parents[k, i]])
+
+            # every node is not its own parent
+            for i in range(parents.shape[0]):
+                clauses.append([-parents[i, i]])
 
             # if i is parent of j then i is also ancestor of j
             for i in range(parents.shape[0]):
                 for j in range(parents.shape[0]):
                     clauses.append([-parents[j, i], ancestors[j, i]])
 
-            # ancestor asymmetry
             for i in range(ancestors.shape[0]):
+                clauses.append([-ancestors[i, i]])
                 for j in range(ancestors.shape[0]):
                     if i == j:
                         continue
-                    clauses.append([ancestors[i, j], ancestors[j, i]])
+                    # one of both relations have to be false
                     clauses.append([-ancestors[i, j], -ancestors[j, i]])
 
                     # ensure transitivity
@@ -599,19 +614,27 @@ class SatModel(object):
                         if i == j or j == k or k == i:
                             continue
                         # (i_anc_of_j & j_anc_of_k) >> i_anc_of_k
-                        clauses.append([-ancestors[i, j], -ancestors[j, k], ancestors[i, k]])
+                        clauses.append([-ancestors[i, j], -parents[j, k], ancestors[i, k]])
 
-            # TODO single root seems not to work properly see http://algo.inf.uni-tuebingen.de/linearlayouts/linearlayout.html#100
-            # no_parents_implies is_root
             for i in range(parents.shape[0]):
-                parents_of_i = list(ancestors[:, i])
+                parents_of_i: List[int] = list(parents[:, i])
+                parents_of_i.remove(parents[i, i])
+                # if there is a parent to i, it is not root
+                for parent in parents_of_i:
+                    clauses.append([-parent, -is_root[i]])
+
+                # no_parents and at least one child implies is_root
                 parents_of_i.append(is_root[i])
-                clauses.append(parents_of_i)
+                for child in list(parents[i, :]):
+                    tmp = parents_of_i.copy()
+                    tmp.append(-child)
+                    clauses.append(tmp)
 
             # single root
             for i in range(is_root.shape[0]):
-                for j in range(is_root.shape[0]):
+                for j in range(i):
                     clauses.append([-is_root[i], -is_root[j]])
+            # clauses.append(list(is_root))
 
         else:
             abort(501, "The page constraint {} is not implemented yet".format(page_constraint))

@@ -190,6 +190,7 @@ def create_app():
         @api.response(code=500, description="Server Error", model=error_schema)
         def get(self):
             """List all embeddings"""
+            # TODO implement pagination
             return jsonify(data_store.get_all())
 
         @api.doc('create_embedding')
