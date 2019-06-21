@@ -91,7 +91,7 @@ require([
 						node.tag = getNextTag()
 						
 						
-						console.log("no label or tag -> label: " + label + ", tag: " + node.tag)
+
 					} else if (node.tag == null) {
 						node.tag = getNextTag()
 					} else {
@@ -122,7 +122,6 @@ require([
 						var edges = graphComponent.graph.edges.toArray()
 						
 						edges.forEach(function(e) {
-							console.log(e.tag + " " + edge.tag)
 							if (e.tag == edge.tag && e != edge) {
 								edge.tag = edge.sourceNode.tag + "-" + edge.targetNode.tag
 							}
@@ -1071,7 +1070,6 @@ require([
 				var pages = filterStringByTag(myGraph, "page")
 
 				if (pages.length == 0) {
-					console.log("old format")
 					var pages2 = filterStringByTag(myGraph, "pages")
 					let i;
 					for (i = 1; i<= parseInt(pages2[0]); i++) {
@@ -1594,7 +1592,7 @@ require([
 
 				var data = JSON.stringify(createDataForCalculation(graphEncoded64))
 
-				console.log(data)
+				//console.log(data)
 
 				var settings = {
 					"async": true,
@@ -1862,7 +1860,6 @@ require([
 
 
 		function interpretResultAsRegularLayout(object) {
-			console.log("interpret")
 			// load in the constraints and pages
 
 			loadConstraintsFromJSON(object.constraints)

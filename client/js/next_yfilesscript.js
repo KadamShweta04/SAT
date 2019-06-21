@@ -329,12 +329,13 @@ require([
 				
 				
 				edges.forEach(function(e) {
-					console.log(e.tag.toString() + " " + e.sourceNode + " " + e.targetNode)
 					if (a.edge == e.tag.toString()) {
 						pagesArray[arrayLocation].push(e)
 					}
 				})
 			})
+			
+			console.log(pagesArray)
 			
 
 
@@ -502,7 +503,6 @@ require([
 			var pageNr = id.slice(-1)
 			var edgesToChange = pagesArray[pageNr-1]
 			
-			console.log(edgesToChange)
 
 			if (edgesToChange != null) {
 
