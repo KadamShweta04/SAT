@@ -320,17 +320,22 @@ require([
 			// REGISTERING WHICH EDGES GO TO WHICH PAGES
 			var assignments = object.assignments
 
+			var helper = 0; 
 			assignments.forEach(function(a) {
 				var arrayLocation = a.page.slice(1)
 				arrayLocation = arrayLocation-1;
 
 				var edges = graphComponent.graph.edges.toArray()
+				
+				
 				edges.forEach(function(e) {
+					console.log(e.tag.toString() + " " + e.sourceNode + " " + e.targetNode)
 					if (a.edge == e.tag.toString()) {
 						pagesArray[arrayLocation].push(e)
 					}
 				})
 			})
+			
 
 
 			// LabelPlacing
@@ -496,6 +501,8 @@ require([
 		function changeVisibility(id, visible) {
 			var pageNr = id.slice(-1)
 			var edgesToChange = pagesArray[pageNr-1]
+			
+			console.log(edgesToChange)
 
 			if (edgesToChange != null) {
 

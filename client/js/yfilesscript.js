@@ -110,6 +110,27 @@ require([
 			graphComponent.graph.addEdgeCreatedListener((sender, args) => {
 				let edge = args.item;
 
+				setTimeout(function() {
+					
+					if (edge.labels.size == 0 && edge.tag == null) {
+						let label = getNextLabel("edge");
+						graphComponent.graph.addLabel(edge, label.toString())
+						edge.tag = edge.sourceNode.tag + "-" + edge.targetNode.tag
+					}	else if (edge.tag == null) {
+						edge.tag = edge.sourceNode.tag + "-" + edge.targetNode.tag
+					} else {
+						var edges = graphComponent.graph.edges.toArray()
+						
+						edges.forEach(function(e) {
+							console.log(e.tag + " " + edge.tag)
+							if (e.tag == edge.tag && e != edge) {
+								edge.tag = edge.sourceNode.tag + "-" + edge.targetNode.tag
+							}
+						})
+					}
+				}, 10)
+
+
 				var edges = graphComponent.graph.edges.toArray();
 				edges.forEach(function(e) {
 					if (edge.sourceNode == e.sourceNode && edge.targetNode == e.targetNode && edge != e) {
