@@ -116,16 +116,9 @@ require([
 						let label = getNextLabel("edge");
 						graphComponent.graph.addLabel(edge, label.toString())
 						edge.tag = edge.sourceNode.tag + "-" + edge.targetNode.tag
-					}	else if (edge.tag == null) {
+					}	else {
 						edge.tag = edge.sourceNode.tag + "-" + edge.targetNode.tag
-					} else {
-						var edges = graphComponent.graph.edges.toArray()
 						
-						edges.forEach(function(e) {
-							if (e.tag == edge.tag && e != edge) {
-								edge.tag = edge.sourceNode.tag + "-" + edge.targetNode.tag
-							}
-						})
 					}
 				}, 10)
 
