@@ -236,6 +236,16 @@ class SatModel(object):
         self.constraints = constraints
         self.clauses = []
 
+        node_id_dupes = get_duplicates(node_ids)
+        if len(node_id_dupes) > 0:
+            abort(400, "Node ids have to be unique. The id(s) {} occurred multiple times".format(node_id_dupes))
+        edge_id_dupes_dupes = get_duplicates([e.id for e in edges])
+        if len(edge_id_dupes_dupes) > 0:
+            abort(400, "Edge ids have to be unique. The id(s) {} occurred multiple times".format(edge_id_dupes_dupes))
+        page_id_dupes_dupes = get_duplicates([p['id'] for p in pages])
+        if len(page_id_dupes_dupes) > 0:
+            abort(400, "Page ids have to be unique. The id(s) {} occured multiple times".format(page_id_dupes_dupes))
+
         node_id_size = len(node_ids)
         self._node_idxs = list(range(node_id_size))
         self._node_idx_to_id = {i: n_id for i, n_id in enumerate(node_ids)}
