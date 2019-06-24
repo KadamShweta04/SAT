@@ -226,7 +226,6 @@ def encode_neighbor_order(node_order, n1, n2):
 
 
 class SatModel(object):
-    # noinspection PyTypeChecker
     def __init__(self, pages, edges: Edge, node_ids, constraints):
 
         self.result = {}
