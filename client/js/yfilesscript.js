@@ -54,7 +54,7 @@ require([
 
 		function run() {
 			graphComponent.inputMode = new yfiles.input.GraphEditorInputMode()
-		
+
 			/* zooming only when ctrl is held*/
 			graphComponent.mouseWheelBehavior =
 				yfiles.view.MouseWheelBehaviors.ZOOM | yfiles.view.MouseWheelBehaviors.SCROLL;
@@ -89,8 +89,8 @@ require([
 						let label = getNextLabel("node")
 						graphComponent.graph.addLabel(node, label.toString())
 						node.tag = getNextTag()
-						
-						
+
+
 
 					} else if (node.tag == null) {
 						node.tag = getNextTag()
@@ -110,18 +110,14 @@ require([
 			graphComponent.graph.addEdgeCreatedListener((sender, args) => {
 				let edge = args.item;
 
-				setTimeout(function() {
-					
-					if (edge.labels.size == 0 && edge.tag == null) {
-						let label = getNextLabel("edge");
-						graphComponent.graph.addLabel(edge, label.toString())
-						edge.tag = edge.sourceNode.tag + "-" + edge.targetNode.tag
-					}	else {
-						edge.tag = edge.sourceNode.tag + "-" + edge.targetNode.tag
-						
-					}
-				}, 10)
-
+				if (edge.tag == null) {
+					edge.tag = edge.sourceNode.tag + "-" + edge.targetNode.tag
+				}
+				if (edge.labels.size == 0) {
+					let label = getNextLabel("edge");
+				
+					graphComponent.graph.addLabel(edge, label.toString())
+				}
 
 				var edges = graphComponent.graph.edges.toArray();
 				edges.forEach(function(e) {
@@ -434,25 +430,25 @@ require([
 
 			if (graphComponent.selection.selectedNodes.size > 0 && graphComponent.selection.selectedEdges.size >0){
 			} else if (graphComponent.selection.selectedNodes.size == 1 ){
-				
+
 				contextMenu.addMenuItem("tag", () => {
 					alert(graphComponent.selection.selectedNodes.toArray()[0].tag)
 				})
 				contextMenu.addMenuItem("label", () => {
 					alert(graphComponent.selection.selectedNodes.toArray()[0].labels.first().text)
 				})
-				 
+
 			} else if (graphComponent.selection.selectedEdges.size == 1) {
 				selEdges = graphComponent.selection.selectedEdges.toArray();
 				contextMenu.addMenuItem('Assign to...', () => $( "#pageDialog" ).dialog( "open" ),  fillAssignDialog());
-				
+
 				contextMenu.addMenuItem("tag", () => {
 					alert(graphComponent.selection.selectedEdges.toArray()[0].tag)
 				})
 				contextMenu.addMenuItem("label", () => {
 					alert(graphComponent.selection.selectedEdges.toArray()[0].labels.first().text)
 				})
-				 
+
 			} else if (graphComponent.selection.selectedNodes.size == 2) {
 				var nodesArr = graphComponent.selection.selectedNodes.toArray();
 				var a = nodesArr[0];
@@ -1238,7 +1234,7 @@ require([
 				$("#saveDialog").dialog("open")
 			})
 
-			
+
 			document.querySelector("#saveButton").addEventListener("click", () => {
 				saveFile($("#fileName").val());
 				$("#saveDialog").dialog("close")
@@ -1532,7 +1528,7 @@ require([
 				var nrOfEdges = graph.edges.size
 				var isPlanar =  yfiles.algorithms.PlanarEmbedding.isPlanar(ygraph)
 				var isConnected = yfiles.algorithms.GraphChecker.isConnected(ygraph)
-				
+
 				var cyclePath = yfiles.algorithms.Cycles.findCycle(ygraph, false)
 				var isAcyclic;
 				if (cyclePath.size == 0) {
@@ -1540,10 +1536,10 @@ require([
 				} else {
 					isAcyclic = false;
 				}
-				
+
 				var isTree = yfiles.algorithms.Trees.isTree(ygraph)
 				var isBipartite = yfiles.algorithms.GraphChecker.isBipartite(ygraph)
-				
+
 				document.getElementById("nrOfVertices").innerHTML =  nrOfVertices
 				document.getElementById("nrOfEdges").innerHTML = nrOfEdges 
 				document.getElementById("isPlanar").innerHTML = isPlanar
@@ -1760,9 +1756,6 @@ require([
 				}
 			})
 
-
-
-
 			setTimeout(function() {
 				// REGISTERING WHICH EDGES GO TO WHICH PAGES
 				var assignments = object.assignments
@@ -1771,13 +1764,19 @@ require([
 					var arrayLocation = a.page.slice(1)
 					arrayLocation = arrayLocation-1;
 
+
 					var edges = graphComponent.graph.edges.toArray()
 					edges.forEach(function(e) {
+						var reversestring = a.edge.split("-").reverse().join("-");
+
 						if (a.edge == e.tag.toString()) {
+							pagesArray[arrayLocation].push(e)
+						} else if (reversestring == e.tag.toString()) {
 							pagesArray[arrayLocation].push(e)
 						}
 					})
 				})
+
 
 				var colors = ["#FF0000", "#0000FF", "#00FF00", "#000000"]
 				let i;
