@@ -1,15 +1,22 @@
 # Linear Layout SAT solver
 
-## Run
+## Development
 
-```bash                             # attach to the screen session or create a new one with screen -S sat-server
-pipenv install                                      # install new dependencies from pipfile
-pipenv clean                                        # remove unused dependencies
-pipenv run waitress-serve --listen=*:5555 be.app:app   # start the server
-```
-
-## Deploy to test server
+### Init project workspace
 
 ```bash
-rsync -av * --include 'be/*.py' --include '*/'  --include 'Pipfile*' --include '*.md' --include '*.py' --include 'experiment_*'  --exclude '*' mirco@sofa.fsi.uni-tuebingen.de:/home/mirco/book-embedding/
+pipenv install                                      # install new dependencies from pipfile
+pipenv clean                                        # remove unused dependencies
 ```
+
+### Build
+```bash
+pipenv run pyinstaller --clean be/run_server.spec   # builds a single executable in dist/run_server
+```
+
+### Run 
+Copy the file `dist/run_server` to the target server.
+
+Copy the database (`data.db`) to the current directory if wanted.
+
+Run the executable.

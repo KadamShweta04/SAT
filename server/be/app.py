@@ -64,7 +64,8 @@ def create_app():
                                                             enum=[
                                                                 'NONE',
                                                                 'DISPERSIBLE',
-                                                                'TREE'
+                                                                'TREE',
+                                                                'FOREST'
                                                                 # TODO Order of 1(DISPERSIBLE) 2(2edges per node)
                                                             ])
                             })

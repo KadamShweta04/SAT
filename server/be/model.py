@@ -226,7 +226,6 @@ def encode_neighbor_order(node_order, n1, n2):
 
 
 class SatModel(object):
-    # noinspection PyTypeChecker
     def __init__(self, pages, edges: Edge, node_ids, constraints):
 
         self.result = {}
@@ -235,6 +234,16 @@ class SatModel(object):
         self.pages = pages
         self.constraints = constraints
         self.clauses = []
+
+        node_id_dupes = get_duplicates(node_ids)
+        if len(node_id_dupes) > 0:
+            abort(400, "Node ids have to be unique. The id(s) {} occurred multiple times".format(node_id_dupes))
+        edge_id_dupes_dupes = get_duplicates([e.id for e in edges])
+        if len(edge_id_dupes_dupes) > 0:
+            abort(400, "Edge ids have to be unique. The id(s) {} occurred multiple times".format(edge_id_dupes_dupes))
+        page_id_dupes_dupes = get_duplicates([p['id'] for p in pages])
+        if len(page_id_dupes_dupes) > 0:
+            abort(400, "Page ids have to be unique. The id(s) {} occured multiple times".format(page_id_dupes_dupes))
 
         node_id_size = len(node_ids)
         self._node_idxs = list(range(node_id_size))
@@ -550,72 +559,20 @@ class SatModel(object):
                         abort(400, "Multi edges are not allowed")
                     else:
                         continue
+        elif page_constraint == 'FOREST':
+            node_len = len(self.node_ids)
+            parents = np.array(self._create_new_vars(node_len ** 2)).reshape((node_len, node_len))
+            ancestors = np.array(self._create_new_vars(node_len ** 2)).reshape((node_len, node_len))
+            self._add_forrest_constraints(ancestors, assignment_variables, clauses, edges, page_idx, parents)
+
         elif page_constraint == 'TREE':
             node_len = len(self.node_ids)
             parents = np.array(self._create_new_vars(node_len ** 2)).reshape((node_len, node_len))
             ancestors = np.array(self._create_new_vars(node_len ** 2)).reshape((node_len, node_len))
             is_root = np.array(self._create_new_vars(node_len)).reshape((node_len,))
-            for i in range(edges.shape[0]):
-                e1 = edges[i]
-                e1_idx = e1[0]
-                e1n1 = e1[1]
-                e1n2 = e1[2]
-                edge_on_page = assignment_variables[page_idx, e1_idx]
-                n1_is_parent_of_n2 = parents[e1n1, e1n2]
-                n2_is_parent_of_n1 = parents[e1n2, e1n1]
+            self._add_forrest_constraints(ancestors, assignment_variables, clauses, edges, page_idx, parents)
 
-                # either n1 or n2 is the parent of the other one
-                # sympy.to_cnf(edge_on_page >> (n1_is_parent_of_n2 ^ n2_is_parent_of_n1))
-                clauses.append([-edge_on_page, n1_is_parent_of_n2, n2_is_parent_of_n1])
-                clauses.append([-edge_on_page, -n1_is_parent_of_n2, -n2_is_parent_of_n1])
-
-                # no one is parent if the edge is not on this page
-                # sympy.to_cnf(~edge_on_page >> (~n1_is_parent_of_n2 & ~n2_is_parent_of_n1))
-                clauses.append([edge_on_page, -n1_is_parent_of_n2])
-                clauses.append([edge_on_page, -n2_is_parent_of_n1])
-
-            # make sure every unused parent var is false and take away the dont care variable from the solver
-            used_ids = {np.abs(item) for sublist in clauses for item in sublist}
-            for i in range(parents.shape[0]):
-                for j in range(parents.shape[0]):
-                    if parents[j, i] not in used_ids:
-                        clauses.append([-parents[j, i]])
-
-            # at most one parent for each node
-            for i in range(parents.shape[0]):
-                parents_of_i = parents[:, i]
-                for j in range(len(parents_of_i)):
-                    if j == i:
-                        continue
-                    for k in range(j):
-                        if k == i or j == k:
-                            continue
-                        clauses.append([-parents[j, i], -parents[k, i]])
-
-            # every node is not its own parent
-            for i in range(parents.shape[0]):
-                clauses.append([-parents[i, i]])
-
-            # if i is parent of j then i is also ancestor of j
-            for i in range(parents.shape[0]):
-                for j in range(parents.shape[0]):
-                    clauses.append([-parents[j, i], ancestors[j, i]])
-
-            for i in range(ancestors.shape[0]):
-                clauses.append([-ancestors[i, i]])
-                for j in range(ancestors.shape[0]):
-                    if i == j:
-                        continue
-                    # one of both relations have to be false
-                    clauses.append([-ancestors[i, j], -ancestors[j, i]])
-
-                    # ensure transitivity
-                    for k in range(ancestors.shape[0]):
-                        if i == j or j == k or k == i:
-                            continue
-                        # (i_anc_of_j & j_anc_of_k) >> i_anc_of_k
-                        clauses.append([-ancestors[i, j], -parents[j, k], ancestors[i, k]])
-
+            # Add single root constraint
             for i in range(parents.shape[0]):
                 parents_of_i: List[int] = list(parents[:, i])
                 parents_of_i.remove(parents[i, i])
@@ -639,6 +596,63 @@ class SatModel(object):
         else:
             abort(501, "The page constraint {} is not implemented yet".format(page_constraint))
         return clauses
+
+    def _add_forrest_constraints(self, ancestors, assignment_variables, clauses, edges, page_idx, parents):
+        for i in range(edges.shape[0]):
+            e1 = edges[i]
+            e1_idx = e1[0]
+            e1n1 = e1[1]
+            e1n2 = e1[2]
+            edge_on_page = assignment_variables[page_idx, e1_idx]
+            n1_is_parent_of_n2 = parents[e1n1, e1n2]
+            n2_is_parent_of_n1 = parents[e1n2, e1n1]
+
+            # either n1 or n2 is the parent of the other one
+            # sympy.to_cnf(edge_on_page >> (n1_is_parent_of_n2 ^ n2_is_parent_of_n1))
+            clauses.append([-edge_on_page, n1_is_parent_of_n2, n2_is_parent_of_n1])
+            clauses.append([-edge_on_page, -n1_is_parent_of_n2, -n2_is_parent_of_n1])
+
+            # no one is parent if the edge is not on this page
+            # sympy.to_cnf(~edge_on_page >> (~n1_is_parent_of_n2 & ~n2_is_parent_of_n1))
+            clauses.append([edge_on_page, -n1_is_parent_of_n2])
+            clauses.append([edge_on_page, -n2_is_parent_of_n1])
+        # make sure every unused parent var is false and take away the dont care variable from the solver
+        used_ids = {np.abs(item) for sublist in clauses for item in sublist}
+        for i in range(parents.shape[0]):
+            for j in range(parents.shape[0]):
+                if parents[j, i] not in used_ids:
+                    clauses.append([-parents[j, i]])
+        # at most one parent for each node
+        for i in range(parents.shape[0]):
+            parents_of_i = parents[:, i]
+            for j in range(len(parents_of_i)):
+                if j == i:
+                    continue
+                for k in range(j):
+                    if k == i or j == k:
+                        continue
+                    clauses.append([-parents[j, i], -parents[k, i]])
+        # every node is not its own parent
+        for i in range(parents.shape[0]):
+            clauses.append([-parents[i, i]])
+        # if i is parent of j then i is also ancestor of j
+        for i in range(parents.shape[0]):
+            for j in range(parents.shape[0]):
+                clauses.append([-parents[j, i], ancestors[j, i]])
+        for i in range(ancestors.shape[0]):
+            clauses.append([-ancestors[i, i]])
+            for j in range(ancestors.shape[0]):
+                if i == j:
+                    continue
+                # one of both relations have to be false
+                clauses.append([-ancestors[i, j], -ancestors[j, i]])
+
+                # ensure transitivity
+                for k in range(ancestors.shape[0]):
+                    if i == j or j == k or k == i:
+                        continue
+                    # (i_anc_of_j & j_anc_of_k) >> i_anc_of_k
+                    clauses.append([-ancestors[i, j], -parents[j, k], ancestors[i, k]])
 
     def node_constraint_stack(self, assignment_variables: ndarray, edges: ndarray, node_order: ndarray,
                               page_idx: int):
