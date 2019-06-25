@@ -17,6 +17,7 @@ function fillPages() {
 				'<option value="NONE">maximal</option>'+
 				'<option value="TREE">tree</option>'+
 				'<option value="DISPERSIBLE">matching</option>'+
+				'<option value="FOREST">forest</option>'+
 				'</select>'+
 				'</div>'
 		)
