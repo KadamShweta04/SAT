@@ -126,7 +126,17 @@ require([
 								sideOfEdge: "ABOVE_EDGE",
 							})
 					)
-
+					
+					// forbid double edges
+					var edges = graphComponent.graph.edges.toArray();
+					edges.forEach(function(e) {
+						if (edge.sourceNode == e.sourceNode && edge.targetNode == e.targetNode && edge != e) {
+							// this timeout removes a duplicate edge after a few miliseconds
+							setTimeout(function() {
+								graphComponent.inputMode.undo()
+							},30)
+						}
+					})
 				}
 
 			})
