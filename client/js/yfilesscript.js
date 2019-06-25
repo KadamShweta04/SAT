@@ -411,26 +411,10 @@ require([
 
 
 			if (graphComponent.selection.selectedNodes.size > 0 && graphComponent.selection.selectedEdges.size >0){
-			} else if (graphComponent.selection.selectedNodes.size == 1 ){
-
-				contextMenu.addMenuItem("tag", () => {
-					alert(graphComponent.selection.selectedNodes.toArray()[0].tag)
-				})
-				contextMenu.addMenuItem("label", () => {
-					alert(graphComponent.selection.selectedNodes.toArray()[0].labels.first().text)
-				})
-
+				// do nothing
 			} else if (graphComponent.selection.selectedEdges.size == 1) {
 				selEdges = graphComponent.selection.selectedEdges.toArray();
 				contextMenu.addMenuItem('Assign to...', () => $( "#pageDialog" ).dialog( "open" ),  fillAssignDialog());
-
-				contextMenu.addMenuItem("tag", () => {
-					alert(graphComponent.selection.selectedEdges.toArray()[0].tag)
-				})
-				contextMenu.addMenuItem("label", () => {
-					alert(graphComponent.selection.selectedEdges.toArray()[0].labels.first().text)
-				})
-
 			} else if (graphComponent.selection.selectedNodes.size == 2) {
 				var nodesArr = graphComponent.selection.selectedNodes.toArray();
 				var a = nodesArr[0];
@@ -1094,15 +1078,13 @@ require([
 
 					iterateOver();
 					
-
-				})
-
-				// reads constraints
-				setTimeout(function() {
+					
+					// took out a timeout, seems to work fine
 					constraints.forEach(function(c){
 						deserialize(c)
 					})
-				},10)
+					
+				})
 
 
 			};
