@@ -30,6 +30,7 @@ require([
 
 		/* some global variables */
 		let graphComponent = new yfiles.view.GraphComponent("#graphComponent");
+
 		let graphMLIOHandler = null;
 
 		let graph = null;
@@ -51,6 +52,8 @@ require([
 
 		function run() {
 			graphComponent.inputMode = new yfiles.input.GraphEditorInputMode()
+			const createEdgeInputMode = graphComponent.inputMode.createEdgeInputMode
+
 
 			/* zooming only when ctrl is held*/
 			graphComponent.mouseWheelBehavior =
@@ -82,76 +85,63 @@ require([
 			/*
 			 * WHEN A NODE/EDGE IS CREATED LISTENER
 			 */
+			
+			graphComponent.inputMode.addNodeCreatedListener((sender, args) => {
+				let node = args.item;
 
-			graphComponent.graph.addNodeCreatedListener((sender, args) => {
+				// if no label is set, create new label
+				if (node.labels.size == 0) {
+					let label = getNextLabel("node")
+					graphComponent.graph.addLabel(node, label.toString())
+				}
 
-				// timeout is needed because directly after creation the node isn't ready and this leads to problems (e.g. when copying nodes)
-				setTimeout(function() {
-					let node = args.item;
+				// if no tag is set, set new tag
+				if (node.tag == null) {
+					node.tag = getNextTag()
 
-					// if no label is set, create new label
-					if (node.labels.size == 0) {
-						let label = getNextLabel("node")
-						graphComponent.graph.addLabel(node, label.toString())
-					}
-
-					// if no tag is set, set new tag
-					if (node.tag == null) {
-						node.tag = getNextTag()
-
-					}  
-
-					//if tag is set but already used in graph, set new tag
-					graphComponent.graph.nodes.toArray().forEach(function(n) {
-						if (n.tag == node.tag && n != node) {
-							node.tag = getNextTag()
-						}
-					})
-				},10)
-
-			})
-
-
-			// labels get placed slightly away from the edge
-
-
-
-
-			graphComponent.graph.addEdgeCreatedListener((sender, args) => {
-
-				setTimeout(function() {
-					let edge = args.item
-
-					edge.tag = edge.sourceNode.tag + "-" + edge.targetNode.tag
-
-					if (edge.labels.size == 0) {
-						let label = getNextLabel("edge");
-						var newLabel = graphComponent.graph.addLabel(edge, label.toString())	
-
-
-						// for each edge assign edge label style (label above edge)
-
-						const edgeSegmentLabelModel = new yfiles.graph.EdgeSegmentLabelModel()
-						edgeSegmentLabelModel.offset = 10
-						edgeSegmentLabelModel.autoRotation = false;
-						graphComponent.graph.setLabelLayoutParameter(
-								newLabel,
-								edgeSegmentLabelModel.createParameterFromCenter({
-									sideOfEdge: "ABOVE_EDGE",
-								})
-						)
-
-					}
-
-
-
-				},30)
-
+				}  
 
 			})
 
 
 
+			createEdgeInputMode.addEdgeCreatedListener((sender, args)=> {
+				let edge = args.item
+
+				edge.tag = edge.sourceNode.tag + "-" + edge.targetNode.tag
+
+				if (edge.labels.size == 0) {
+					let label = getNextLabel("edge");
+					var newLabel = graphComponent.graph.addLabel(edge, label.toString())	
+
+
+					// for each edge assign edge label style (label above edge)
+
+					const edgeSegmentLabelModel = new yfiles.graph.EdgeSegmentLabelModel()
+					edgeSegmentLabelModel.offset = 7
+					edgeSegmentLabelModel.autoRotation = false;
+					graphComponent.graph.setLabelLayoutParameter(
+							newLabel,
+							edgeSegmentLabelModel.createParameterFromCenter({
+								sideOfEdge: "ABOVE_EDGE",
+							})
+					)
+
+				}
+
+			})
+			
+
+			/*
+			 * COPY LISTENER
+			 */
+			graphComponent.clipboard.fromClipboardCopier.addNodeCopiedListener((sender, args) => {
+				args.copy.tag = getNextTag()
+			})
+			
+			graphComponent.clipboard.fromClipboardCopier.addEdgeCopiedListener((sender, args) => {
+				args.copy.tag = args.copy.sourceNode.tag + "-" + args.copy.targetNode.tag
+			})
 
 
 
@@ -1092,8 +1082,8 @@ require([
 				.then(() => {
 					graphComponent.fitGraphBounds();
 
-					var nodes = graphComponent.graph.nodes;
-
+					iterateOver();
+					
 
 				})
 
@@ -1110,6 +1100,32 @@ require([
 
 		}
 
+		function iterateOver() {
+			var nodes = graphComponent.graph.nodes.toArray();
+			
+			nodes.forEach(function(n) {
+				if (n.labels.size == 0) {
+					var label = getNextLabel("node")
+					graphComponent.graph.addLabel(n, label.toString())
+				}
+				if (n.tag == null) {
+					n.tag = getNextTag()
+				}
+			})
+			
+			var edges = graphComponent.graph.edges.toArray();
+			edges.forEach(function(e) {
+				console.log(e.labels.size)
+				if (e.labels.size == 0) {
+					var label = getNextLabel("edge")
+					graphComponent.graph.addLabel(e, label.toString())
+				}
+				if (e.tag == null) {
+					e.tag = e.sourceNode.tag + "-" +e.targetNode.tag
+ 				}
+			})
+
+		}
 
 
 		/*
@@ -1714,9 +1730,7 @@ require([
 					)
 
 					// remove old edge
-					setTimeout(function() {
 						graphComponent.graph.remove(e)
-					},30)
 				}
 
 
