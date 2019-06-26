@@ -1107,7 +1107,6 @@ require([
 			
 			var edges = graphComponent.graph.edges.toArray();
 			edges.forEach(function(e) {
-				console.log(e.labels.size)
 				if (e.labels.size == 0) {
 					var label = getNextLabel("edge")
 					graphComponent.graph.addLabel(e, label.toString())
