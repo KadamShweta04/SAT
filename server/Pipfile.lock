@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "94989863530164678e0ea28cc9d9babd40142b532f4a66bbdf178f1871dc1659"
+            "sha256": "006386c4abe4bb9f911b74f52d8b88ace246e1bd259e6361357260774d419368"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -346,13 +346,6 @@
                 "sha256:a5d6e8305c6b210849b47a6174ddf9c452b2888340b8177874b862ba6c207645"
             ],
             "version": "==2019.4.18"
-        },
-        "pygraphviz": {
-            "hashes": [
-                "sha256:50a829a305dc5a0fd1f9590748b19fece756093b581ac91e00c2c27c651d319d"
-            ],
-            "index": "pypi",
-            "version": "==1.5"
         },
         "pyinstaller": {
             "hashes": [
