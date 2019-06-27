@@ -183,16 +183,29 @@ def create_app():
                                        description='A timestamp when this instance was created')
         })
 
+    parser = api.parser()
+    parser.add_argument('limit', type=int, help='How many objects should be returned', location='query', default=20)
+    parser.add_argument('offset', type=int, help='Where to start counting', location='query', default=0)
+
     @api.route('/embeddings')
     class EmbeddingList(Resource):
 
         @api.doc('list_embeddings')
         @api.response(code=200, description="Success", model=[book_embedding_schema])
         @api.response(code=500, description="Server Error", model=error_schema)
+        @api.expect(parser)
         def get(self):
             """List all embeddings"""
+
+            limit = int(request.args.get('limit', 20))
+            if (limit < 1) or (limit > 50):
+                abort(400, "limit has to be in range [1,50]")
+            offset = int(request.args.get('offset', 0))
+            if offset < 0:
+                abort(400, "offset has to be not negative")
+
             # TODO implement pagination
-            return jsonify(data_store.get_all())
+            return jsonify(data_store.get_all(limit=limit, offset=offset))
 
         @api.doc('create_embedding')
         @api.expect(book_embedding_schema)
@@ -321,11 +334,6 @@ def create_app():
         entity['rawSolverResult'] = result.solver_output
         entity = data_store.updateEntry(result.entity_id, entity)
         return entity
-
-    #
-    # @api.route("/foo")
-    # def fobar():
-    #     return [PageAssignment("foo", "bar")]
 
     return app
 

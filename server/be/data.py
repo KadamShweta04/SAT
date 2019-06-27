@@ -16,7 +16,9 @@ FROM layouts WHERE rowid == (?)"""
 
 get_all_layouts_sql = """
 SELECT content 
-FROM layouts"""
+FROM layouts
+ORDER BY ROWID DESC 
+LIMIT (?) OFFSET (?)"""
 
 update_layout_by_id_sql = """
 UPDATE layouts
@@ -47,10 +49,10 @@ class DataStore(object):
     def get_connection(self):
         return sqlite3.connect(self.data_path)
 
-    def get_all(self):
+    def get_all(self, limit=20, offset=0):
         with self.get_connection() as conn:
             c: Cursor = conn.cursor()
-            c.execute(get_all_layouts_sql, ())
+            c.execute(get_all_layouts_sql, (limit, offset))
             results = c.fetchall()
             res = []
             for result in results:
