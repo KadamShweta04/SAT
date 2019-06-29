@@ -7,7 +7,7 @@ from datetime import timedelta
 import simplejson
 from flask import json
 
-from be.graphml_parser import parse_graphml_string
+from be.graphml_parser import get_nodes_and_edges_from_graph
 from be.solver import SolverInterface
 from be.utils import set_printing, CodeTimer
 from experiments.constom_ex_types import ExResult
@@ -59,7 +59,7 @@ def do_experiment(base_constraints, pages, line):
     edge_number = line_obj['edge_number']
     node_number = line_obj['node_number']
     graph_type = line_obj['graph_type']
-    nodes, edges = parse_graphml_string(graph_str)
+    nodes, edges = get_nodes_and_edges_from_graph(graph_str)
 
     constraints = base_constraints.copy()
     constraints.append(

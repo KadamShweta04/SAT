@@ -9,6 +9,13 @@ from be.utils import get_duplicates
 
 
 def static_node_order_generation(node_order, node_indexes):
+    """
+    generates the clauses to ensure that the node order is asymmetric and transitive
+
+    :param node_order: all node order variables
+    :param node_indexes: the mapper from node id's to node indexes
+    :return: the list of generated clauses
+    """
     clauses = []
     # Ensure asymmetry
     for i in node_indexes:
@@ -226,6 +233,10 @@ def encode_neighbor_order(node_order, n1, n2):
 
 
 class SatModel(object):
+    """
+    This class is responsible for generating the clauses corresponding to the given Problem instance.
+    """
+
     def __init__(self, pages, edges: Edge, node_ids, constraints):
 
         self.result = {}

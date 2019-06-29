@@ -5,7 +5,7 @@ verify_ssl = true
 
 [dev-packages]
 sympy = "*"
-pyinstaller = "*"
+sphinx = "*"
 
 [packages]
 flask = "==1.*"
@@ -20,8 +20,6 @@ pyhull = "*"
 matplotlib = "*"
 # this is needed to serialize named touples as dicts. Flask uses this automatically if it is present
 simplejson = "*"
-#to force pyinstall to include this lib
-jsonschema = "==2.*"
 
 [requires]
-python_version = "3.7"
+python_version = "3.6"

@@ -6,39 +6,30 @@ On linear layouts of graphs with SAT
 
 ### Init project workspace
 
-Install python 3.7 in the development version via `apt install python3-dev` or `env PYTHON_CONFIGURE_OPTS="--enable-shared" pyenv install 3.7`
-
 ```bash
 pip3 install --upgrade pipenv                       # To install pipenv
 pipenv install                                      # install new dependencies from pipfile
 pipenv clean                                        # remove unused dependencies
 ```
 
-### Build
-
-```bash
-pipenv run pyinstaller --clean be/run_server.spec   # builds a single executable in dist/run_server
-```
-
 ### Run
 
 #### Production
 
-Build the project 
+1. Copy the relevant files to the target server. E.g.:
 
-Copy the file `dist/run_server` to the target server.
+    ```bash
+    rsync -av * --include 'be/*.py' --include '*/'  --include 'Pipfile*' --include '*.md' --include '*.py'  --exclude '*' mirco@sofa.fsi.uni-tuebingen.de:/home/mirco/book-embedding/
+    ```
+2. Optionally enter the screen session via   `screen -r sat-server`
+3. Stop the old server process
+4. Start the new server process via
+    ```bash
+    pipenv run waitress-serve --listen=*:5555 be.app:app
+    ```
+_Side note:_
 
-Copy the database (`data.db`) to the current directory if wanted.
-
-Run the executable.
-
-#### Development
-
-```bash
-pipenv run waitress-serve --listen=*:5555 be.app:app
-```
+regularly backup the database file `data.db`
 
 #TODO 
-project struckture
-pagination
 technical documentation

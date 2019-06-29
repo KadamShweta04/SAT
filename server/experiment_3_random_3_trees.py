@@ -10,7 +10,7 @@ from os.path import isfile
 
 import simplejson
 
-from be.graphml_parser import parse_graphml_string
+from be.graphml_parser import get_nodes_and_edges_from_graph
 from be.solver import SolverInterface
 from be.utils import set_printing
 from experiments.constom_ex_types import ExResult
@@ -75,7 +75,7 @@ def main():
 def do_experiment(base_constraints, pages_2, pages_3, graph_str):
     graph_type = 'planar-3-tree'
     graph_str = graph_str.encode('utf-8')
-    nodes, edges = parse_graphml_string(graph_str)
+    nodes, edges = get_nodes_and_edges_from_graph(graph_str)
 
     sources = [e.source for e in edges]
     sources.extend([e.target for e in edges])

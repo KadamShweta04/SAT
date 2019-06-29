@@ -1,13 +1,19 @@
+from typing import List
+
 from lxml import etree
 
 from be.custom_types import Edge
 
 
-def parse_graphml_string(string):
-    """Parse a string into a Graph.
+def get_nodes_and_edges_from_graph(string: str) -> (List[str], List[Edge]):
+    """
+    Obtains node and enge information from a string containing a graphml definition.
+    For the ids or the elements, the userdata is used first. If there is none then the xml ids of the elements are used.
+    For edges the xml id is not mandatory and therefor if neither userdata nor xml id is present for edges then the used
+    ids are consisting of `<SOURCE_NODE_ID>-<TARGET_NODE_ID>`
 
-    :param string: String that is to be passed into Grapg
-    :return: Graph
+    :param: the graphml string
+    :return: the lists of node ids and edges
     """
     parser = etree.XMLParser(remove_blank_text=True)
 
