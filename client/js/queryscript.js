@@ -295,8 +295,7 @@ function testForContradictions(name) {
 
 
 $( function() {
-	
-	
+		
 	setTimeout(function() {
 		var screenHeight = $(window).outerHeight()
 		var pagesHeight = $("#pages").outerHeight()

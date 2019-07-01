@@ -14,7 +14,7 @@ require([
 	'utils/ContextMenu',
 	'utils/FileSaveSupport',
 	'yfiles/complete',
-	'yfiles/view',
+	//'yfiles/view',
 	'./js/ClientSideImageExport.js',
 	'./js/ClientSidePdfExport.js',
 	'yfiles/view-layout-bridge',
