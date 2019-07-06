@@ -335,7 +335,6 @@ require([
 				})
 			})
 			
-			console.log(pagesArray)
 			
 
 

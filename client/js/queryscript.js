@@ -15,6 +15,7 @@ function fillPages() {
 				'<option value="QUEUE">queue</option>'+
 				'</select> <select id="layoutP'+j+'" name="layoutP'+j+'">'+
 				'<option value="NONE">maximal</option>'+
+				'<option value="FOREST">forest</option>'+
 				'<option value="TREE">tree</option>'+
 				'<option value="DISPERSIBLE">matching</option>'+
 				'</select>'+
@@ -294,8 +295,7 @@ function testForContradictions(name) {
 
 
 $( function() {
-	
-	
+		
 	setTimeout(function() {
 		var screenHeight = $(window).outerHeight()
 		var pagesHeight = $("#pages").outerHeight()
