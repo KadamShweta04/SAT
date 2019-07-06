@@ -10,7 +10,7 @@ from be.utils import get_duplicates
 
 def static_node_order_generation(node_order, node_indexes):
     """
-    generates the clauses to ensure that the node order is asymmetric and transitive
+    Generates the clauses to ensure that the node order is asymmetric and transitive
 
     :param node_order: all node order variables
     :param node_indexes: the mapper from node id's to node indexes
@@ -686,9 +686,11 @@ class SatModel(object):
                 duplicates = get_duplicates([e1[1], e1[2], e2[1], e2[2]])
 
                 if len(duplicates) > 1:
-                    abort(400,
-                          "Got more than one shared nodes. Multi edges are not allowed. "
-                          "The duplicated nodes where {}".format(duplicates))
+                    # ignore double edges
+                    continue
+                    # abort(400,
+                    #       "Got more than one shared nodes. Multi edges are not allowed. "
+                    #       "The duplicated nodes where {}".format(duplicates))
                 # if the edges share one node
                 elif len(duplicates) == 1:
                     # adjacent edges do not need handling
@@ -732,9 +734,11 @@ class SatModel(object):
                 duplicates = get_duplicates([e1[1], e1[2], e2[1], e2[2]])
 
                 if len(duplicates) > 1:
-                    abort(400,
-                          "Got more than one shared nodes. Multi edges are not allowed. "
-                          "The duplicated nodes where {}".format(duplicates))
+                    # ignore double edges
+                    continue
+                    # abort(400,
+                    #       "Got more than one shared nodes. Multi edges are not allowed. "
+                    #       "The duplicated nodes where {}".format(duplicates))
                 # if the edges share one node
                 elif len(duplicates) == 1:
                     # adjacent edges do not need handling

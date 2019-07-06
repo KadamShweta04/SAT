@@ -268,13 +268,21 @@ class App:
                                 "The Implementation only supports graphs where "
                                 "every edge has two distinct start and end nodes")
 
-                    # validate for no double edges
-                    all_edge_endpoints = [{e.source, e.target} for e in edges]
-                    duplicate_edges = get_duplicates(all_edge_endpoints)
-                    if len(duplicate_edges) > 0:
+                    # ignore double edges
+                    # # validate for no double edges
+                    # all_edge_endpoints = [{e.source, e.target} for e in edges]
+                    # duplicate_edges = get_duplicates(all_edge_endpoints)
+                    # if len(duplicate_edges) > 0:
+                    #     abort(400,
+                    #           "Multiedges are not allowed. "
+                    #           "The following edges were recognized as duplicate {}".format(duplicate_edges))
+
+                    # validate for unique edge ids
+                    duplicate_edge_ids = get_duplicates([e.id for e in edges])
+                    if len(duplicate_edge_ids) > 0:
                         abort(400,
-                              "Multiedges are not allowed. "
-                              "The following edges were recognized as duplicate {}".format(duplicate_edges))
+                              "Edge ids have to be unique"
+                              "The following ids were recognized as duplicate {}".format(duplicate_edge_ids))
 
                     # validate page id uniqueness
                     page_ids = [p['id'] for p in entity.get('pages')]
