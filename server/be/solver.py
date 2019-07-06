@@ -31,13 +31,13 @@ class SolverInterface(object):
             with CodeTimer("solve.to_lingeline_and_back"):
                 output = cls.call_lingeling_with_string(dimacstr)
 
-                sat_result = model.parse_linegeling_result(str(output, encoding='UTF-8'))
+                sat_result = model.parse_lingeling_result(str(output, encoding='UTF-8'))
 
                 page_assignments = None
                 vertex_order = None
                 if sat_result['satisfiable']:
-                    vertex_order = model.get_vertex_order()
-                    page_assignments = model.get_page_assignments()
+                    vertex_order = model.get_vertex_order_result()
+                    page_assignments = model.get_page_assignments_result()
 
             return SolverResult(satisfiable=sat_result['satisfiable'],
                                 page_assignments=page_assignments,

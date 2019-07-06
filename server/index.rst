@@ -18,7 +18,13 @@ Indices and tables
 ==================
 .. automodule:: be.app
    :members:
-.. automodule:: be.model
+.. autoclass:: be.model.SatModel
    :members:
 .. automodule:: be.graphml_parser
+   :members:
+
+
+   TODO
+
+.. automodule:: be.model
    :members:
