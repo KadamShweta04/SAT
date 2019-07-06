@@ -42,10 +42,6 @@ def static_assignments_vars(idxs, variables, page_number):
         # each page has to be assigned to at least one page
         clauses.append(list(variables[:, i]))
         # i_on_page_j >> -i_on_page_k
-        # at most one page per edge
-        for j in range(page_number):
-            for k in range(j + 1, page_number):
-                clauses.append([-variables[j, i], -variables[k, i]])
     return clauses
 
 
