@@ -4,7 +4,7 @@ On linear layouts of graphs with SAT
 
 ## Development
 
-Sadly there is no 
+This application requires lingeling which depends on UNIX. This files assumes that you run in an UNIX like environment. Currently it also seems to work as well in the Windows Subsystem for Linux.
 
 ### Init project workspace
 
@@ -21,7 +21,7 @@ pipenv --version                                        # should show something 
 
 ```
 
-Second build lingeling. You can skip this if you have lingeling already in your path.
+Second build lingeling. You can skip this if you have lingeling already in your path. Check this by running `lingeling --version`
 ```bash
 sudo apt install -y gcc make                            # install the tools to build lingeling
 git clone https://github.com/arminbiere/lingeling.git   # checkout the lingeling repo

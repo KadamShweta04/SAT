@@ -1,6 +1,7 @@
 import base64
 import datetime
 import multiprocessing
+import subprocess
 from concurrent.futures import Future
 from concurrent.futures.process import ProcessPoolExecutor
 
@@ -51,6 +52,13 @@ class App:
         :returns:
             the app object
         """
+
+        try:
+            output = subprocess.check_output(["lingeling", "--version"])
+        except Exception as e:
+            raise Exception("The SAT solver binary could not be called. "
+                            "Please make sure that lingeling is build and present in the path.") from e
+
         app = Flask(__name__)
         if app.config['DEBUG']:
             app.config['PROFILE'] = True
