@@ -425,6 +425,10 @@ class SatModel(object):
                                                            self._assignment_variables))
             elif con['type'] == 'EDGES_DIFFERENT_PAGES':
 
+                if len(self.pages) < len(con_args):
+                    abort(400, "It is not possible to fir {} egedes on {} different pages.".format(len(con_args),
+                                                                                                   len(self.pages)))
+
                 for i, ignore1 in enumerate(con_args):
                     for j in range(i):
                         if i == j:
