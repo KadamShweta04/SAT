@@ -388,7 +388,7 @@ class SatModel(object):
                                                          node_order,
                                                          page_idx)
                 self._add_clauses(clauses)
-            elif page_type == 'MIXED':
+            elif page_type == 'NONE':
                 continue
             else:
                 abort(501, "Page type {} is currently not implemented".format(page_type))
@@ -424,13 +424,14 @@ class SatModel(object):
                     clauses.extend(static_encode_same_page(e_idxs[i - 1], e_idxs[i],
                                                            self._assignment_variables))
             elif con['type'] == 'EDGES_DIFFERENT_PAGES':
-                if len(con_args) != 2:
-                    abort(400, "The EDGES_DIFFERENT_PAGES constraint only allows exactly two arguments")
 
-                e1_idx = self.edge_id_to_idx[con_args[0]]
-                e2_idx = self.edge_id_to_idx[con_args[1]]
-                clauses.extend(static_encode_different_page(e1_idx, e2_idx,
-                                                            self._assignment_variables))
+                for i, ignore1 in enumerate(con_args):
+                    for j in range(i):
+                        if i == j:
+                            continue
+                        clauses.extend(static_encode_different_page(self.edge_id_to_idx[con_args[i]],
+                                                                    self.edge_id_to_idx[con_args[j]],
+                                                                    self._assignment_variables))
             elif con['type'] == 'EDGES_TO_SUB_ARC_ON_PAGES':
                 if len(con_args) != 2:
                     abort(400, "The EDGES_CONDITIONALLY_ON_PAGES constraint only allows exactly two arguments")

@@ -77,7 +77,7 @@ class App:
                                                                       'MIXED allows all patterns',
                                                           enum=['QUEUE',
                                                                 'STACK',
-                                                                'MIXED'],
+                                                                'NONE'],
                                                           required=True),
                                     'constraint': fields.String(description='Additional constraints for the page',
                                                                 enum=[
