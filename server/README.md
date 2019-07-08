@@ -32,7 +32,7 @@ exec bash                                               # load the new PATH vari
 lingeling --version                                     # should show something like bcj 78ebb8672540bde0a335aea946bbf32515157d5a
 ```
 
-To install the necessary packages to run this application run the following commands in the same directory as this file.
+In order to install the necessary packages to run this application run the following commands in the same directory as this README.md file.
 
 ```bash
 pipenv install          # install new dependencies from pipfile
@@ -60,6 +60,3 @@ pipenv clean            # remove unused dependencies
 _Side note:_
 
 regularly backup the database file `data.db`
-
-#TODO 
-technical documentation

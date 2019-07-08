@@ -8,41 +8,236 @@
 On linear layouts of graphs with SAT
 ####################################
 
-.. contents:: Table of Contents
-   :depth: 3
+.. only:: html
+
+   .. contents:: Table of Contents
+      :depth: 4
+
+**********
+Motivation
+**********
+
+But why?
+
 
 ***************************
 Fundamentals and Frameworks
 ***************************
 
-  * REST Apis
-  * Python
-  * Flask
-  * Flask-restplus
-  * Sqlite
-  * SAT solving
+This chapter describes the technology and the frameworks used in the project.
+
+REST APIs
+=========
+
+REST Interfaces or APIs are meant to provide an interface to other programs. Instead of the HTML [#]_ files normal webservice deliver a webserver providing a REST interface delivers files in the JSON [#]_ format. Like a normal webserver provides different sites at different sub URLs. E.g. "http://algo.inf.uni-tuebingen.de/?site=mitarbeiter/stud_mitarbeiter" and "http://algo.inf.uni-tuebingen.de/?site=mitarbeiter/mitarbeiter" a REST service can also provide different data at different sub URLs.
+
+In addition to different URLs a REST API can also use the different HTTP verbs [#]_ to do different things. Per convention a request with the verb GET does read some data from the server, whereas a request with the verb POST does write data to the server. One combination of sub URL and HTTP verbs does identify a so called endpoint.
+
+Each endpoint in a REST service has a specified JSON format in which it accepts data and a specified format in which it returns data.
+
+The external Interface this application provides is a REST interface. For an detailed information which endpoints are available and which format they use see `the root page of the server <http://sofa.fsi.uni-tuebingen.de:5555/>`_
+
+.. [#] https://en.wikipedia.org/wiki/HTML
+.. [#] https://en.wikipedia.org/wiki/JSON
+.. [#] https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol#Request_methods
+
+
+Python
+======
+
+This application is implemented in python.
+
+"Python is an easy to learn, powerful programming language. It has efficient high-level data structures and a simple but effective approach to object-oriented programming. Python’s elegant syntax and dynamic typing, together with its interpreted nature, make it an ideal language for scripting and rapid application development in many areas on most platforms.
+
+The Python interpreter and the extensive standard library are freely available in source or binary form for all major platforms from the Python Web site, https://www.python.org/, and may be freely distributed. The same site also contains distributions of and pointers to many free third party Python modules, programs and tools, and additional documentation.
+
+The Python interpreter is easily extended with new functions and data types implemented in C or C++ (or other languages callable from C). Python is also suitable as an extension language for customizable applications." [#]_
+
+
+.. [#] https://docs.python.org/3.7/tutorial/index.html
+
+
+Flask and Flask-restplus
+========================
+
+Flask is a python framework which enables a Developer to write REST services with python.
+
+Flask-restplus is another framework which enables the Developer to easily define the data format of each REST endpoint created.
+
+With these two Frameworks the external interface of the service is implemented. The implementation of the interface is mainly done in the class :class:`.App`
+
+SQlite
+======
+
+SQLite is a database engine which does not need a server. Instead all the work a database server normally does is inlcuded in the SQLite client. SQLite does provide a fully featured SQL [#]_ interface. The data is stored in a single file in the SQLite file format. Typically those files have the extension `.db`. Python already contains such a SQLite client. The application stores the computed results in such a SQLite database. [#]_ The class encapsulating the database access from the rest of the application is :class:`.DataStore`
+
+
+.. [#] https://en.wikipedia.org/wiki/SQL
+.. [#] https://www.sqlite.org/index.html
+
+Boolean satisfiability problem
+==============================
+
+The boolean satisfiability problem is the problem of finding a interpretation which satisfies a given boolean formula. For simple formulas such as the following, this is rather trivial.
+
+
+.. math::
+
+   A \wedge B \wedge C
+
+But as the formula grows and introduces more variables and clauses the time to find a satisfying interpretation of the formula grows. The "boolean satisfiability problem" or short "SAT Problem" is NP-complete.
+
+SAT Solvers try to find an interpretation of a given formula by using computers and optimized algorithms. There are also competitions for the best SAT Solver. In order to make things more easy the formula for a solver hast to be in the conjunctive normal form (CNF). [#]_ Small problem instances contain roughly 3000 variables and 80000 CNF clauses and are solved within 0.1 seconds.
+
+In order to achieve the Goals mentioned in `Motivation`_, the application does formulate the problem as a boolean formula and passes this formula to the SAT Solver.
+
+The translation of the problem in a boolean formula and back is task of the class :class:`.SatModel`. The actual solving of this formula is passed to the SAT Solver `lingeling <http://fmv.jku.at/lingeling/>`_
+
+.. [#] https://en.wikipedia.org/wiki/Conjunctive_normal_form
 
 
 Setup project
 =============
 
+This project requires the `lingeling` binary present on the system. Currently lingeling does only support UNIX operating
+systems. So the application only runs in UNIX environments.
+
+But also unix like environments like cygwin [#]_ or Windows Subsystem for Linux (WSL) [#]_ are supported to run lingeling as the application itself does not depend on unix but only on python which is platform independent.
+
+.. [#] https://www.cygwin.com/
+.. [#] https://en.wikipedia.org/wiki/Windows_Subsystem_for_Linux
+
+
+For detailed information on how to build and run the project see the `README.md file <https://github.com/linear-layouts/SAT/blob/master/server/README.md#init-project-workspace>`_
+
 ********************
 Theoretical baseline
 ********************
 
+This chapter first describes linear layouts and the different types of linear layouts. Afterwards it provides insight in how the constraints from the linear layout itself and the additional constraint are encoded with SAT
+
 Linear layout
 =============
 
-Book embedding:
+A linear layout of a graph simply states that all nodes are on one line. The interesting thing on such a layout is the order in which the nodes appear and how the edges are placed around this nodes. The two linear layouts used in the application are book embeddings and queues. The sample graph to demonstrate this two layouts will be the Goldner–Harary graph shown in this image.
 
-  * Rules
+.. _gh:
+.. figure:: sphinx-doc/_static/graphs/gh.png
+   :width: 50 %
+   :alt: Goldner–Harary graph
+
+   Goldner–Harary graph
+
+
+Book embedding
+--------------
+
+A book embedding layout in quantified in the number of pages or colors an graph needs for its book embedding. The directive of the book embedding is, that no two edges of the same color intersect. Therefor all edges represent a stack. The given graph :numref:`gh` as book embedding can be seen in :numref:`ghStack`.
+
+.. _ghStack:
+.. figure:: sphinx-doc/_static/graphs/gh_stack.png
+   :width: 70 %
+   :alt: Goldner–Harary graph stack
+   :align: center
+
+   Goldner–Harary graph as book embedding or stack
+
 
 Queue embedding
+---------------
 
-  * Rules
+A queue embedding layout of the graph shown in :numref:`gh` is show in :numref:`ghQueue`. A Queue embedding is subject to the constraint that not two edges of one color do completely enclose each other.
+
+.. _ghQueue:
+.. figure:: sphinx-doc/_static/graphs/gh_queue.png
+   :width: 70 %
+   :alt: Goldner–Harary graph queue
+
+   Goldner–Harary graph as queue
+
+:numref:`ll_sum` shows a summary on allowed patterns within linear layouts.
+
+.. _ll_sum:
+.. figure:: sphinx-doc/_static/graphs/book_and_queue.png
+   :width: 70 %
+   :alt: Linear layout summary
+
+   Summary on linear layouts [#]_
+
+
+.. [#] Engineering Linear Layouts with SAT, Jessica Wolz, 2018
+
 
 Encoding with SAT
 =================
+
+The in `Motivation`_ defined problem gets hard to solve because of so many possible solutions. The application translates this problem to a SAT problem and let it be solved by specialized SAT solvers. This chapter describes how the Problem is encoded with SAT.
+
+Linear layout
+-------------
+
+The basic parameters of a layout like node order or edge assignment are encoded according to this paper [#]_ .
+
+Let :math:`G = (E,V)` with :math:`V=\{v_1,v_2,\cdots,v_n\}` and :math:`E=\{e_1,e_2,\cdots,e_m\}`. :math:`p` denotes the index of the page.
+
+The node order is then defined as :math:`\sigma(v_i,v_j) \quad \forall v_i,v_j \in V` with pairwise distinct i,j. For :math:`\sigma` then holds asymmetry and transitivity.
+
+The edge to page assignment of edge i to page p is denoted by :math:`\phi_p(e_i)`. Clearly has :math:`\phi_1(e_i) \vee \cdots \vee \phi_p(e_i) \forall e_i \in E` to hold to assign each edge to at least one page.
+
+For each STACK page :math:`p` the following clauses are added to forbid alternating patterns of vertexes of e1 and e2 if all vertexes are distinct.
+
+.. math::
+
+   \phi_p(e_1) \wedge \phi_p(e_2) &\implies \neg (\sigma(e_1n_i, e_2n_k) \wedge \sigma(e_2n_k , e_1n_j) \wedge \sigma(e_1n_j,e_2n_l))
+
+   \text{w.r.t:}&
+
+   &\{e_1n_i, e_1n_j \} \in V(e_1), \{e_2n_k, e_2n_l \} \in V(e_2)
+
+   &e_1n_i \neq e_1n_j \neq e_2n_k \neq e_2n_l
+
+   &\forall e_1 \neq e_2 \in E
+
+For QUEUE pages :math:`q` there are clauses added which forbid enclosing patterns.
+
+.. math::
+
+   \phi_q(e_1) \wedge \phi_q(e_2) &\implies \neg (\sigma(e_1n_i, e_2n_k) \wedge \sigma(e_2n_k , e_2n_l) \wedge \sigma(e_2n_l ,e_1n_j))
+
+   \text{w.r.t:}&
+
+   &\{e_1n_i, e_1n_j \} \in V(e_1), \{e_2n_k, e_2n_l \} \in V(e_2)
+
+   &e_1n_i \neq e_1n_j \neq e_2n_k \neq e_2n_l
+
+   &\forall e_1 \neq e_2 \in E
+
+Page constraints
+----------------
+
+In addition to the type, each page can have an additional constraint.
+
+The first of such constraints is the DISPENSABLE constraint which does restrict the order of each vertex to at most one. The coresponding clauses are:
+
+.. math::
+
+   \neg \phi_p(e_1) \vee \neg \phi_p(e_2)
+
+   \text{w.r.t:}&
+
+   & V(e_1) \cap V(e_2) \neq \{\}\quad \forall e_1,e_2 \in E
+
+The second of such constraints is FOREST. Which enforces, that the graph on page :math:`p` is acyclic. To encode this new variables have to be introduced:
+
+
+
+.. [#] The Book Embedding Problem from a SAT-Solving Perspective, M. A. Bekos, et al, 2015, Chapter 2
+
+Node order
+~~~~~~~~~~
+The first attribute of the linear layout is in in which order the nodes appear.
+
+The node order is encoded relative
 
   * Node order
   * Edge to page assignment
@@ -102,6 +297,9 @@ The following interface is provided:
 The following module is the glue code between the :class:`.App`: class which handles the external interface and the :class:`.SatModel`: class which does the heavy lifting in creating the SAT clauses and calling the SAT solver.
 
 .. automodule:: be.solver
+   :members:
+
+.. automodule:: be.data
    :members:
 
 

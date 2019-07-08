@@ -176,9 +176,9 @@
         },
         "pyrsistent": {
             "hashes": [
-                "sha256:16692ee739d42cf5e39cef8d27649a8c1fdb7aa99887098f1460057c5eb75c3a"
+                "sha256:50cffebc87ca91b9d4be2dcc2e479272bcb466b5a0487b6c271f7ddea6917e14"
             ],
-            "version": "==0.15.2"
+            "version": "==0.15.3"
         },
         "pytz": {
             "hashes": [
@@ -432,11 +432,11 @@
         },
         "perfplot": {
             "hashes": [
-                "sha256:82908d5661b836b61e8342f8d543614539215915af00bb1bc2fa03b46897a648",
-                "sha256:fc49ae0fe56e62f88f50cb5ce0eacddb1dfbafae8b447cee3e4252c59e21f80a"
+                "sha256:1f16433cf9124ebcf4a10e196f18536f8506f1bcd067f2a496e9d8c51db0d5a1",
+                "sha256:61f7d15a35f635fb31f504e00b85b00c3a637a8e77ce7351a58f4bc305f7d19c"
             ],
             "index": "pypi",
-            "version": "==0.6.0"
+            "version": "==0.6.1"
         },
         "pygments": {
             "hashes": [
@@ -551,6 +551,13 @@
             ],
             "index": "pypi",
             "version": "==1.4"
+        },
+        "termtables": {
+            "hashes": [
+                "sha256:517e49cb2012f3d763738d5a7cd30ca7de7fe2bdbff039e0a90a228f5d7b1ec9",
+                "sha256:b01303c4f4e304d4c2fe4dc649a12ca50de48699aaace955fa7cb43fb030d9aa"
+            ],
+            "version": "==0.1.0"
         },
         "tqdm": {
             "hashes": [
