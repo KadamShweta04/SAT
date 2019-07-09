@@ -10,6 +10,7 @@ networkx = "*"
 pyhull = "*"
 matplotlib = "*"
 perfplot = "*"
+sphinxcontrib-plantuml = "*"
 
 [packages]
 flask = "==1.*"
@@ -19,7 +20,7 @@ numpy ="==1.*"
 flask-cors ="==3.*"
 lxml = "==4.*"
 # this is needed to serialize named touples as dicts. Flask uses this automatically if it is present
-simplejson = "*"
+simplejson = "==3.*"
 
 [requires]
 python_version = "3.6"

@@ -78,6 +78,7 @@ class App:
                               'The instances are solved using [lingeling](http://fmv.jku.at/lingeling/)\n'
                   )
 
+        #: The schema definition of a page
         page_schema = api.model('Page',
                                 {
                                     'id': fields.String(required=True, description='The id of this page', example="P1"),
@@ -97,6 +98,7 @@ class App:
                                                                 ])
                                 })
 
+        #: The schema definition of a constraint
         constraint_schema = api.model('Constraint',
                                       {'type': fields.String(description="""
                                       EDGES_ON_PAGES: assigns edges to specific pages
@@ -184,8 +186,10 @@ class App:
             {
                 'message': fields.String(description='The error message', required=True, readonly=True)
             })
-        book_embedding_schema = api.model(
-            'Book embedding',
+
+        # the schema definition for the full linear layout
+        linear_layout_schema = api.model(
+            'Linear layout',
             {
                 'id': fields.Integer(description='The id of the embedding', readonly=True),
                 'graph': fields.String(description='This field contains a graphml definition encoded with base64. '
@@ -220,7 +224,7 @@ class App:
         class EmbeddingList(Resource):
 
             @api.doc('list_embeddings')
-            @api.response(code=200, description="Success", model=[book_embedding_schema])
+            @api.response(code=200, description="Success", model=[linear_layout_schema])
             @api.response(code=500, description="Server Error", model=error_schema)
             @api.expect(parser)
             def get(self):
@@ -239,8 +243,8 @@ class App:
                 return jsonify(data_store.get_all(limit=limit, offset=offset))
 
             @api.doc('create_embedding')
-            @api.expect(book_embedding_schema)
-            @api.response(code=200, description="Success", model=book_embedding_schema)
+            @api.expect(linear_layout_schema)
+            @api.response(code=200, description="Success", model=linear_layout_schema)
             @api.response(code=500, description="Server Error", model=error_schema)
             @api.response(code=501, description="Not Implemented", model=error_schema)
             @api.response(code=400, description="Bad Request", model=error_schema)
@@ -333,7 +337,7 @@ class App:
         class SingleEmbedding(Resource):
 
             @api.doc('get_embedding')
-            @api.response(code=200, description="Success", model=book_embedding_schema)
+            @api.response(code=200, description="Success", model=linear_layout_schema)
             def get(self, id):
                 """
                 Get an embedding by id

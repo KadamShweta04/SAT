@@ -334,17 +334,42 @@ This constraint is similar to `NODES_ABSOLUTE_ORDER`_ with two nodes but without
 **************
 Implementation
 **************
-TODO
- Arch diagramm
-Flow diagramm
-Input/Output
 
-less technical
+This chapter describes the architecture of the application and highlights implementation details. It will first describe how the different application components work together. Then the signatures and the code comments of the core classes are included and at the end of this chapter there will be some considerations regarding the performance optimization.
 
-presntation 20 minutes
+Architecture
+============
 
 .. automodule:: be
    :members:
+
+The following diagram shows how one request flows through the system. The schema flask validates against is created in :func:`~be.app.App.create_app`
+
+.. uml::
+
+   @startuml
+   User -> flask: POST Problem\nJSON
+   flask -> flask: validate schema
+   flask -> app.py: post()\nJSON
+   app.py -> graphml_parser.py: Parse Json
+   graphml_parser.py -> app.py: Problem
+   app.py -> app.py: validate Problem
+   app.py -> data.py: save request(Problem)
+   data.py -> app.py: id
+   app.py -> solver.py: solve(Problem,id)
+   solver.py -> model.py: create clauses
+   model.py -> solver.py: clauses
+   solver.py -> lingeling: solve clauses
+   lingeling -> solver.py: solution
+   solver.py -> model.py:parse solution
+   model.py -> solver.py: parsed solution
+   solver.py -> app.py: solution
+   app.py -> data.py: save(id,solution)
+   app.py -> flask: solution\nJSON
+   flask -> User: solution\nJSON
+   @enduml
+
+
 
 Core Classes
 ============
@@ -353,6 +378,11 @@ Core Classes
    :members:
 
 .. autoclass:: be.model.SatModel
+   :members:
+
+The following module is the glue code between the :class:`.App`: class which handles the external interface and the :class:`.SatModel`: class which does the heavy lifting in creating the SAT clauses and calling the SAT solver.
+
+.. automodule:: be.solver
    :members:
 
 Auxiliary classes
@@ -367,11 +397,6 @@ The following interface is provided:
 .. automodule:: be.graphml_parser
    :members:
 
-The following module is the glue code between the :class:`.App`: class which handles the external interface and the :class:`.SatModel`: class which does the heavy lifting in creating the SAT clauses and calling the SAT solver.
-
-.. automodule:: be.solver
-   :members:
-
 .. automodule:: be.data
    :members:
 
@@ -381,7 +406,7 @@ Performance Analysis
 
 This chapter sheds light on the particular hot spots of the application regarding technical optimization.
 
-The Following snippet shows the time  the python interpreter needed for the different methods. This was measured by the ProfilerMiddleware (TODO Link) of werkzeug (TODO link)::
+The Following snippet shows the time  the python interpreter needed for the different methods. This was measured by the ProfilerMiddleware [#]_ of werkzeug [#]_::
 
    PATH: '/embeddings'
             2387712 function calls (2381351 primitive calls) in 4.810 seconds
@@ -389,37 +414,40 @@ The Following snippet shows the time  the python interpreter needed for the diff
       Ordered by: internal time, call count
       List reduced from 617 to 30 due to restriction <30>
 
-      ncalls  tottime  percall  cumtime  percall filename:lineno(function)
-        5059    1.163    0.000    1.163    0.000 {method 'poll' of 'select.poll' objects}
-           1    0.868    0.868    0.934    0.934 /Uni/forschungsarbeit/SAT/server/be/model.py:72(static_to_dimacs)
-           5    0.668    0.134    2.027    0.405 /Uni/forschungsarbeit/SAT/server/be/model.py:728(static_encode_page_constraint_stack)
-           1    0.456    0.456    0.483    0.483 /Uni/forschungsarbeit/SAT/server/be/model.py:11(static_node_order_generation)
-      395040    0.415    0.000    0.484    0.000 /Uni/forschungsarbeit/SAT/server/be/model.py:53(static_get_order_clauses)
-      152353    0.375    0.000    0.375    0.000 {built-in method numpy.array}
-       51485    0.154    0.000    0.500    0.000 /Uni/forschungsarbeit/SAT/server/be/utils.py:45(get_duplicates)
-       51485    0.110    0.000    0.110    0.000 {method 'sort' of 'numpy.ndarray' objects}
-      100865    0.094    0.000    0.094    0.000 {method 'tolist' of 'numpy.ndarray' objects}
-      839228    0.069    0.000    0.069    0.000 {method 'append' of 'list' objects}
-           1    0.068    0.068    4.756    4.756 /Uni/forschungsarbeit/SAT/server/be/solver.py:15(solve)
-       51485    0.065    0.000    0.065    0.000 {method 'copy' of 'numpy.ndarray' objects}
-       51485    0.046    0.000    0.256    0.000 /home/mirco/.local/share/virtualenvs/server-qznNmo4Y/lib/python3.6/site-packages/numpy/core/fromnumeric.py:815(sort)
-   508258/508257    0.041    0.000    0.041    0.000 {built-in method builtins.len}
-           1    0.036    0.036    0.036    0.036 {method 'translate' of 'str' objects}
-           3    0.031    0.010    0.031    0.010 {method 'commit' of 'sqlite3.Connection' objects}
-          12    0.030    0.003    0.030    0.003 {method 'replace' of 'str' objects}
-           1    0.020    0.020    1.216    1.216 /home/mirco/.pyenv/versions/3.6.8/lib/python3.6/subprocess.py:1486(_communicate)
-       50097    0.018    0.000    0.018    0.000 {method 'extend' of 'list' objects}
-        5059    0.013    0.000    1.179    0.000 /home/mirco/.pyenv/versions/3.6.8/lib/python3.6/selectors.py:365(select)
-       51485    0.013    0.000    0.035    0.000 /home/mirco/.local/share/virtualenvs/server-qznNmo4Y/lib/python3.6/site-packages/numpy/core/numeric.py:541(asanyarray)
-        5040    0.011    0.000    0.011    0.000 {built-in method posix.write}
-           1    0.003    0.003    1.224    1.224 /Uni/forschungsarbeit/SAT/server/be/solver.py:57(_call_lingeling_with_string)
-     3814/38    0.003    0.000    0.008    0.000 /home/mirco/.local/share/virtualenvs/server-qznNmo4Y/lib/python3.6/copy.py:132(deepcopy)
-           1    0.003    0.003    2.036    2.036 /Uni/forschungsarbeit/SAT/server/be/model.py:359(add_page_constraints)
-          21    0.002    0.000    0.002    0.000 {built-in method posix.read}
+      ncalls  tottime  percall  filename:lineno(function)
+        5059    1.163    0.000  {method 'poll' of 'select.poll' objects}
+           1    0.868    0.868  /Uni/forschungsarbeit/SAT/server/be/model.py:72(static_to_dimacs)
+           5    0.668    0.134  /Uni/forschungsarbeit/SAT/server/be/model.py:728(static_encode_page_constraint_stack)
+           1    0.456    0.456  /Uni/forschungsarbeit/SAT/server/be/model.py:11(static_node_order_generation)
+      395040    0.415    0.000  /Uni/forschungsarbeit/SAT/server/be/model.py:53(static_get_order_clauses)
+      152353    0.375    0.000  {built-in method numpy.array}
+       51485    0.154    0.000  /Uni/forschungsarbeit/SAT/server/be/utils.py:45(get_duplicates)
+       51485    0.110    0.000  {method 'sort' of 'numpy.ndarray' objects}
+      100865    0.094    0.000  {method 'tolist' of 'numpy.ndarray' objects}
+      839228    0.069    0.000  {method 'append' of 'list' objects}
+           1    0.068    0.068  /Uni/forschungsarbeit/SAT/server/be/solver.py:15(solve)
+       51485    0.065    0.000  {method 'copy' of 'numpy.ndarray' objects}
+       51485    0.046    0.000  /home/mirco/.local/share/virtualenvs/server-qznNmo4Y/lib/python3.6/site-packages/numpy/core/fromnumeric.py:815(sort)
+      508258    0.041    0.0000 {built-in method builtins.len}
+           1    0.036    0.036  {method 'translate' of 'str' objects}
+           3    0.031    0.010  {method 'commit' of 'sqlite3.Connection' objects}
+          12    0.030    0.003  {method 'replace' of 'str' objects}
+           1    0.020    0.020  /home/mirco/.pyenv/versions/3.6.8/lib/python3.6/subprocess.py:1486(_communicate)
+       50097    0.018    0.000  {method 'extend' of 'list' objects}
+        5059    0.013    0.000  /home/mirco/.pyenv/versions/3.6.8/lib/python3.6/selectors.py:365(select)
+       51485    0.013    0.000  /home/mirco/.local/share/virtualenvs/server-qznNmo4Y/lib/python3.6/site-packages/numpy/core/numeric.py:541(asanyarray)
+        5040    0.011    0.000  {built-in method posix.write}
+           1    0.003    0.003  /Uni/forschungsarbeit/SAT/server/be/solver.py:57(_call_lingeling_with_string)
+     3814/38    0.003    0.000  /home/mirco/.local/share/virtualenvs/server-qznNmo4Y/lib/python3.6/copy.py:132(deepcopy)
+           1    0.003    0.003  /Uni/forschungsarbeit/SAT/server/be/model.py:359(add_page_constraints)
+          21    0.002    0.000  {built-in method posix.read}
 
 The `tottime` defines the time the interpreter ran this particular method without jumping to a sub method. The first line here `{method 'poll' of 'select.poll' objects}` is actually the waiting loop for the SAT solver to finish.
 
 The first method which is self implemented is the call to `static_to_dimacs` which is why this method got fairly much attention in order to get optimized as much as possible. See sub section one of this chapter.
+
+.. [#] https://werkzeug.palletsprojects.com/en/0.15.x/middleware/profiler/#module-werkzeug.middleware.profiler
+.. [#] https://werkzeug.palletsprojects.com/en/0.15.x/
 
 
 DIMACS File generation
@@ -431,9 +459,51 @@ DIMACS File generation
    :alt: Comparison DIMACS generation
    :align: center
 
-General Clause generation attempts
-----------------------------------
+The figure shows that the time complexity of the problem is already linear and optimization can only aim to make the line less steep. This problem is ultimately not hard but generating a for bigger problem instances 1.5 GB big string just takes its time.
 
-  * Sympy
-  * Lists of ints
-  * Numpy
+Algorithms before technology
+----------------------------
+
+The application iterates a lot over edges or nodes. Often to create permutations of two or more edges. More often than not these permutations are not sensitive to ordering. In early interations of this application to create permutations of 3 edges, there would be three loops over all the edges like this::
+
+       for i in a:
+        for j in a:
+            if i == j:
+                continue
+            for k in a:
+                if k == i or k == j:
+                    continue
+                # do something
+                pass
+
+The difference to the following more intelligent algorithm below should be obivous. Not only does the second algorithm only produce a fraction of the loops but the loops which are done are all used.::
+
+    for i in range(len(a)):
+        for j in range(i):
+            for k in range(j):
+                # do something
+                pass
+
+The difference in performance is show below.
+
+
+.. image:: sphinx-doc/_static/performance/3Touples.png
+   :scale: 100 %
+   :alt: 3 touple generation
+   :align: center
+
+Even with by optimising the slow algorithm to run a hundred times faster it would still not beat the intelligent algorithm. Therefor the lesson is clearly optimize algorithms before technology.
+
+
+Ahead of time
+-------------
+
+Initially the application used a logic framework like sympy to generate the CNF clauses from the definition shown in `Encoding with SAT`_. This works pretty well out of the box. The problem was that the transformation to a CNF form had to be done millions of times per problem. This was realy slow. The solution was to invest some brain power to formulate the CNF clauses and use the already transformed clauses during the application. The Downside of this is for example that certain constraints like `EDGES_SAME_PAGES`_ only work for as much pages as there are predefined clauses present.
+
+
+**********
+Conclusion
+**********
+
+TODO
+was it worth it

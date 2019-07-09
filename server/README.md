@@ -39,6 +39,12 @@ pipenv install          # install new dependencies from pipfile
 pipenv clean            # remove unused dependencies
 ```
 
+### Build documentation
+
+run `sudo apt install graphviz plantuml` to install the runtime requirements which are not installable via pip.
+
+`make html` in the root directory generates the sphinx documentation and outputs it at build/docs
+
 ### Run
 
 #### Production

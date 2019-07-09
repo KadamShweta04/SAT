@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "e35f01bc2ffb28378a16f7c8dd26bf6cf76bb21739b9ee7959ce564b699e99e3"
+            "sha256": "e88fd44ecd7479cd952c0417ef6b4fc22b036a2ee2f04f717fbc18d29a0e99a9"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -39,11 +39,11 @@
         },
         "flask": {
             "hashes": [
-                "sha256:a31adc27de06034c657a8dc091cc5fcb0227f2474798409bff0e9674de31a026",
-                "sha256:b5ae63812021cb04174fcff05d560a98387a44d9cccd4652a2bfa131ba4e4c9b"
+                "sha256:13f9f196f330c7c2c5d7a5cf91af894110ca0215ac051b5844701f2bfd934d52",
+                "sha256:45eb5a6fd193d6cf7e0cf5d8a5b31f83d5faae0293695626f539a823e93b13f6"
             ],
             "index": "pypi",
-            "version": "==1.1.0"
+            "version": "==1.1.1"
         },
         "flask-cors": {
             "hashes": [
@@ -529,6 +529,13 @@
                 "sha256:a9925e4a4587247ed2191a22df5f6970656cb8ca2bd6284309578f2153e0c4b8"
             ],
             "version": "==1.0.1"
+        },
+        "sphinxcontrib-plantuml": {
+            "hashes": [
+                "sha256:1e388ea0c8bc933adecf438f5243857ca238050a107d2768e5ffb490bbb733d7"
+            ],
+            "index": "pypi",
+            "version": "==0.17"
         },
         "sphinxcontrib-qthelp": {
             "hashes": [

@@ -12,12 +12,6 @@ class PageAssignment(NamedTuple):
     page: str
 
 
-class Constraint(NamedTuple):
-    type: str
-    arguments: List[str]
-    modifier: List[str]
-
-
 class SolverResult(NamedTuple):
     satisfiable: bool
     page_assignments: List[PageAssignment]

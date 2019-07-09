@@ -23,7 +23,7 @@ class SolverInterface(object):
         :param pages: the pages of the problem instance
         :param constraints: the constraints of the problem instance
         :param entity_id: the id of the problem instance. This is used to wrap any exception in an
-        :class `.IdRelatedException`: in order to pass the id to the handling method.
+                            :class:`.IdRelatedException` in order to pass the id to the handling method.
         :return: the solved result of the problem instance
         """
         try:
