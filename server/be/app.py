@@ -112,9 +112,8 @@ class App:
                                       modifier none
                                       
                                       EDGES_TO_SUB_ARC_ON_PAGES: If any node shares an edge with the nodes named in 
-                                      arguments and is between the two nodes, 
-                                      then this edge is restricted to the pages in modifier
-                                      as endpoint are only allowed on the two named pages. 
+                                      arguments and is between the two nodes, then this edge is restricted to the pages 
+                                      in modifier.
                                       arguments: the two vertexes to restrict the edges from
                                       modifier: the pages to restrict the edges to
                                       
@@ -126,7 +125,9 @@ class App:
                                       arguments: the node ids to be before 
                                       modifier: the node ids to be after
                                       
-                                      NODES_ABSOLUTE_ORDER: The given nodes have to be in exactly the given order and no nodes 
+                                      NODES_ABSOLUTE_ORDER: see NODES_REQUIRE_ABSOLUTE_ORDER
+                                      
+                                      NODES_REQUIRE_ABSOLUTE_ORDER: The given nodes have to be in exactly the given order and no nodes 
                                       are allowed in between
                                       arguments: the nodes in the required order
                                       modifier: none 
@@ -153,6 +154,7 @@ class App:
                                                                  "EDGES_FROM_NODES_ON_PAGES",
                                                                  "NODES_PREDECESSOR",
                                                                  "NODES_ABSOLUTE_ORDER",
+                                                                 "NODES_REQUIRE_ABSOLUTE_ORDER",
                                                                  "NODES_REQUIRE_PARTIAL_ORDER",
                                                                  "NODES_FORBID_PARTIAL_ORDER",
                                                                  "NODES_CONSECUTIVE",

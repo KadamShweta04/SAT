@@ -176,9 +176,9 @@ The in `Motivation`_ defined problem gets hard to solve because of so many possi
 Linear layout
 -------------
 
-The basic parameters of a layout like node order or edge assignment are encoded according to this paper [#]_ .
+The basic parameters of a layout like node order or edge assignment are encoded according to chapter two of this paper [#paper]_ .
 
-Let :math:`G = (E,V)` with :math:`V=\{v_1,v_2,\cdots,v_n\}` and :math:`E=\{e_1,e_2,\cdots,e_m\}`. :math:`p` denotes the index of the page.
+Let :math:`G = (E,V)` with :math:`V=\{v_1,v_2,\cdots,v_n\}` and :math:`E=\{e_1,e_2,\cdots,e_m\}`. :math:`p` denotes the index of the page and :math:`P` denotes all pages.
 
 The node order is then defined as :math:`\sigma(v_i,v_j) \quad \forall v_i,v_j \in V` with pairwise distinct i,j. For :math:`\sigma` then holds asymmetry and transitivity.
 
@@ -227,36 +227,109 @@ The first of such constraints is the DISPENSABLE constraint which does restrict 
 
    & V(e_1) \cap V(e_2) \neq \{\}\quad \forall e_1,e_2 \in E
 
-The second of such constraints is FOREST. Which enforces, that the graph on page :math:`p` is acyclic. To encode this new variables have to be introduced:
+The second of such constraints is FOREST. Which enforces, that the graph on page :math:`p` is acyclic. To encode this new variables have to be introduced. One type for the parent relationship and one for the ancestor relationship. The ancestor relationship is used to forbid cyclic graphs. The detailed formulation is described in chapter 2.1 of this paper [#paper]_.
+
+The TREE constraint is also described there. It basically adds the a additional variable to indicate if one node is the root of the tree and allows only one root.
+
+The implementation of this constraints is located in :func:`~be.model.SatModel.add_page_constraints`
+
+Additional constraints
+----------------------
+
+The application supports a wide variety of additional constraints the user can impose on the given problem instance. In the following the there will be a short description of the constraint in text form followed by the logical projection. The title will represent the constraint type accepted by the API. The implementation to this constraints is found in :func:`~be.model.SatModel.add_additional_constraints`.
+
+EDGES_ON_PAGES
+~~~~~~~~~~~~~~
+
+This constraint forces the given edges :math:`E^*` to a given pages :math:`P^*`. The implementation is simply
+
+.. math::
+      \bigwedge_{p \in P^*} \phi_p(e) \quad \forall e \in E^*
+
+
+EDGES_SAME_PAGES
+~~~~~~~~~~~~~~~~
+
+This constraint will force the given edges :math:`e_1,\cdots,e_n` to the same page. Because there is no general way to formulate this constraint in CNF for an arbitrary number of pages it is only implemented up to four pages. The general formulation is as follows
+
+.. math::
+   \bigvee_{p \in P} (\phi_p(e_{i-1}) \wedge \phi_p(e_i)) \quad \forall i \in [2,n]
+
+EDGES_DIFFERENT_PAGES
+~~~~~~~~~~~~~~~~~~~~~
+
+This constraint forces all given edges :math:`E^*` on different pages. It will create unsolvable instances if more edges are given than there are pages. In this case the application will throw an error. The constraint is paiwise implemented as
+
+.. math::
+   \bigwedge_{p \in P} (\neg \phi_p(e_i) \vee  \neg \phi_p(e_j)) \quad \forall e_i \neq e_j \in E^*
+
+
+EDGES_TO_SUB_ARC_ON_PAGES
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This constraint is rather special to the proof of Yannakakis [#]_. According to the description in the proof this constraint enforces the following. If an edge has one endpoint in one of two specifically designated nodes :math:`s,t` and the other endpoint between them, then it is restricted to certain pages :math:`P^*`. The logical formula is:
+
+.. math::
+   \bigvee_{p \in P^*}(\phi_p(e)) \quad \forall e \in E \ | \  V(e) \cap \{s,t\} \neq \{\} \wedge V(e) \in [s,t]
+
+
+EDGES_FROM_NODES_ON_PAGES
+~~~~~~~~~~~~~~~~~~~~~~~~~
+The current constraint is an less strict version of the `EDGES_TO_SUB_ARC_ON_PAGES`_ constraint. Given this constraint all edges from the given nodes :math:`V^*` to the given pages :math:`P^*`.
+
+.. math::
+   \bigvee_{p \in P^*}(\phi_p(e)) \quad \forall e \in E \ | \  V(e) \cap V^* \neq \{\}
+
+
+NODES_PREDECESSOR
+~~~~~~~~~~~~~~~~~
+This and the following constraints apply to nodes. The current constraint does require that one set of nodes :math:`V_1^*` is before an other set of nodes :math:`V_2^*`.
+
+.. math::
+   \sigma(n_i,n_j) \quad \forall n_i \in V_1^* ; n_j \in V_2^*
+
+
+NODES_ABSOLUTE_ORDER
+~~~~~~~~~~~~~~~~~~~~
+Whereas the previous constraint is only able to encode relative order, does this constraint encode absolute order. So no node is in between the given node order :math:`n_1,\cdots,n_j` and they apear in exactly this order. The logical encoding uses exactly this trick:
+
+.. math::
+   \sigma(n_{i-1},n_i) \wedge \left(\bigwedge_{ n_x \in V \ | \ n_i \neq n_x \neq n_{i-1}} \neg\left(\sigma(n_{n-1} , n_x) \wedge \sigma(n_x, n_i)\right)\right) \quad \forall i \in [2,j]
+
+
+NODES_REQUIRE_PARTIAL_ORDER
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+A series of `NODES_PREDECESSOR`_ constraint with one node in each set can be expressed with this constraint. It simply enforces, that the nodes appear in the order :math:`n_1,\cdots,n_j`. The formula is as simple as it can get with:
+
+.. math::
+   \bigwedge_{i \in [2,j]}\sigma(n_{i-1}, n_i)
+
+
+NODES_FORBID_PARTIAL_ORDER
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+This encodes the opposite of `NODES_REQUIRE_PARTIAL_ORDER`_. The constraint is satified as soon as two of the nodes switch their relative position. The formula is:
+
+.. math::
+   \neg \left(\bigwedge_{i \in [2,j]}\sigma(n_{i-1}, n_i) \right)
+
+
+NODES_CONSECUTIVE
+~~~~~~~~~~~~~~~~~
+
+This constraint is similar to `NODES_ABSOLUTE_ORDER`_ with two nodes but without regarding the particular order of the nodes. This constraint only requires that between the two given nodes :math:`n_1,n_2` is no other node. The corresponding formula is.
+
+.. math::
+   \sigma(n_1,n_2) \Leftrightarrow \sigma(n_i,n_1) \vee \sigma(n_2,n_i) \quad \forall n_i \in V \ | \ n_2 \neq n_i \neq n_1
 
 
 
-.. [#] The Book Embedding Problem from a SAT-Solving Perspective, M. A. Bekos, et al, 2015, Chapter 2
 
-Node order
-~~~~~~~~~~
-The first attribute of the linear layout is in in which order the nodes appear.
 
-The node order is encoded relative
 
-  * Node order
-  * Edge to page assignment
-  * Tree
-  * Dispensable
+.. [#paper] The Book Embedding Problem from a SAT-Solving Perspective, M. A. Bekos, et al, 2015
 
-Constraints
------------
 
-   * EDGES_ON_PAGES
-   * EDGES_SAME_PAGES
-   * EDGES_DIFFERENT_PAGES
-   * EDGES_TO_SUB_ARC_ON_PAGES
-   * EDGES_FROM_NODES_ON_PAGES
-   * NODES_PREDECESSOR
-   * NODES_ABSOLUTE_ORDER
-   * NODES_FORBID_PARTIAL_ORDER
-   * NODES_REQUIRE_PARTIAL_ORDER
-   * NODES_CONSECUTIVE
+.. [#] M. Yannakakis. Four pages are necessary and sufficient for planar graphs (extended abstract). In J. Hartmanis, editor, ACM Symposium on Theory of Computing, pages 104–108. ACM, 1986. doi:10.1145/12130.12141
 
 **************
 Implementation
@@ -319,7 +392,7 @@ The Following snippet shows the time  the python interpreter needed for the diff
       ncalls  tottime  percall  cumtime  percall filename:lineno(function)
         5059    1.163    0.000    1.163    0.000 {method 'poll' of 'select.poll' objects}
            1    0.868    0.868    0.934    0.934 /Uni/forschungsarbeit/SAT/server/be/model.py:72(static_to_dimacs)
-           5    0.668    0.134    2.027    0.405 /Uni/forschungsarbeit/SAT/server/be/model.py:728(node_constraint_stack)
+           5    0.668    0.134    2.027    0.405 /Uni/forschungsarbeit/SAT/server/be/model.py:728(static_encode_page_constraint_stack)
            1    0.456    0.456    0.483    0.483 /Uni/forschungsarbeit/SAT/server/be/model.py:11(static_node_order_generation)
       395040    0.415    0.000    0.484    0.000 /Uni/forschungsarbeit/SAT/server/be/model.py:53(static_get_order_clauses)
       152353    0.375    0.000    0.375    0.000 {built-in method numpy.array}
@@ -341,7 +414,7 @@ The Following snippet shows the time  the python interpreter needed for the diff
         5040    0.011    0.000    0.011    0.000 {built-in method posix.write}
            1    0.003    0.003    1.224    1.224 /Uni/forschungsarbeit/SAT/server/be/solver.py:57(_call_lingeling_with_string)
      3814/38    0.003    0.000    0.008    0.000 /home/mirco/.local/share/virtualenvs/server-qznNmo4Y/lib/python3.6/copy.py:132(deepcopy)
-           1    0.003    0.003    2.036    2.036 /Uni/forschungsarbeit/SAT/server/be/model.py:359(add_page_type_constraints)
+           1    0.003    0.003    2.036    2.036 /Uni/forschungsarbeit/SAT/server/be/model.py:359(add_page_constraints)
           21    0.002    0.000    0.002    0.000 {built-in method posix.read}
 
 The `tottime` defines the time the interpreter ran this particular method without jumping to a sub method. The first line here `{method 'poll' of 'select.poll' objects}` is actually the waiting loop for the SAT solver to finish.

@@ -36,10 +36,10 @@ class SolverInterface(object):
                     model.add_page_assignment_clauses()
 
                 with CodeTimer("solve.SAT.page_constraints"):
-                    model.add_page_type_constraints()
+                    model.add_page_constraints()
 
                 with CodeTimer("solve.SAT.additional_constraints"):
-                    model.add_constraints()
+                    model.add_additional_constraints()
 
             with CodeTimer("solve.to_dimacs"):
                 dimacstr = model.to_dimacs_str()
