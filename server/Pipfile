@@ -11,6 +11,7 @@ pyhull = "*"
 matplotlib = "*"
 perfplot = "*"
 sphinxcontrib-plantuml = "*"
+sphinxcontrib-bibtex = "*"
 
 [packages]
 flask = "==1.*"

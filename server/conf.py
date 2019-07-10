@@ -32,6 +32,7 @@ release = '1.0.0'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinxcontrib.plantuml',
+    'sphinxcontrib.bibtex',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -98,72 +99,32 @@ Universität Tübingen
 	\end{center}
 \makeatother
 \end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Titelr"uckseite: Bibliographische Angaben
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\\thispagestyle{empty}
+\\makeatletter
+\\vspace*{\\fill}
+\\begin{minipage}{11.2cm}
+\\textbf{\@author:}\\\\
+\\emph{\@title}\\\\ Forschungsarbeit Informatik MSc.\\\\
+Eberhard Karls Universität Tübingen\\\\
+Thesis period: April 2019 - July 2019
+\\end{minipage}
+\\makeatother
+\\newpage
     """,
     'fncychap': '',
-    'tableofcontents': """
-    
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  
-\\pagenumbering{roman}
-\\setcounter{page}{1}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Seite I: Zusammenfassug, Danksagung
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-
-\\section*{Abstract}
-
-During the course of this research project an application to compute linear layouts of graphs was created. This application provides a wide variety of options and constraints to force the resulting layout in the desired shape. The application in based on python and flask. The actual computing is done by creating SAT instances from the given problem and pass those instances to the lingeling SAT solver. The application provides a extensivly documented REST API to accept problem instances. This API is currently only used by the frontend located at. 
-
-\\section*{Zusammenfassung}
-
-Bei einer englischen Masterarbeit muss zus\\"atzlich eine deutsche Zusammenfassung verfasst werden.
-
-\\cleardoublepage
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Table of Contents
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\\renewcommand{\\baselinestretch}{1.3}
-\\small\\normalsize
-
-\\tableofcontents
-
-\\renewcommand{\\baselinestretch}{1}
-\\small\\normalsize
-
-\\cleardoublepage
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% List of Figures
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\\renewcommand{\\baselinestretch}{1.3}
-\\small\\normalsize
-
-\\addcontentsline{toc}{chapter}{List of Figures}
-\\listoffigures
-
-\\renewcommand{\\baselinestretch}{1}
-\\small\\normalsize
-
-\\cleardoublepage
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% Der Haupttext, ab hier mit arabischer Numerierung
-%%% Mit \\input{dateiname} werden die Datei `dateiname' eingebunden
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\\pagenumbering{arabic}
-\\setcounter{page}{1}
-""",
-    'pointsize': '14pt',
+    'tableofcontents': '',
+    'pointsize': 'twoside,14pt',
     'papersize': 'a4paper',
-    'sphinxsetup': 'TitleColor={rgb}{0.,0.,0.}',
-
+    'sphinxsetup': 'TitleColor={rgb}{0.,0.,0.}, InnerLinkColor={rgb}{0.,0.,0.}',
+    'printindex': ''
 }
 
 master_doc = 'index'
 latex_documents = [(master_doc, 'main.tex', project, author, 'report')]
+
+latex_domain_indices = False

@@ -1,9 +1,3 @@
-.. On ll with SAT documentation master file, created by
-   sphinx-quickstart on Sat Jun 29 18:46:25 2019.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
-
 ####################################
 On linear layouts of graphs with SAT
 ####################################
@@ -13,22 +7,96 @@ On linear layouts of graphs with SAT
    .. contents:: Table of Contents
       :depth: 4
 
+.. only:: latex
+
+   .. raw:: latex
+
+      \pagenumbering{roman}
+      \setcounter{page}{1}
+
+      \cleardoublepage
+      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      %%% Erklaerung
+      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      \thispagestyle{empty}
+      \section*{Selbst\"andigkeitserkl\"arung}
+
+      Hiermit versichere ich, dass ich die vorliegende Arbeit
+      selbst\"andig und nur mit den angegebenen Hilfsmitteln angefertigt habe und dass alle Stellen, die dem Wortlaut oder dem
+      Sinne nach anderen Werken entnommen sind, durch Angaben von Quellen als
+      Entlehnung kenntlich gemacht worden sind.
+      Diese Arbeit wurde in gleicher oder \"ahnlicher Form in keinem anderen
+      Studiengang als Pr\"ufungsleistung vorgelegt.
+
+      \vskip 3cm
+
+      Ort, Datum	\hfill Unterschrift \hfill
+
+      \cleardoublepage
+
+      \section*{Abstract}
+
+
+   During the course of this research project an application to compute linear layouts of graphs was created. This application provides a wide variety of options and constraints to force the resulting layout in the desired shape. The application in based on python and flask. The actual computing is done by creating SAT instances from the given problem and pass those instances to the lingeling SAT solver. The application provides a extensivly documented REST API to accept problem instances. This API is currently only used by the frontend located at `<http://algo.inf.uni-tuebingen.de/linearlayouts/>`_ . But in principle everybody is able to implement their own frontend to accommodate their needs.
+
+
+
+   .. raw:: latex
+
+      \section*{Zusammenfassung}
+
+   Im Verlauf dieses Forschungprojekts wurde eine Anwendung entwickelt welche lineare Layouts von graphen berechnen kann. Die Anwendung stellt eine große Bandbreite an Optionen und Bedingungen zur verfügung mithilfe derer es möglich ist das errechnete lineare Layout in die gewünschte Form zu zwingen. Die Anwendung basiert auf Python und Flask. Die Errechnung des linearen Layouts basiert darauf, dass die gegebene Probleminstanz zuerst in ein SAT Problem umgewandelt wird. Danach wird die SAT Instanz an den SAT Solver "lingeling" übergeben. Das Ergebniss wird zurück umgewandelt und dem Benutzer zur Verfügung gestellt. Die Anwendung stellt eine vollständig dokumentierte REST API zur Verfügung um Probleminstanzen anzunehmen. Diese Schnittstelle wird zur Zeit nur von der Frontend `<http://algo.inf.uni-tuebingen.de/linearlayouts/>`_ verwendet. Doch im Prinzip kann jede Person ein eigenes, an ihre speziellen Bedürfnisse angepasstes, Frontend erstellen.
+
+
+    .. raw:: latex
+
+      \cleardoublepage
+
+      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      %%% Table of Contents
+      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+      \renewcommand{\baselinestretch}{1.3}
+      \small\normalsize
+
+      \tableofcontents
+
+      \renewcommand{\baselinestretch}{1}
+      \small\normalsize
+
+      \cleardoublepage
+
+      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+      %%% Table of Figures
+      %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+      \renewcommand{\baselinestretch}{1.3}
+      \small\normalsize
+      \addcontentsline{toc}{chapter}{List of Figures}
+
+      \listoffigures
+
+      \renewcommand{\baselinestretch}{1}
+      \small\normalsize
+
+      \cleardoublepage
+      \pagenumbering{arabic}
+      \setcounter{page}{1}
+
 **********
 Motivation
 **********
 
-This the goal of this application is to find linear layouts from given graphs under the restriction of various constraints. There is an already existing tool here [#]_. But this tool is limited to finding general linear layouts with no constraints regarding individual pages or even individual graph elements. The problem is that many proofs and scientific papers about linear layouts require a specific structure of the resulting linear layout. If such a proof has to be investiged with the previous mentioned tool, it would take a lot of time to create even the graph which produces a linear layout as required. This problem is intensified by the fact that for most graphs more than on linear layout exists of which only one is interesting.
+This the goal of this application is to find linear layouts from given graphs under the restriction of various constraints. There is an already existing tool implemented by :cite:`bob` . But this tool is limited to finding general linear layouts with no constraints regarding individual pages or even individual graph elements. The problem is that many proofs and scientific papers about linear layouts require a specific structure of the resulting linear layout. If such a proof has to be investigated with the previous mentioned tool, it would take a lot of time to create even the graph which produces a linear layout as required. This problem is intensified by the fact that for most graphs more than on linear layout exists of which only one is interesting.
 
 This application will help to omit this graph finding phase and directly restrict an arbitrary graph to the desired properties. For this reason the a dedicated frontend will be developed which allows graph manipulation and attaching constraints to all graph elements. This application will then accept a problem definition consisting of the graph, the arguments for the linear layout and a list of additional constraints.
 
-To make this application even more usefull there will be no dependencies on the used frontend. Meaning anybody can use the server from whichever frontend suits their need as long as they honor the api contract.
-
-.. [#] http://be.cs.arizona.edu/
+To make this application even more useful there will be no dependencies on the used frontend. Meaning anybody can use the server from whichever frontend suits their need as long as they honor the api contract.
 
 
-***************************
-Fundamentals and Frameworks
-***************************
+*****************
+Technology basics
+*****************
 
 This chapter describes the technology and the frameworks used in the project.
 
@@ -57,10 +125,7 @@ This application is implemented in python.
 
 The Python interpreter and the extensive standard library are freely available in source or binary form for all major platforms from the Python Web site, https://www.python.org/, and may be freely distributed. The same site also contains distributions of and pointers to many free third party Python modules, programs and tools, and additional documentation.
 
-The Python interpreter is easily extended with new functions and data types implemented in C or C++ (or other languages callable from C). Python is also suitable as an extension language for customizable applications." [#]_
-
-
-.. [#] https://docs.python.org/3.7/tutorial/index.html
+The Python interpreter is easily extended with new functions and data types implemented in C or C++ (or other languages callable from C). Python is also suitable as an extension language for customizable applications." :cite:`py-tut`
 
 
 Flask and Flask-restplus
@@ -146,7 +211,7 @@ A book embedding layout in quantified in the number of pages or colors an graph 
    :alt: Goldner–Harary graph stack
    :align: center
 
-   Goldner–Harary graph as book embedding or stack
+   Goldner–Harary graph as book embedding / stack
 
 
 Queue embedding
@@ -168,10 +233,7 @@ A queue embedding layout of the graph shown in :numref:`gh` is show in :numref:`
    :width: 70 %
    :alt: Linear layout summary
 
-   Summary on linear layouts [#]_
-
-
-.. [#] Engineering Linear Layouts with SAT, Jessica Wolz, 2018
+   Summary on linear layouts taken from :cite:`jess`
 
 
 Encoding with SAT
@@ -182,7 +244,7 @@ The in `Motivation`_ defined problem gets hard to solve because of so many possi
 Linear layout
 -------------
 
-The basic parameters of a layout like node order or edge assignment are encoded according to chapter two of this paper [#paper]_ .
+The basic parameters of a layout like node order or edge assignment are encoded according to chapter two of this paper :cite:`Bekos2015` .
 
 Let :math:`G = (E,V)` with :math:`V=\{v_1,v_2,\cdots,v_n\}` and :math:`E=\{e_1,e_2,\cdots,e_m\}`. :math:`p` denotes the index of the page and :math:`P` denotes all pages.
 
@@ -233,7 +295,7 @@ The first of such constraints is the DISPENSABLE constraint which does restrict 
 
    & V(e_1) \cap V(e_2) \neq \{\}\quad \forall e_1,e_2 \in E
 
-The second of such constraints is FOREST. Which enforces, that the graph on page :math:`p` is acyclic. To encode this new variables have to be introduced. One type for the parent relationship and one for the ancestor relationship. The ancestor relationship is used to forbid cyclic graphs. The detailed formulation is described in chapter 2.1 of this paper [#paper]_.
+The second of such constraints is FOREST. Which enforces, that the graph on page :math:`p` is acyclic. To encode this new variables have to be introduced. One type for the parent relationship and one for the ancestor relationship. The ancestor relationship is used to forbid cyclic graphs. The detailed formulation is described in chapter 2.1 of this paper :cite:`Bekos2015`.
 
 The TREE constraint is also described there. It basically adds the a additional variable to indicate if one node is the root of the tree and allows only one root.
 
@@ -273,7 +335,7 @@ This constraint forces all given edges :math:`E^*` on different pages. It will c
 EDGES_TO_SUB_ARC_ON_PAGES
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-This constraint is rather special to the proof of Yannakakis [#]_. According to the description in the proof this constraint enforces the following. If an edge has one endpoint in one of two specifically designated nodes :math:`s,t` and the other endpoint between them, then it is restricted to certain pages :math:`P^*`. The logical formula is:
+This constraint is rather special to the proof sketched in :cite:`DBLP:conf/stoc/Yannakakis86`. According to the description in the proof this constraint enforces the following. If an edge has one endpoint in one of two specifically designated nodes :math:`s,t` and the other endpoint between them, then it is restricted to certain pages :math:`P^*`. The logical formula is:
 
 .. math::
    \bigvee_{p \in P^*}(\phi_p(e)) \quad \forall e \in E \ | \  V(e) \cap \{s,t\} \neq \{\} \wedge V(e) \in [s,t]
@@ -330,13 +392,6 @@ This constraint is similar to `NODES_ABSOLUTE_ORDER`_ with two nodes but without
 
 
 
-
-
-.. [#paper] The Book Embedding Problem from a SAT-Solving Perspective, M. A. Bekos, et al, 2015
-
-
-.. [#] M. Yannakakis. Four pages are necessary and sufficient for planar graphs (extended abstract). In J. Hartmanis, editor, ACM Symposium on Theory of Computing, pages 104–108. ACM, 1986. doi:10.1145/12130.12141
-
 **************
 Implementation
 **************
@@ -357,8 +412,9 @@ The following diagram shows how one request flows through the system. The schema
    User -> flask: POST Problem\nJSON
    flask -> flask: validate schema
    flask -> app.py: post()\nJSON
-   app.py -> graphml_parser.py: Parse Json
-   graphml_parser.py -> app.py: Problem
+   app.py -> app.py: parse JSON
+   app.py -> graphml_parser.py: Parse Graphml
+   graphml_parser.py -> app.py: Nodes,Edges
    app.py -> app.py: validate Problem
    app.py -> data.py: save request(Problem)
    data.py -> app.py: id
@@ -375,6 +431,12 @@ The following diagram shows how one request flows through the system. The schema
    flask -> User: solution\nJSON
    @enduml
 
+
+.. figure:: sphinx-doc/_static/FFFFFF-0.png
+   :scale: 1 %
+   :align: center
+
+   Flow diagram of one request
 
 
 Core Classes
@@ -458,17 +520,19 @@ DIMACS File generation
 ----------------------
 
 
-.. image:: sphinx-doc/_static/performance/toDimacs.png
+.. figure:: sphinx-doc/_static/performance/toDimacs.png
    :scale: 100 %
    :alt: Comparison DIMACS generation
    :align: center
 
-The figure shows that the time complexity of the problem is already linear and optimization can only aim to make the line less steep. This problem is ultimately not hard but generating a for bigger problem instances 1.5 GB big string just takes its time.
+   Performance comparison of dimacs file generation
+
+The figure shows that the time complexity of the problem is already linear and optimization can only aim to make the line less steep. This problem is ultimately not hard, but for bigger instances string sizes of several gigabytes are not unheard of and this simply takes its time.
 
 Algorithms before technology
 ----------------------------
 
-The application iterates a lot over edges or nodes. Often to create permutations of two or more edges. More often than not these permutations are not sensitive to ordering. In early interations of this application to create permutations of 3 edges, there would be three loops over all the edges like this::
+The application iterates a lot over edges or nodes. Often to create permutations of two or more edges. More often than not these permutations are not sensitive to ordering. In early iterations of this application to create permutations of 3 edges, there would be three loops over all the edges like this::
 
        for i in a:
         for j in a:
@@ -491,10 +555,12 @@ The difference to the following more intelligent algorithm below should be obivo
 The difference in performance is show below.
 
 
-.. image:: sphinx-doc/_static/performance/3Touples.png
+.. figure:: sphinx-doc/_static/performance/3Touples.png
    :scale: 100 %
-   :alt: 3 touple generation
+   :alt: 3 tuple generation
    :align: center
+
+   Performance comparison of different 3-tuple generation
 
 Even with by optimising the slow algorithm to run a hundred times faster it would still not beat the intelligent algorithm. Therefor the lesson is clearly optimize algorithms before technology.
 
@@ -509,5 +575,9 @@ Initially the application used a logic framework like sympy to generate the CNF 
 Conclusion
 **********
 
-TODO
-was it worth it
+The application clearly works for its intended use case. We where able to check several assumption from :cite:`DBLP:conf/stoc/Yannakakis86` and found new insights into the problem or linear layouts. The Frontend integrates nicely with the given API and there are already several new ideas on what to check next with this application.
+
+
+
+.. bibliography:: sphinx-doc/references.bib
+
