@@ -12,8 +12,8 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('.'))
 
+sys.path.insert(0, os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
 
@@ -24,7 +24,6 @@ author = 'Mirco Haug'
 # The full version, including alpha/beta/rc tags
 release = '1.0.0'
 
-
 # -- General configuration ---------------------------------------------------
 
 # Add any Sphinx extension module names here, as strings. They can be
@@ -32,6 +31,8 @@ release = '1.0.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
+    'sphinxcontrib.plantuml',
+    'sphinxcontrib.bibtex',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -41,7 +42,6 @@ templates_path = ['sphinx-doc/_templates']
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
-
 
 # -- Options for HTML output -------------------------------------------------
 
@@ -55,5 +55,76 @@ html_theme = 'alabaster'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['sphinx-doc/_static']
 
+numfig = True
 
 # -- Extension configuration -------------------------------------------------
+
+
+latex_elements = {
+    'preamble': """
+\\textwidth 14cm
+\\textheight 22cm
+\\topmargin 0.0cm
+\\evensidemargin 1cm
+\\oddsidemargin 1cm
+\\setlength\parindent{20pt}
+    """,
+    'maketitle': """
+\\begin{titlepage}
+	\makeatletter
+	\\begin{center}
+		{\LARGE Eberhard Karls Universität Tübingen}\\\\
+{\large Mathematisch-Naturwissenschaftliche Fakultät \\\\
+Wilhelm-Schickard-Institut für Informatik\\\\[4cm]}
+		{\huge Forschungsarbeit Informatik MSc.\\\\[2cm]}
+		{\Large\\bf  \@title \\\\[1.5cm]}
+		{\large \@author }\\\\[0.5cm]
+		\@date\\\\[4cm]
+		{\small\\bf Reviewers}\\\\[0.5cm]
+		\parbox{7cm}
+		{\\begin{center}{\large 	Michael A. Bekos}\\\\
+(Informatik)\\\\
+{\\footnotesize 
+					Wilhelm-Schickard-Institut für Informatik\\\\
+Universität Tübingen
+				}\end{center}}\hfill\parbox{7cm}
+			{\\begin{center}
+				{\large Michael Kaufmann}\\\\
+(Informatik)\\\\
+{\\footnotesize 
+					Wilhelm-Schickard-Institut für Informatik\\\\
+Universität Tübingen
+			}\end{center}
+		}
+	\end{center}
+\makeatother
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% Titelr"uckseite: Bibliographische Angaben
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\\thispagestyle{empty}
+\\makeatletter
+\\vspace*{\\fill}
+\\begin{minipage}{11.2cm}
+\\textbf{\@author:}\\\\
+\\emph{\@title}\\\\ Forschungsarbeit Informatik MSc.\\\\
+Eberhard Karls Universität Tübingen\\\\
+Thesis period: April 2019 - July 2019
+\\end{minipage}
+\\makeatother
+\\newpage
+    """,
+    'fncychap': '',
+    'tableofcontents': '',
+    'pointsize': 'twoside,14pt',
+    'papersize': 'a4paper',
+    'sphinxsetup': 'TitleColor={rgb}{0.,0.,0.}, InnerLinkColor={rgb}{0.,0.,0.}',
+    'printindex': ''
+}
+
+master_doc = 'index'
+latex_documents = [(master_doc, 'main.tex', project, author, 'report')]
+
+latex_domain_indices = False

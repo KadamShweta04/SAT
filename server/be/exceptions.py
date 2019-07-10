@@ -1,7 +1,3 @@
-class NotSatisfiableException(Exception):
-    pass
-
-
 class IdRelatedException(Exception):
     """
     This is a wrapper exception to conserve the information about the processed id.

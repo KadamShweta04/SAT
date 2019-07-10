@@ -35,6 +35,7 @@ class DataStore(object):
     def __init__(self, data_path):
         """
         Initialises the datastore if it is not already initialised
+
         :param data_path: the path to use for the data store
         """
         self.data_path = data_path
@@ -47,6 +48,7 @@ class DataStore(object):
     def insert_new_element(self, element):
         """
         Inserts a new elements into the data store and return the inserted element including the generated id
+
         :param element: the element to store
         :return: the stored element
         """
@@ -66,6 +68,7 @@ class DataStore(object):
     def get_all(self, limit=20, offset=0):
         """
         This method obtains multiple stored elements. Also provides parameters to implement pagination
+
         :param limit: the number of elements to return at max
         :param offset: the offset where to start
         :return: a list of elements
@@ -82,6 +85,7 @@ class DataStore(object):
     def get_by_id(self, elem_id):
         """
         Obtains an element by id
+
         :param elem_id: the element id
         :return: the element or None if the id was not found.
         """
@@ -98,6 +102,7 @@ class DataStore(object):
     def update_entry(self, elem_id, element):
         """
         Updates the entry with the given id to contain the new contents
+
         :param elem_id: the element id
         :param element: the new element content
         :return: the updated element

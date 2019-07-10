@@ -10,6 +10,8 @@ networkx = "*"
 pyhull = "*"
 matplotlib = "*"
 perfplot = "*"
+sphinxcontrib-plantuml = "*"
+sphinxcontrib-bibtex = "*"
 
 [packages]
 flask = "==1.*"
@@ -19,7 +21,9 @@ numpy ="==1.*"
 flask-cors ="==3.*"
 lxml = "==4.*"
 # this is needed to serialize named touples as dicts. Flask uses this automatically if it is present
-simplejson = "*"
+simplejson = "==3.*"
 
 [requires]
+# Pipenv does not support multiple python versions from one pipfile. Python 3.6 is the minimum requirement.
+# Feel free to edit this file locally to include a higher python version like 3.7
 python_version = "3.6"

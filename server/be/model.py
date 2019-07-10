@@ -179,7 +179,7 @@ def static_encode_same_page(e1_idx: int, e2_idx: int, assignment_variables: ndar
     return clauses
 
 
-def static_encode_different_page(e1_idx, e2_idx, assignment_variables) -> List[List[int]]:
+def static_encode_different_pages(e1_idx, e2_idx, assignment_variables) -> List[List[int]]:
     """
     Encodes different pages for two edges.
 
@@ -203,7 +203,7 @@ def static_encode_different_page(e1_idx, e2_idx, assignment_variables) -> List[L
 def static_encode_node_absolute_order(node_order, n1, n2) -> List[List[int]]:
     """
     Encodes that two nodes are direct adjacent to each other with n1 being the first. In contrast
-    to :func:`~be.model.encode_nodes_as_neighbors` which does not require the intrinsic order.
+    to :func:`~be.model.static_encode_nodes_as_neighbors` which does not require the intrinsic order.
 
     :param node_order: all node order variables
     :param n1: the first node
@@ -222,7 +222,7 @@ def static_encode_node_absolute_order(node_order, n1, n2) -> List[List[int]]:
 def static_encode_nodes_as_neighbors(node_order, n1, n2) -> List[List[int]]:
     """
     Encodes that two nodes are next to each other without requiring a particular order. In contrast
-    to :func:`~be.model.encode_node_absolute_order` which requires the intrinsic order as well.
+    to :func:`~be.model.static_encode_node_absolute_order` which requires the intrinsic order as well.
 
     :param node_order:
     :param n1:
@@ -234,6 +234,122 @@ def static_encode_nodes_as_neighbors(node_order, n1, n2) -> List[List[int]]:
             continue
         clauses.append([-node_order[n1, n2], node_order[i, n1], node_order[n2, i]])
         clauses.append([node_order[n1, n2], -node_order[i, n1], -node_order[n2, i]])
+    return clauses
+
+
+def static_encode_page_constraint_stack(assignment_variables: ndarray, edges: ndarray, node_order: ndarray,
+                                        page_idx: int) -> List[List[int]]:
+    """
+    Encodes the page type stack
+
+    :param assignment_variables: all edge to page assignments
+    :param edges: all edges
+    :param node_order: all node order variables
+    :param page_idx: the index of the current page
+            """
+    clauses = []
+    for i in range(edges.shape[0]):
+        e1 = edges[i]
+        e1_idx = e1[0]
+        e1n1 = e1[1]
+        e1n2 = e1[2]
+        e1_page_var = assignment_variables[page_idx, e1_idx]
+        for j in range(i):
+            e2 = edges[j]
+            if e1[0] == e2[0]:
+                continue
+            e2_idx = e2[0]
+            e2_page_var = assignment_variables[page_idx, e2_idx]
+            e2n1 = e2[1]
+            e2n2 = e2[2]
+
+            duplicates = get_duplicates([e1[1], e1[2], e2[1], e2[2]])
+
+            if len(duplicates) > 1:
+                # ignore double edges
+                continue
+                # abort(400,
+                #       "Got more than one shared nodes. Multi edges are not allowed. "
+                #       "The duplicated nodes where {}".format(duplicates))
+            # if the edges share one node
+            elif len(duplicates) == 1:
+                # adjacent edges do not need handling
+                continue
+            else:
+
+                # forbid alternating patterns of node from e1 and e2
+                order_clauses = np.array([
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n1, e2n1, e1n2, e2n2),
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n1, e2n2, e1n2, e2n1),
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n2, e2n1, e1n1, e2n2),
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n2, e2n2, e1n1, e2n1),
+
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n1, e1n1, e2n2, e1n2),
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n1, e1n2, e2n2, e1n1),
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n2, e1n1, e2n1, e1n2),
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n2, e1n2, e2n1, e1n1),
+                ])
+                clauses.extend((order_clauses * -1).tolist())
+
+    return clauses
+
+
+def static_encode_page_constraint_queue(assignment_variables: ndarray, edges: ndarray, node_order: ndarray,
+                                        page_idx: int) -> List[List[int]]:
+    """
+           Encodes the page type queue
+
+           :param assignment_variables: all edge to page assignments
+           :param edges: all edges
+           :param node_order: all node order variables
+           :param page_idx: the index of the current page
+                          """
+    clauses = []
+    for i in range(edges.shape[0]):
+        e1 = edges[i]
+        e1_idx = e1[0]
+        e1n1 = e1[1]
+        e1n2 = e1[2]
+        e1_page_var = assignment_variables[page_idx, e1_idx]
+        for j in range(i):
+            e2 = edges[j]
+            if e1[0] == e2[0]:
+                continue
+            e2_idx = e2[0]
+            e2_page_var = assignment_variables[page_idx, e2_idx]
+            e2n1 = e2[1]
+            e2n2 = e2[2]
+
+            duplicates = get_duplicates([e1[1], e1[2], e2[1], e2[2]])
+
+            if len(duplicates) > 1:
+
+                # ignore double edges
+                continue
+                # abort(400,
+                #       "Got more than one shared nodes. Multi edges are not allowed. "
+                #       "The duplicated nodes where {}".format(duplicates))
+            # if the edges share one node
+            elif len(duplicates) == 1:
+                # adjacent edges do not need handling
+                continue
+            else:
+
+                # forbid enclosing patterns
+                order_clauses = np.array([
+                    # e1 encloses e2
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n1, e2n1, e2n2, e1n2),
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n1, e2n2, e2n1, e1n2),
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n2, e2n1, e2n2, e1n1),
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n2, e2n2, e2n1, e1n1),
+
+                    # e2 encloses e1
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n1, e1n1, e1n2, e2n2),
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n1, e1n2, e1n1, e2n2),
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n2, e1n1, e1n2, e2n1),
+                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n2, e1n2, e1n1, e2n1),
+                ])
+                clauses.extend((order_clauses * -1).tolist())
     return clauses
 
 
@@ -356,12 +472,10 @@ class SatModel(object):
             ret_val.append(PageAssignment(edge=edge_id, page=page_id))
         return ret_val
 
-    def add_page_type_constraints(self):
+    def add_page_constraints(self):
         """
-        Takes the initialised pages and for each page creates the clauses for the the specific page type constraints
-        like stack or queue.
-
-                """
+        Generates the clauses to encode the page type as well as additional page constraints like DISPERSIBLE or TREE
+        """
         edges = np.array([
             [self.edge_id_to_idx[e.id],
              self._node_id_to_idx[e.source],
@@ -372,32 +486,26 @@ class SatModel(object):
         for page in self.pages:
             page_idx = self.page_id_to_idx[page['id']]
             page_constraint = page.get('constraint', "NONE")
-            page_constraint_clauses = self.add_page_constraint(assignment_variables, edges, page_constraint, page_idx)
+            page_constraint_clauses = self._add_additional_page_constraint(assignment_variables, edges, page_constraint,
+                                                                           page_idx)
             self._add_clauses(page_constraint_clauses)
             page_type = page['type']
             if page_type == 'STACK':
-                clauses = self.node_constraint_stack(assignment_variables,
-                                                     edges,
-                                                     node_order,
-                                                     page_idx)
+                clauses = static_encode_page_constraint_stack(assignment_variables, edges, node_order, page_idx)
                 self._add_clauses(clauses)
 
             elif page_type == 'QUEUE':
-                clauses = self.add_node_constraint_queue(assignment_variables,
-                                                         edges,
-                                                         node_order,
-                                                         page_idx)
+                clauses = static_encode_page_constraint_queue(assignment_variables, edges, node_order, page_idx)
                 self._add_clauses(clauses)
             elif page_type == 'NONE':
                 continue
             else:
                 abort(501, "Page type {} is currently not implemented".format(page_type))
 
-    def add_constraints(self):
+    def add_additional_constraints(self):
         """
-        Adds the clauses to encode all the given constraints
-
-                """
+        Adds the clauses to encode the given additional constraints
+        """
 
         if not self.constraints:
             return
@@ -425,19 +533,23 @@ class SatModel(object):
                                                            self._assignment_variables))
             elif con['type'] == 'EDGES_DIFFERENT_PAGES':
 
+                if len(self.pages) < len(con_args):
+                    abort(400, "It is not possible to fir {} egedes on {} different pages.".format(len(con_args),
+                                                                                                   len(self.pages)))
+
                 for i, ignore1 in enumerate(con_args):
                     for j in range(i):
                         if i == j:
                             continue
-                        clauses.extend(static_encode_different_page(self.edge_id_to_idx[con_args[i]],
-                                                                    self.edge_id_to_idx[con_args[j]],
-                                                                    self._assignment_variables))
+                        clauses.extend(static_encode_different_pages(self.edge_id_to_idx[con_args[i]],
+                                                                     self.edge_id_to_idx[con_args[j]],
+                                                                     self._assignment_variables))
             elif con['type'] == 'EDGES_TO_SUB_ARC_ON_PAGES':
                 if len(con_args) != 2:
-                    abort(400, "The EDGES_CONDITIONALLY_ON_PAGES constraint only allows exactly two arguments")
+                    abort(400, "The EDGES_TO_SUB_ARC_ON_PAGES constraint only allows exactly two arguments")
 
                 if not con_modifier or not len(con_modifier) >= 1:
-                    abort(400, "The EDGES_CONDITIONALLY_ON_PAGES constraint requires at least one modifiers.")
+                    abort(400, "The EDGES_TO_SUB_ARC_ON_PAGES constraint requires at least one modifiers.")
                 s_idx = self._node_id_to_idx[con_args[0]]
                 t_idx = self._node_id_to_idx[con_args[1]]
                 clauses = []
@@ -488,7 +600,7 @@ class SatModel(object):
                             abort(400,
                                   "The key '{}' is in arguments and modifier which is not allowed".format(first))
                         clauses.append([self._node_order[self._node_id_to_idx[first], self._node_id_to_idx[second]]])
-            elif con['type'] == 'NODES_ABSOLUTE_ORDER':
+            elif con['type'] == 'NODES_ABSOLUTE_ORDER' or con['type'] == 'NODES_REQUIRE_ABSOLUTE_ORDER':
                 for i in range(len(con_args)):
                     if i == 0:
                         continue
@@ -585,7 +697,8 @@ class SatModel(object):
 
         return result
 
-    def add_page_constraint(self, assignment_variables: ndarray, edges: ndarray, page_constraint: str, page_idx: int):
+    def _add_additional_page_constraint(self, assignment_variables: ndarray, edges: ndarray, page_constraint: str,
+                                        page_idx: int):
         """
         This method generates the clauses to encode additional page constraints like dispensable or tree.
 
@@ -725,117 +838,3 @@ class SatModel(object):
                         continue
                     # (i_anc_of_j & j_anc_of_k) >> i_anc_of_k
                     clauses.append([-ancestors[i, j], -parents[j, k], ancestors[i, k]])
-
-    def node_constraint_stack(self, assignment_variables: ndarray, edges: ndarray, node_order: ndarray,
-                              page_idx: int):
-        """
-        Encodes the page type stack
-
-        :param assignment_variables: all edge to page assignments
-        :param edges: all edges
-        :param node_order: all node order variables
-        :param page_idx: the index of the current page
-                """
-        clauses = []
-        for i in range(edges.shape[0]):
-            e1 = edges[i]
-            e1_idx = e1[0]
-            e1n1 = e1[1]
-            e1n2 = e1[2]
-            e1_page_var = assignment_variables[page_idx, e1_idx]
-            for j in range(i):
-                e2 = edges[j]
-                if e1[0] == e2[0]:
-                    continue
-                e2_idx = e2[0]
-                e2_page_var = assignment_variables[page_idx, e2_idx]
-                e2n1 = e2[1]
-                e2n2 = e2[2]
-
-                duplicates = get_duplicates([e1[1], e1[2], e2[1], e2[2]])
-
-                if len(duplicates) > 1:
-                    # ignore double edges
-                    continue
-                    # abort(400,
-                    #       "Got more than one shared nodes. Multi edges are not allowed. "
-                    #       "The duplicated nodes where {}".format(duplicates))
-                # if the edges share one node
-                elif len(duplicates) == 1:
-                    # adjacent edges do not need handling
-                    continue
-                else:
-
-                    # forbid alternating patterns of node from e1 and e2
-                    order_clauses = np.array([
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n1, e2n1, e1n2, e2n2),
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n1, e2n2, e1n2, e2n1),
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n2, e2n1, e1n1, e2n2),
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n2, e2n2, e1n1, e2n1),
-
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n1, e1n1, e2n2, e1n2),
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n1, e1n2, e2n2, e1n1),
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n2, e1n1, e2n1, e1n2),
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n2, e1n2, e2n1, e1n1),
-                    ])
-                    clauses.extend((order_clauses * -1).tolist())
-
-        return clauses
-
-    def add_node_constraint_queue(self, assignment_variables: ndarray, edges: ndarray, node_order: ndarray,
-                                  page_idx: int):
-        """
-               Encodes the page type queue
-
-               :param assignment_variables: all edge to page assignments
-               :param edges: all edges
-               :param node_order: all node order variables
-               :param page_idx: the index of the current page
-                              """
-        clauses = []
-        for i in range(edges.shape[0]):
-            e1 = edges[i]
-            e1_idx = e1[0]
-            e1n1 = e1[1]
-            e1n2 = e1[2]
-            e1_page_var = assignment_variables[page_idx, e1_idx]
-            for j in range(i):
-                e2 = edges[j]
-                if e1[0] == e2[0]:
-                    continue
-                e2_idx = e2[0]
-                e2_page_var = assignment_variables[page_idx, e2_idx]
-                e2n1 = e2[1]
-                e2n2 = e2[2]
-
-                duplicates = get_duplicates([e1[1], e1[2], e2[1], e2[2]])
-
-                if len(duplicates) > 1:
-
-                    # ignore double edges
-                    continue
-                    # abort(400,
-                    #       "Got more than one shared nodes. Multi edges are not allowed. "
-                    #       "The duplicated nodes where {}".format(duplicates))
-                # if the edges share one node
-                elif len(duplicates) == 1:
-                    # adjacent edges do not need handling
-                    continue
-                else:
-
-                    # forbid enclosing patterns
-                    order_clauses = np.array([
-                        # e1 encloses e2
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n1, e2n1, e2n2, e1n2),
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n1, e2n2, e2n1, e1n2),
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n2, e2n1, e2n2, e1n1),
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n2, e2n2, e2n1, e1n1),
-
-                        # e2 encloses e1
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n1, e1n1, e1n2, e2n2),
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n1, e1n2, e1n1, e2n2),
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n2, e1n1, e1n2, e2n1),
-                        [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n2, e1n2, e1n1, e2n1),
-                    ])
-                    clauses.extend((order_clauses * -1).tolist())
-        return clauses

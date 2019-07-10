@@ -9,8 +9,23 @@ from be.utils import CodeTimer
 
 
 class SolverInterface(object):
+    """
+    This class provides an simplified interface to the :class:`.SatModel`:
+    """
     @classmethod
     def solve(cls, nodes, edges, pages, constraints, entity_id) -> SolverResult:
+        """
+        Initialises the class :class `.SatModel`: with the given parameters and triggers the clause generation. Afterwards
+        the created clauses are send to the SAT solver and the result is parsed back and returned.
+
+        :param nodes: the nodes/vertexes of the problem instance
+        :param edges: the edges of the problem instance
+        :param pages: the pages of the problem instance
+        :param constraints: the constraints of the problem instance
+        :param entity_id: the id of the problem instance. This is used to wrap any exception in an
+                            :class:`.IdRelatedException` in order to pass the id to the handling method.
+        :return: the solved result of the problem instance
+        """
         try:
             with CodeTimer("solve.SAT"):
                 with CodeTimer("solve.SAT.var_creation"):
@@ -21,15 +36,15 @@ class SolverInterface(object):
                     model.add_page_assignment_clauses()
 
                 with CodeTimer("solve.SAT.page_constraints"):
-                    model.add_page_type_constraints()
+                    model.add_page_constraints()
 
                 with CodeTimer("solve.SAT.additional_constraints"):
-                    model.add_constraints()
+                    model.add_additional_constraints()
 
             with CodeTimer("solve.to_dimacs"):
                 dimacstr = model.to_dimacs_str()
             with CodeTimer("solve.to_lingeline_and_back"):
-                output = cls.call_lingeling_with_string(dimacstr)
+                output = cls._call_lingeling_with_string(dimacstr)
 
                 sat_result = model.parse_lingeling_result(str(output, encoding='UTF-8'))
 
@@ -52,7 +67,7 @@ class SolverInterface(object):
             raise IdRelatedException(entity_id, "{} : {} ".format(type(e), str(e))) from e
 
     @classmethod
-    def call_lingeling_with_string(cls, dimacstr):
+    def _call_lingeling_with_string(cls, dimacstr):
         try:
             output = subprocess.check_output(["lingeling"], input=bytes(dimacstr, 'UTF-8'))
         except subprocess.CalledProcessError as e:

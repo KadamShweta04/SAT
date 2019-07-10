@@ -1,6 +1,7 @@
 import base64
 import datetime
 import multiprocessing
+import subprocess
 from concurrent.futures import Future
 from concurrent.futures.process import ProcessPoolExecutor
 
@@ -51,6 +52,13 @@ class App:
         :returns:
             the app object
         """
+
+        try:
+            output = subprocess.check_output(["lingeling", "--version"])
+        except Exception as e:
+            raise Exception("The SAT solver binary could not be called. "
+                            "Please make sure that lingeling is build and present in the path.") from e
+
         app = Flask(__name__)
         if app.config['DEBUG']:
             app.config['PROFILE'] = True
@@ -70,6 +78,7 @@ class App:
                               'The instances are solved using [lingeling](http://fmv.jku.at/lingeling/)\n'
                   )
 
+        #: The schema definition of a page
         page_schema = api.model('Page',
                                 {
                                     'id': fields.String(required=True, description='The id of this page', example="P1"),
@@ -89,6 +98,7 @@ class App:
                                                                 ])
                                 })
 
+        #: The schema definition of a constraint
         constraint_schema = api.model('Constraint',
                                       {'type': fields.String(description="""
                                       EDGES_ON_PAGES: assigns edges to specific pages
@@ -104,9 +114,8 @@ class App:
                                       modifier none
                                       
                                       EDGES_TO_SUB_ARC_ON_PAGES: If any node shares an edge with the nodes named in 
-                                      arguments and is between the two nodes, 
-                                      then this edge is restricted to the pages in modifier
-                                      as endpoint are only allowed on the two named pages. 
+                                      arguments and is between the two nodes, then this edge is restricted to the pages 
+                                      in modifier.
                                       arguments: the two vertexes to restrict the edges from
                                       modifier: the pages to restrict the edges to
                                       
@@ -118,7 +127,9 @@ class App:
                                       arguments: the node ids to be before 
                                       modifier: the node ids to be after
                                       
-                                      NODES_ABSOLUTE_ORDER: The given nodes have to be in exactly the given order and no nodes 
+                                      NODES_ABSOLUTE_ORDER: see NODES_REQUIRE_ABSOLUTE_ORDER
+                                      
+                                      NODES_REQUIRE_ABSOLUTE_ORDER: The given nodes have to be in exactly the given order and no nodes 
                                       are allowed in between
                                       arguments: the nodes in the required order
                                       modifier: none 
@@ -145,6 +156,7 @@ class App:
                                                                  "EDGES_FROM_NODES_ON_PAGES",
                                                                  "NODES_PREDECESSOR",
                                                                  "NODES_ABSOLUTE_ORDER",
+                                                                 "NODES_REQUIRE_ABSOLUTE_ORDER",
                                                                  "NODES_REQUIRE_PARTIAL_ORDER",
                                                                  "NODES_FORBID_PARTIAL_ORDER",
                                                                  "NODES_CONSECUTIVE",
@@ -174,8 +186,10 @@ class App:
             {
                 'message': fields.String(description='The error message', required=True, readonly=True)
             })
-        book_embedding_schema = api.model(
-            'Book embedding',
+
+        # the schema definition for the full linear layout
+        linear_layout_schema = api.model(
+            'Linear layout',
             {
                 'id': fields.Integer(description='The id of the embedding', readonly=True),
                 'graph': fields.String(description='This field contains a graphml definition encoded with base64. '
@@ -210,7 +224,7 @@ class App:
         class EmbeddingList(Resource):
 
             @api.doc('list_embeddings')
-            @api.response(code=200, description="Success", model=[book_embedding_schema])
+            @api.response(code=200, description="Success", model=[linear_layout_schema])
             @api.response(code=500, description="Server Error", model=error_schema)
             @api.expect(parser)
             def get(self):
@@ -229,8 +243,8 @@ class App:
                 return jsonify(data_store.get_all(limit=limit, offset=offset))
 
             @api.doc('create_embedding')
-            @api.expect(book_embedding_schema)
-            @api.response(code=200, description="Success", model=book_embedding_schema)
+            @api.expect(linear_layout_schema)
+            @api.response(code=200, description="Success", model=linear_layout_schema)
             @api.response(code=500, description="Server Error", model=error_schema)
             @api.response(code=501, description="Not Implemented", model=error_schema)
             @api.response(code=400, description="Bad Request", model=error_schema)
@@ -323,7 +337,7 @@ class App:
         class SingleEmbedding(Resource):
 
             @api.doc('get_embedding')
-            @api.response(code=200, description="Success", model=book_embedding_schema)
+            @api.response(code=200, description="Success", model=linear_layout_schema)
             def get(self, id):
                 """
                 Get an embedding by id
