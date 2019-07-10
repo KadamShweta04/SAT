@@ -23,4 +23,6 @@ lxml = "==4.*"
 simplejson = "==3.*"
 
 [requires]
+# Pipenv does not support multiple python versions from one pipfile. Python 3.6 is the minimum requirement.
+# Feel free to edit this file locally to include a higher python version like 3.7
 python_version = "3.6"

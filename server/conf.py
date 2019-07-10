@@ -58,5 +58,65 @@ html_static_path = ['sphinx-doc/_static']
 
 numfig = True
 
-
 # -- Extension configuration -------------------------------------------------
+
+
+latex_elements = {
+    'passoptionstopackages':"""
+        \\textwidth 14cm
+        \\textheight 22cm
+        \\topmargin 0.0cm
+        \evensidemargin 1cm
+        \oddsidemargin 1cm
+        \parskip0.5explus0.1exminus0.1ex
+        \\usepackage{epsf}
+        \\usepackage{graphics, graphicx}
+        \\usepackage{latexsym}
+        \\usepackage[margin=10pt,font=small,labelfont=bf]{caption}
+        \\usepackage[utf8]{inputenc}
+        \\usepackage[toc,page]{appendix}
+    """,
+    'fncychap':'\\usepackage{fncychap}',
+    'fontpkg':'\\usepackage{amsmath,amsfonts,amssymb,amsthm}',
+    'preamble' : """
+    \sloppy
+    """,
+    'maketitle':"""
+\\begin{titlepage}
+	\makeatletter
+	\\begin{center}
+		{\LARGE Eberhard Karls Universität Tübingen}\\\\
+{\large Mathematisch-Naturwissenschaftliche Fakultät \\\\
+Wilhelm-Schickard-Institut für Informatik\\\\[4cm]}
+		{\huge Forschungsarbeit Informatik MSc.\\\\[2cm]}
+		{\Large\\bf  \@title \\\\[1.5cm]}
+		{\large \@author }\\\\[0.5cm]
+		\@date\\\\[4cm]
+		{\small\\bf Reviewers}\\\\[0.5cm]
+		\parbox{7cm}
+		{\\begin{center}{\large 	Michael A. Bekos}\\\\
+(Informatik)\\\\
+{\\footnotesize 
+					Wilhelm-Schickard-Institut für Informatik\\\\
+Universität Tübingen
+				}\end{center}}\hfill\parbox{7cm}
+			{\\begin{center}
+				{\large Michael Kaufmann}\\\\
+(Informatik)\\\\
+{\\footnotesize 
+					Wilhelm-Schickard-Institut für Informatik\\\\
+Universität Tübingen
+			}\end{center}
+		}
+	\end{center}
+\makeatother
+\end{titlepage}
+    """,
+    'pointsize': '14pt',
+    'papersize': 'a4paper',
+
+}
+#TODO latex stuff
+# * Title
+# * style
+# * Abstract deu / eng

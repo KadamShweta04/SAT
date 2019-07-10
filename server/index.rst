@@ -17,7 +17,13 @@ On linear layouts of graphs with SAT
 Motivation
 **********
 
-But why?
+This the goal of this application is to find linear layouts from given graphs under the restriction of various constraints. There is an already existing tool here [#]_. But this tool is limited to finding general linear layouts with no constraints regarding individual pages or even individual graph elements. The problem is that many proofs and scientific papers about linear layouts require a specific structure of the resulting linear layout. If such a proof has to be investiged with the previous mentioned tool, it would take a lot of time to create even the graph which produces a linear layout as required. This problem is intensified by the fact that for most graphs more than on linear layout exists of which only one is interesting.
+
+This application will help to omit this graph finding phase and directly restrict an arbitrary graph to the desired properties. For this reason the a dedicated frontend will be developed which allows graph manipulation and attaching constraints to all graph elements. This application will then accept a problem definition consisting of the graph, the arguments for the linear layout and a list of additional constraints.
+
+To make this application even more usefull there will be no dependencies on the used frontend. Meaning anybody can use the server from whichever frontend suits their need as long as they honor the api contract.
+
+.. [#] http://be.cs.arizona.edu/
 
 
 ***************************
@@ -414,33 +420,31 @@ The Following snippet shows the time  the python interpreter needed for the diff
       Ordered by: internal time, call count
       List reduced from 617 to 30 due to restriction <30>
 
-      ncalls  tottime  percall  filename:lineno(function)
-        5059    1.163    0.000  {method 'poll' of 'select.poll' objects}
-           1    0.868    0.868  /Uni/forschungsarbeit/SAT/server/be/model.py:72(static_to_dimacs)
-           5    0.668    0.134  /Uni/forschungsarbeit/SAT/server/be/model.py:728(static_encode_page_constraint_stack)
-           1    0.456    0.456  /Uni/forschungsarbeit/SAT/server/be/model.py:11(static_node_order_generation)
-      395040    0.415    0.000  /Uni/forschungsarbeit/SAT/server/be/model.py:53(static_get_order_clauses)
-      152353    0.375    0.000  {built-in method numpy.array}
-       51485    0.154    0.000  /Uni/forschungsarbeit/SAT/server/be/utils.py:45(get_duplicates)
-       51485    0.110    0.000  {method 'sort' of 'numpy.ndarray' objects}
-      100865    0.094    0.000  {method 'tolist' of 'numpy.ndarray' objects}
-      839228    0.069    0.000  {method 'append' of 'list' objects}
-           1    0.068    0.068  /Uni/forschungsarbeit/SAT/server/be/solver.py:15(solve)
-       51485    0.065    0.000  {method 'copy' of 'numpy.ndarray' objects}
-       51485    0.046    0.000  /home/mirco/.local/share/virtualenvs/server-qznNmo4Y/lib/python3.6/site-packages/numpy/core/fromnumeric.py:815(sort)
-      508258    0.041    0.0000 {built-in method builtins.len}
-           1    0.036    0.036  {method 'translate' of 'str' objects}
-           3    0.031    0.010  {method 'commit' of 'sqlite3.Connection' objects}
-          12    0.030    0.003  {method 'replace' of 'str' objects}
-           1    0.020    0.020  /home/mirco/.pyenv/versions/3.6.8/lib/python3.6/subprocess.py:1486(_communicate)
-       50097    0.018    0.000  {method 'extend' of 'list' objects}
-        5059    0.013    0.000  /home/mirco/.pyenv/versions/3.6.8/lib/python3.6/selectors.py:365(select)
-       51485    0.013    0.000  /home/mirco/.local/share/virtualenvs/server-qznNmo4Y/lib/python3.6/site-packages/numpy/core/numeric.py:541(asanyarray)
-        5040    0.011    0.000  {built-in method posix.write}
-           1    0.003    0.003  /Uni/forschungsarbeit/SAT/server/be/solver.py:57(_call_lingeling_with_string)
-     3814/38    0.003    0.000  /home/mirco/.local/share/virtualenvs/server-qznNmo4Y/lib/python3.6/copy.py:132(deepcopy)
-           1    0.003    0.003  /Uni/forschungsarbeit/SAT/server/be/model.py:359(add_page_constraints)
-          21    0.002    0.000  {built-in method posix.read}
+      ncalls  tottime  filename:lineno(function)
+        5059    1.163  {method 'poll' of 'select.poll' objects}
+           1    0.868  ./SAT/server/be/model.py:72(static_to_dimacs)
+           5    0.668  ./SAT/server/be/model.py:728(static_encode_page_constraint_stack)
+           1    0.456  ./SAT/server/be/model.py:11(static_node_order_generation)
+      395040    0.415  ./SAT/server/be/model.py:53(static_get_order_clauses)
+      152353    0.375  {built-in method numpy.array}
+       51485    0.154  ./SAT/server/be/utils.py:45(get_duplicates)
+       51485    0.110  {method 'sort' of 'numpy.ndarray' objects}
+      100865    0.094  {method 'tolist' of 'numpy.ndarray' objects}
+      839228    0.069  {method 'append' of 'list' objects}
+           1    0.068  ./SAT/server/be/solver.py:15(solve)
+       51485    0.065  {method 'copy' of 'numpy.ndarray' objects}
+       51485    0.046  site-packages/numpy/core/fromnumeric.py:815(sort)
+      508258    0.0410 {built-in method builtins.len}
+           1    0.036  {method 'translate' of 'str' objects}
+           3    0.031  {method 'commit' of 'sqlite3.Connection' objects}
+          12    0.030  {method 'replace' of 'str' objects}
+       50097    0.018  {method 'extend' of 'list' objects}
+       51485    0.013  site-packages/numpy/core/numeric.py:541(asanyarray)
+        5040    0.011  {built-in method posix.write}
+           1    0.003  ./SAT/server/be/solver.py:57(_call_lingeling_with_string)
+     3814/38    0.003  copy.py:132(deepcopy)
+           1    0.003  ./SAT/server/be/model.py:359(add_page_constraints)
+          21    0.002  {built-in method posix.read}
 
 The `tottime` defines the time the interpreter ran this particular method without jumping to a sub method. The first line here `{method 'poll' of 'select.poll' objects}` is actually the waiting loop for the SAT solver to finish.
 
