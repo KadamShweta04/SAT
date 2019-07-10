@@ -36,7 +36,7 @@ extensions = [
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['sphinx-doc/_templates']
+templates_path = ['docs/_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
@@ -53,7 +53,7 @@ html_theme = 'alabaster'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['sphinx-doc/_static']
+html_static_path = ['docs/_static']
 
 numfig = True
 
@@ -61,6 +61,7 @@ numfig = True
 
 
 latex_elements = {
+    # makes the settings from the template
     'preamble': """
 \\textwidth 14cm
 \\textheight 22cm
@@ -69,6 +70,7 @@ latex_elements = {
 \\oddsidemargin 1cm
 \\setlength\parindent{20pt}
     """,
+    # makes the title page
     'maketitle': """
 \\begin{titlepage}
 	\makeatletter
@@ -116,15 +118,25 @@ Thesis period: April 2019 - July 2019
 \\makeatother
 \\newpage
     """,
+    # removes fancy chapter headings
     'fncychap': '',
+    # table of contents are created inside the document
     'tableofcontents': '',
+    # document class options
     'pointsize': 'twoside,14pt',
     'papersize': 'a4paper',
+    # reset the title and link colors back to black
     'sphinxsetup': 'TitleColor={rgb}{0.,0.,0.}, InnerLinkColor={rgb}{0.,0.,0.}',
+    # no index of python modules at the end
     'printindex': ''
 }
 
-master_doc = 'index'
-latex_documents = [(master_doc, 'main.tex', project, author, 'report')]
+# root document
+master_doc = 'docs/index'
+latex_documents = [
+    # root doc,   output doc,                       title, author, latex documentclass
+    (master_doc, 'Researchproject_Mirco_Haug.tex', project, author, 'report')
+]
 
+# no index of python classes at the end
 latex_domain_indices = False

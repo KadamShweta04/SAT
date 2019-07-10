@@ -41,7 +41,11 @@ pipenv clean            # remove unused dependencies
 
 ### Build documentation
 
+The documentation is checked in at build/docs/latex/Researchproject_Mirco_Haug.pdf
+
 run `sudo apt install graphviz plantuml` to install the runtime requirements which are not installable via pip.
+
+run `pipenv install -d` to install all the development dependencies including sphinx etc.
 
 `make html` in the root directory generates the sphinx documentation and outputs it at build/docs
 

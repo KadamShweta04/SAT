@@ -103,7 +103,7 @@ This chapter describes the technology and the frameworks used in the project.
 REST APIs
 =========
 
-REST Interfaces or APIs are meant to provide an interface to other programs. Instead of the HTML [#]_ files normal webservice deliver a webserver providing a REST interface delivers files in the JSON [#]_ format. Like a normal webserver provides different sites at different sub URLs. E.g. "http://algo.inf.uni-tuebingen.de/?site=mitarbeiter/stud_mitarbeiter" and "http://algo.inf.uni-tuebingen.de/?site=mitarbeiter/mitarbeiter" a REST service can also provide different data at different sub URLs.
+REST Interfaces or APIs are meant to provide an interface to other programs. Instead of the HTML [#]_ files normal webservices deliver, a webservice providing a REST interface delivers files in the JSON [#]_ format. Like a normal webserver is providing different sites at different sub URLs, see the footnotes, a REST service can also provide different data at different sub URLs.
 
 In addition to different URLs a REST API can also use the different HTTP verbs [#]_ to do different things. Per convention a request with the verb GET does read some data from the server, whereas a request with the verb POST does write data to the server. One combination of sub URL and HTTP verbs does identify a so called endpoint.
 
@@ -193,7 +193,7 @@ Linear layout
 A linear layout of a graph simply states that all nodes are on one line. The interesting thing on such a layout is the order in which the nodes appear and how the edges are placed around this nodes. The two linear layouts used in the application are book embeddings and queues. The sample graph to demonstrate this two layouts will be the Goldner–Harary graph shown in this image.
 
 .. _gh:
-.. figure:: sphinx-doc/_static/graphs/gh.png
+.. figure:: _static/graphs/gh.png
    :width: 50 %
    :alt: Goldner–Harary graph
 
@@ -206,7 +206,7 @@ Book embedding
 A book embedding layout in quantified in the number of pages or colors an graph needs for its book embedding. The directive of the book embedding is, that no two edges of the same color intersect. Therefor all edges represent a stack. The given graph :numref:`gh` as book embedding can be seen in :numref:`ghStack`.
 
 .. _ghStack:
-.. figure:: sphinx-doc/_static/graphs/gh_stack.png
+.. figure:: _static/graphs/gh_stack.png
    :width: 70 %
    :alt: Goldner–Harary graph stack
    :align: center
@@ -220,7 +220,7 @@ Queue embedding
 A queue embedding layout of the graph shown in :numref:`gh` is show in :numref:`ghQueue`. A Queue embedding is subject to the constraint that not two edges of one color do completely enclose each other.
 
 .. _ghQueue:
-.. figure:: sphinx-doc/_static/graphs/gh_queue.png
+.. figure:: _static/graphs/gh_queue.png
    :width: 70 %
    :alt: Goldner–Harary graph queue
 
@@ -229,7 +229,7 @@ A queue embedding layout of the graph shown in :numref:`gh` is show in :numref:`
 :numref:`ll_sum` shows a summary on allowed patterns within linear layouts.
 
 .. _ll_sum:
-.. figure:: sphinx-doc/_static/graphs/book_and_queue.png
+.. figure:: _static/graphs/book_and_queue.png
    :width: 70 %
    :alt: Linear layout summary
 
@@ -432,7 +432,7 @@ The following diagram shows how one request flows through the system. The schema
    @enduml
 
 
-.. figure:: sphinx-doc/_static/FFFFFF-0.png
+.. figure:: _static/FFFFFF-0.png
    :scale: 1 %
    :align: center
 
@@ -520,7 +520,7 @@ DIMACS File generation
 ----------------------
 
 
-.. figure:: sphinx-doc/_static/performance/toDimacs.png
+.. figure:: _static/performance/toDimacs.png
    :scale: 100 %
    :alt: Comparison DIMACS generation
    :align: center
@@ -555,7 +555,7 @@ The difference to the following more intelligent algorithm below should be obivo
 The difference in performance is show below.
 
 
-.. figure:: sphinx-doc/_static/performance/3Touples.png
+.. figure:: _static/performance/3Touples.png
    :scale: 100 %
    :alt: 3 tuple generation
    :align: center
@@ -579,5 +579,5 @@ The application clearly works for its intended use case. We where able to check 
 
 
 
-.. bibliography:: sphinx-doc/references.bib
+.. bibliography:: references.bib
 
