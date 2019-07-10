@@ -42,6 +42,10 @@
 						<label for="layoutSettings">Layout</label><span></span>
 					</div>
 					<div class="extraButton">
+						<button id="toolsSettings"></button>
+						<label for="toolsSettings">Tools</label><span></span>
+					</div>
+					<div class="extraButton">
 						<button id="about"></button>
 						<label for="about">About</label><span></span>
 					</div>
@@ -61,7 +65,10 @@
 					<label for="SaveDialogButton" title="Save Graph"><img
 						src="style/icons/ic_file_download_24px.svg"></label><span></span>
 					<button id="ExportButton"></button>
-					<label for="ExportButton" title="Export Graph as..."><img src="style/icons/ic_exit_to_app_24px.svg"></label>
+					<label for="ExportButton" title="Export Graph as...">
+						<img src="style/icons/ic_exit_to_app_24px.svg"></label><span></span>
+					<button id="ServerButton"></button>
+					<label for="ServerButton" title="Change Server"><img src="style/icons/ic_laptop_windows_24px.svg"></label>
 				</div>
 				<div id="edit">
 					<button id="UndoButton"></button>
@@ -130,9 +137,21 @@
 					<button id="radialLayoutButton"></button>
 					<label for="radialLayoutButton">Radial</label>
 				</div>
+				<div id="tools">
+					<input type="checkbox" id="resizableNodes" checked><label for="resizableNodes"><img src="style/icons/ic_resizableNodes_24px.svg"></label><span></span>
+					<input type="checkbox" id="doubleEdges" checked><label for="doubleEdges"><img src="style/icons/ic_doubleEdges_24px.svg"></label><span></span>
+					<!-- <button id="oneStellation"></button>
+					<label for="oneStellation" title="One-stellate triangle(s)"><img src="style/icons/ic_oneStellation_24px.svg"></label><span></span> 	
+					<button id="threeStellation"></button>
+					<label for="threeStellation" title="Three-stellate triangle(s)"><img src="style/icons/ic_threeStellation_24px.svg"></label><span></span>
+					<button id="edgeStellation"></button>
+					<label for="edgeStellation" title="Stellate edge(s)"><img src="style/icons/ic_edgeStellation_24px.svg"></label><span></span> -->
+					
+				</div>
 				<div id="rightTools">
 					<button class="ui-button ui-widget ui-corner-all" id="submitButton" style="width: 100px">Compute</button>
 					<button class="ui-button ui-widget ui-corner-all" style="position: absolute; right: 130px;"id="statsButton">Stats</button>
+					<div id="displayCurrentServer" style="position:absolute; right: 250px; font-family: arial; font-size: 8pt"></div>
 				</div>
 			</div>
 		</div>
@@ -148,6 +167,7 @@
 					checked disabled> <select id="typeP1" name="typeP1">
 					<option value="STACK">stack</option>
 					<option value="QUEUE">queue</option>
+					<option value="NONE">undefined</option>
 				</select> <select id="layoutP1" name="layoutP1">
 					<option value="NONE">maximal</option>
 					<option value="FOREST"> forest </option>
@@ -244,6 +264,14 @@
 	<tr><td>Tree:</td><td id="isTree"></td></tr>
 	<tr><td>Bipartite:</td><td id="isBipartite"></td></tr>
 	</table>
+	</div>
+	
+	<div id="serverDialog" title="Server specification" class="ui-dialog">
+	Define the server url:
+	<p> <input type="text" id="serverUrl" style="width:100%"> 
+	<p> <button id="okChangeServer" class="ui-button ui-widget ui-corner-all" style="width:30%" >Ok</button>
+		<button id="abortChangeServer" class="ui-button ui-widget ui-corner-all" style="width:30%" >Cancel</button>
+		<button id="resetServer" class="ui-button ui-widget ui-corner-all" title="Resets to standard server" style="width:30%">Reset</button>
 	</div>
 	
 	

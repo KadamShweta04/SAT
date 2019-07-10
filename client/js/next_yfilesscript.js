@@ -39,6 +39,8 @@ require([
 		let gridInfo = null;
 		let grid = null;
 
+		
+		var standardServer = "http://sofa.fsi.uni-tuebingen.de:5555/embeddings"
 
 		let myGraph;
 
@@ -65,7 +67,16 @@ require([
 			} else {
 				embeddingID = embeddingID.slice(1)
 
-				var link = "http://sofa.fsi.uni-tuebingen.de:5555/embeddings/" + embeddingID
+				var link;  embeddingID
+				
+				var currentServer = window.localStorage.getItem("currentServer") 
+				if (currentServer == null) {
+					document.getElementById("displayCurrentServer").innerHTML("http://sofa.fsi.uni-tuebingen.de:5555/embeddings/")
+					link = "http://sofa.fsi.uni-tuebingen.de:5555/embeddings/" + embeddingID
+				} else {
+					document.getElementById("displayCurrentServer").innerHTML = currentServer
+					link = currentServer + "/embeddings/" + embeddingID
+				}
 
 				sendRequest(link)
 			}
@@ -136,7 +147,6 @@ require([
 					c.modifier.forEach(function(m) {
 						graphComponent.graph.nodes.toArray().forEach(function(n) {
 							if (n.tag == m) {
-								objItems.push(n)
 							}
 						})
 					})
