@@ -6,24 +6,24 @@ function fillPages() {
 	let j;
 
 	for(j=2; j<=numberOfPages; j++) {
-		$("#pages").append(
+			$("#pages").append(
 
-				'<div class="pagesSettings">'+
-				'<label for="page'+j+'">Page '+j+'</label> <input type="checkbox"'+
-				'name="page'+j+'" id="page'+j+'"  onclick="handlePageCheckbox('+j+')" > <select id="typeP'+j+'" name="typeP'+j+'">'+
-				'<option value="STACK">stack</option>'+
-				'<option value="QUEUE">queue</option>'+
-				'</select> <select id="layoutP'+j+'" name="layoutP'+j+'">'+
-				'<option value="NONE">maximal</option>'+
-				'<option value="FOREST">forest</option>'+
-				'<option value="TREE">tree</option>'+
-				'<option value="DISPERSIBLE">matching</option>'+
-				'</select>'+
-				'</div>'
-		)
+					'<div class="pagesSettings">'+
+					'<label for="page'+j+'">Page '+j+'</label> <input type="checkbox"'+
+					'name="page'+j+'" id="page'+j+'"  onclick="handlePageCheckbox('+j+')" > <select id="typeP'+j+'" name="typeP'+j+'">'+
+					'<option value="STACK">stack</option>'+
+					'<option value="QUEUE">queue</option>'+
+					'<option value="NONE">undefined</option>' +
+					'</select> <select id="layoutP'+j+'" name="layoutP'+j+'">'+
+					'<option value="NONE">maximal</option>'+
+					'<option value="FOREST">forest</option>'+
+					'<option value="TREE">tree</option>'+
+					'<option value="DISPERSIBLE">matching</option>'+
+					'</select>'+
+					'</div>'
+			)
 
-
-
+		
 
 		$("#page"+j).checkboxradio({
 			disabled: false, 
@@ -32,6 +32,7 @@ function fillPages() {
 
 		$( "#typeP" + j ).selectmenu({
 			disabled:true,
+			position: { my : "top left", at: "top center" }, 
 			width: 120
 		});
 
@@ -490,6 +491,20 @@ $( function() {
 			$("#greyDiv").hide()
 		}
 	})
+		
+	$("#serverDialog").dialog({
+		autoOpen: false,
+		width: 300, 
+		resizable: false,
+		modal: true,
+		open: function( event, ui ) {
+			$("#greyDiv").show()
+		},
+		beforeClose: function(event, ui) {
+			$("#serverUrl").val("");
+			$("#greyDiv").hide()
+		}
+	})
 	
 	$("#aboutDialog").dialog({
 		autoOpen: false,
@@ -513,6 +528,7 @@ $( function() {
 	$("#edit").hide();
 	$("#view").hide();
 	$("#layout").hide();
+	$("#tools").hide();
 	//$("#settings").hide();
 	
 	$("#greyDiv").hide();
@@ -523,6 +539,7 @@ $( function() {
 		$("#edit").hide();
 		$("#view").hide();
 		$("#layout").hide();
+		$("#tools").hide();
 
 	});
 
@@ -530,6 +547,7 @@ $( function() {
 		$("#edit").fadeToggle();
 		$("#file").hide();
 		$("#view").hide();
+		$("#tools").hide();
 		$("#layout").hide();
 
 	});
@@ -538,6 +556,7 @@ $( function() {
 		$("#view").fadeToggle();
 		$("#file").hide();
 		$("#edit").hide();
+		$("#tools").hide();
 		$("#layout").hide();
 
 	});
@@ -546,9 +565,16 @@ $( function() {
 		$("#layout").fadeToggle();
 		$("#file").hide();
 		$("#edit").hide();
+		$("tools").hide();
 		$("#view").hide();
-
-
+	});
+	
+	$("#toolsSettings").click(function(){
+		$("#tools").fadeToggle();
+		$("#edit").hide();
+		$("#file").hide();
+		$("#view").hide();
+		$("#layout").hide();
 
 	});
 

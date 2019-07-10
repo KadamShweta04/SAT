@@ -35,9 +35,13 @@ require([
 
 		let graph = null;
 
-
+		var standardServer = "http://sofa.fsi.uni-tuebingen.de:5555/embeddings"
+			
 		let gridInfo = null;
 		let grid = null;
+
+		var nodesStableSize = true;
+		var allowDoubleEdges = false;
 
 
 		let myGraph;
@@ -59,7 +63,7 @@ require([
 			graphComponent.mouseWheelBehavior =
 				yfiles.view.MouseWheelBehaviors.ZOOM | yfiles.view.MouseWheelBehaviors.SCROLL;
 
-			/* no resizing of nodes allowed */
+			/* resizing of nodes not allowed by default, changeable by resizableNode checkbox in tools section*/
 			graphComponent.inputMode.showHandleItems =
 				yfiles.graph.GraphItemTypes.ALL & ~yfiles.graph.GraphItemTypes.NODE;
 
@@ -85,7 +89,7 @@ require([
 			/*
 			 * WHEN A NODE/EDGE IS CREATED LISTENER
 			 */
-			
+
 			graphComponent.inputMode.addNodeCreatedListener((sender, args) => {
 				let node = args.item;
 
@@ -103,12 +107,12 @@ require([
 
 			})
 
-
+			// TODO change tag here DONE
 
 			createEdgeInputMode.addEdgeCreatedListener((sender, args)=> {
 				let edge = args.item
 
-				edge.tag = edge.sourceNode.tag + "-" + edge.targetNode.tag
+				edge.tag = edge.sourceNode.tag + "-(0)-" + edge.targetNode.tag
 
 				if (edge.labels.size == 0) {
 					let label = getNextLabel("edge");
@@ -126,31 +130,69 @@ require([
 								sideOfEdge: "ABOVE_EDGE",
 							})
 					)
-					
+
 					// forbid double edges
 					var edges = graphComponent.graph.edges.toArray();
-					edges.forEach(function(e) {
-						if (edge.sourceNode == e.sourceNode && edge.targetNode == e.targetNode && edge != e) {
-							// this timeout removes a duplicate edge after a few miliseconds
-							setTimeout(function() {
-								graphComponent.inputMode.undo()
-							},30)
-						}
-					})
+
+					// abort when double edges are not allowed
+					if (! allowDoubleEdges) {
+						edges.forEach(function(e) {
+							if (((edge.sourceNode == e.sourceNode && edge.targetNode == e.targetNode) || (edge.sourceNode == e.targetNode && edge.targetNode == e.sourceNode)) && edge != e){
+								setTimeout(function() {
+									if (graphComponent.graph.contains(edge)) {
+										graphComponent.graph.remove(edge);
+									}
+								},10)
+							} 
+						})
+					} else {
+						// double Edges are allowed
+						// what to do with tags??
+					}
+
 				}
 
 			})
-			
+
 
 			/*
-			 * COPY LISTENER
+			 * NODE COPY LISTENER
 			 */
+			
 			graphComponent.clipboard.fromClipboardCopier.addNodeCopiedListener((sender, args) => {
 				args.copy.tag = getNextTag()
 			})
+
+			
+			/*
+			 * EDGE COPY LISTENER
+			 * TODO change tag here DONE
+			 */
 			
 			graphComponent.clipboard.fromClipboardCopier.addEdgeCopiedListener((sender, args) => {
-				args.copy.tag = args.copy.sourceNode.tag + "-" + args.copy.targetNode.tag
+				var edge = args.copy
+				var edges = graphComponent.graph.edges.toArray();
+
+				if (! allowDoubleEdges) {
+					edges.forEach(function(e) {
+						if (((edge.sourceNode == e.sourceNode && edge.targetNode == e.targetNode) || (edge.sourceNode == e.targetNode && edge.targetNode == e.sourceNode)) && edge != e){
+							console.log("double Edge")
+							setTimeout(function() {
+								if (graphComponent.graph.contains(edge)) {
+									graphComponent.graph.remove(edge);
+								}
+							},10)
+						} 
+					})
+				} else {
+					occurrance = 0;
+					edges.forEach(function(e) {
+						if (edge.sourceNode == e.sourceNode && edge.targetNode == e.targetNode) {
+							occurrance = occurrance+1;
+						}
+					})
+					edge.tag = edge.sourceNode + "-(" + occurrance + ")-" + edge.targetNode
+				}
 			})
 
 
@@ -192,6 +234,13 @@ require([
 
 
 			})
+
+			//displaying current server
+			var currentServer = window.localStorage.getItem("currentServer")
+			if (currentServer == null) {
+				currentServer = standardServer
+			}
+			document.getElementById("displayCurrentServer").innerHTML = currentServer;
 
 			initializeGraphDefaults();
 			initializeSnapping();
@@ -253,8 +302,11 @@ require([
 			}
 
 		}
-
-		// creates new labels for nodes or edges
+		
+		
+		/*
+		 * creates new labels for nodes or edges
+		 */
 		function getNextLabel(item) {
 			if (item == "node") {
 				var max = -1;
@@ -280,7 +332,9 @@ require([
 		}
 
 
-		// creates new tags for nodes
+		/*
+		 * creates tags for nodes
+		 */
 		function getNextTag() {
 			var max = -1;
 			graphComponent.graph.nodes.forEach(function(n) {
@@ -295,7 +349,7 @@ require([
 
 		/*
 		 *
-		 * DELETING CONSTRAINTS WHEN ITEMS GET DELETED
+		 * this function configures the standard deletion to first check if any constraints are affected and if there are, rechecks if deletion is desired
 		 *
 		 */
 		function configureDeletion() {
@@ -347,7 +401,7 @@ require([
 
 		/*
 		 *
-		 * MARQUEE SELECTION - YOU CAN DECIDE WHAT ITEMS GET SELECTED
+		 * changes which elements should be selected by marquee selection
 		 *
 		 */
 
@@ -369,7 +423,7 @@ require([
 
 		/*
 		 *
-		 *  EVERYTHING CONCERNING CONTEXT MENU
+		 *  configuring the context menu
 		 *	
 		 */
 
@@ -400,6 +454,9 @@ require([
 			}
 		}
 
+		/*
+		 * adds menu items to the context menu
+		 */
 
 		function populateContextMenu(contextMenu, graphComponent, args) {
 			args.showMenu = true
@@ -415,6 +472,11 @@ require([
 			} else if (graphComponent.selection.selectedEdges.size == 1) {
 				selEdges = graphComponent.selection.selectedEdges.toArray();
 				contextMenu.addMenuItem('Assign to...', () => $( "#pageDialog" ).dialog( "open" ),  fillAssignDialog());
+				
+				//contextMenu.addMenuItem("tag", () => alert(selEdges[0].tag))
+			} else if (graphComponent.selection.selectedNodes.size == 1) {
+				//contextMenu.addMenuItem("tag", () => alert(graphComponent.selection.selectedNodes.toArray()[0].tag))
+				
 			} else if (graphComponent.selection.selectedNodes.size == 2) {
 				var nodesArr = graphComponent.selection.selectedNodes.toArray();
 				var a = nodesArr[0];
@@ -434,15 +496,6 @@ require([
 
 
 				contextMenu.addMenuItem('Make consecutive', () => {
-
-					// TODO DO WE NEED THIS
-					var arr = []
-
-					nodesArr.forEach(function(a) {
-						arr.push(a.toString())
-					})
-
-					//
 
 					let constr = new Consecutive(nodesArr);
 					constraintsArray.push(constr)
@@ -509,7 +562,10 @@ require([
 		}
 
 
-		// Fills the dialog for "restrict Edges"
+		/*
+		 * For the constraint "restrict edges of..." this function populates the dialog that shows up
+		 */
+		
 		function fillRestrictDialog(arr) {
 			if (arr.length == 2) {
 				var a = arr[0]
@@ -608,7 +664,11 @@ require([
 
 		}
 
-		// Fills the dialog for order of nodes
+		/*
+		 * 
+		 *  For the partial order constraint this function fills the dialog that shows up 
+		 * 
+		 */
 		function fillOrderDialog() {
 			let miniGraphComponent = new yfiles.view.GraphComponent("#miniGraphComponent");
 			miniGraphComponent.inputMode = new yfiles.input.GraphViewerInputMode()
@@ -650,7 +710,7 @@ require([
 
 		/*
 		 *
-		 * SNAPPING TO THE GRID
+		 * this initializes the grid snapping
 		 *
 		 */
 
@@ -672,7 +732,7 @@ require([
 
 		/*
 		 *
-		 * INITIALIZE THE GRID
+		 * this initializes the grid
 		 *
 		 */
 
@@ -694,7 +754,8 @@ require([
 			graphSnapContext.nodeGridConstraintProvider = new yfiles.input.GridConstraintProvider(gridInfo)
 			graphSnapContext.bendGridConstraintProvider = new yfiles.input.GridConstraintProvider(gridInfo)
 		}
-
+		
+		// TODO change this to less
 		function updateSnapType(snaptype) {
 			const graphSnapContext = graphComponent.inputMode.snapContext
 			if (snaptype == 'none') {
@@ -717,7 +778,7 @@ require([
 
 		/*
 		 *
-		 * GRAPH DEFAULTS SUCH AS COLOR AND SIZE OF NODES
+		 * this sets the defaults for nodes and edges
 		 *
 		 */
 
@@ -725,7 +786,7 @@ require([
 			const graph = graphComponent.graph;
 
 			/*
-			 * NODE STYLE
+			 * node style
 			 */
 
 			graph.nodeDefaults.style = new yfiles.styles.ShapeNodeStyle({
@@ -737,7 +798,7 @@ require([
 
 
 			/*
-			 * EDGE STYLE
+			 * edge style
 			 */
 
 			graph.edgeDefaults.style = new yfiles.styles.PolylineEdgeStyle({
@@ -751,26 +812,9 @@ require([
 
 		}
 
-		/* TODO i think this is useless
-		function filter(string) {
-			while (string.search("</constr>") > -1) {
-				string = string.replace("</constr>", "")
-			}
-			string = string.replace("<constraints>", "")
-			string = string.replace("</constraints>", "")
-
-			string = string.split("<constr>")
-			string.shift();
-
-
-			return string;
-		}*/
-
-
-
 		/*
 		 *
-		 * FIND OUT WHICH PAGES ARE CHECKED
+		 * checks how many pages are available for the lin layout
 		 *
 		 */
 		function getAvailablePages() {
@@ -788,7 +832,7 @@ require([
 
 		/*
 		 *
-		 * DESERIALIZES THE STRINGS FROM SERIALIZED CONSTRAINTS
+		 * deserializes the constraints
 		 *
 		 */
 
@@ -1076,14 +1120,14 @@ require([
 				.then(() => {
 					graphComponent.fitGraphBounds();
 
-					iterateOver();
-					
-					
+					checkLabelsAndTags();
+
+
 					// took out a timeout, seems to work fine
 					constraints.forEach(function(c){
 						deserialize(c)
 					})
-					
+
 				})
 
 
@@ -1091,10 +1135,14 @@ require([
 			reader.readAsText(file);
 
 		}
+		
+		/*
+		 * When a graph is loaded in, this Method checks if every node / edge has a label and a tag and if not, assigns those
+		 */
 
-		function iterateOver() {
+		function checkLabelsAndTags() {
 			var nodes = graphComponent.graph.nodes.toArray();
-			
+
 			nodes.forEach(function(n) {
 				if (n.labels.size == 0) {
 					var label = getNextLabel("node")
@@ -1104,7 +1152,7 @@ require([
 					n.tag = getNextTag()
 				}
 			})
-			
+
 			var edges = graphComponent.graph.edges.toArray();
 			edges.forEach(function(e) {
 				if (e.labels.size == 0) {
@@ -1113,7 +1161,7 @@ require([
 				}
 				if (e.tag == null) {
 					e.tag = e.sourceNode.tag + "-" +e.targetNode.tag
- 				}
+				}
 			})
 
 		}
@@ -1121,7 +1169,8 @@ require([
 
 		/*
 		 *
-		 * TO SAVE A GRAPH WITH PAGES AND CONSTRAINTS
+		 * saves a graph as graphml including pages, page constraints, page types and further constraints
+		 * parameter: filename, string
 		 *
 		 */
 		function saveFile(filename) {
@@ -1168,15 +1217,16 @@ require([
 
 		/*
 		 *
-		 * GIVES THE BUTTONS THEIR FUNCTION
+		 * this function connects the html-buttons with their functionalities
 		 *
 		 */
 		function registerCommands(){
+			
+			
 			/*
 			 * file tab
 			 */
-
-
+			
 			document.querySelector("#NewButton").addEventListener("click", () => {
 				graphComponent.graph.clear();
 				deleteAllConstraints();
@@ -1201,6 +1251,44 @@ require([
 
 			document.querySelector("#cancelSaveDialog").addEventListener("click", () => {
 				$("#saveDialog").dialog("close")
+			})
+
+			document.querySelector("#ServerButton").addEventListener("click", () => {
+				if (typeof(window.localStorage) !== "undefined") {
+					$("#serverDialog").dialog("open")
+				} else {
+					alert("This browser does not support local storage, which leads to problems with computation. Please consider using another browser or stay with the standard server.")
+				}
+			})
+
+			document.querySelector("#okChangeServer").addEventListener("click", () => {
+				var newurl = $("#serverUrl").val()
+			
+
+				// check if server is answering correctly
+				$.ajax({
+					url: newurl + "/embeddings",
+					success: function() {
+						document.getElementById("displayCurrentServer").innerHTML = newurl;
+						window.localStorage.setItem("currentServer", newurl)
+					},
+					error: function() {
+						alert("This server does not host functionality for computation of linear layouts. Please try a different server.")
+					}
+				})
+
+
+				$("#serverDialog").dialog("close")
+			})
+
+			document.querySelector("#abortChangeServer").addEventListener("click", () => {
+				$("#serverDialog").dialog("close")
+			})
+
+			document.querySelector("#resetServer").addEventListener("click", () => {
+				window.localStorage.setItem("currentServer", standardServer)
+				document.getElementById("displayCurrentServer").innerHTML = currentServer;
+				$("#serverDialog").dialog("close")
 			})
 
 			/*
@@ -1239,8 +1327,6 @@ require([
 				yfiles.input.ICommand.DELETE.execute({target: graphComponent});
 
 			})
-
-
 
 			document.querySelector("#yesDelete").addEventListener("click", () => {
 				var selection = graphComponent.selection;
@@ -1335,6 +1421,7 @@ require([
 				graphComponent.morphLayout(new yfiles.circular.CircularLayout());
 				graphComponent.fitGraphBounds();
 			})
+
 			document.querySelector("#treeLayoutButton").addEventListener("click", () => {
 				resetToPolylineStyle();
 				const treeLayout = new yfiles.tree.TreeLayout();
@@ -1351,8 +1438,6 @@ require([
 				treeLayout.removeStage(treeReductionStage);
 
 				graphComponent.fitGraphBounds();
-
-
 
 			})
 			document.querySelector("#balloonLayoutButton").addEventListener("click", () => {
@@ -1378,6 +1463,132 @@ require([
 				graphComponent.morphLayout(new yfiles.radial.RadialLayout());
 				graphComponent.fitGraphBounds();
 			})
+
+
+			/* Tools Tab */
+			document.querySelector("#resizableNodes").addEventListener("click", () => {
+				nodesStableSize = !nodesStableSize;
+
+				if (nodesStableSize) {
+					graphComponent.inputMode.showHandleItems = yfiles.graph.GraphItemTypes.ALL & ~yfiles.graph.GraphItemTypes.NODE;
+				} else if (!nodesStableSize) {
+					graphComponent.inputMode.showHandleItems = yfiles.graph.GraphItemTypes.ALL; 
+				}
+
+			})
+
+			document.querySelector("#doubleEdges").addEventListener("click", () => {
+				allowDoubleEdges = !allowDoubleEdges;
+			})
+			
+
+			/*document.querySelector("#oneStellation").addEventListener("click", () => {
+				const adapter = new yfiles.layout.YGraphAdapter(graphComponent.graph);
+				var ygraph = adapter.yGraph
+
+				var selectedNodes = graphComponent.selection.selectedNodes.toArray();
+					
+				if (selectedNodes.length == 0) {
+					// what then?
+				} else {
+					var sumX = 0;
+					var sumY = 0;
+					selectedNodes.forEach(function(n) {
+						sumX = sumX +  n.layout.center.x
+						sumY = sumY + n.layout.center.y
+					})
+					
+					var xnew = sumX / selectedNodes.length;
+					var ynew = sumY / selectedNodes.length;
+					
+					var newNode = graphComponent.graph.createNodeAt(new yfiles.geometry.Point(xnew, ynew))
+					newNode.tag = getNextTag();
+					var nodeLabel = getNextLabel("node")
+					graphComponent.graph.addLabel(newNode, nodeLabel.toString())
+					
+					selectedNodes.forEach(function(n) {
+						var newEdge = graphComponent.graph.createEdge(newNode, n)
+						graphComponent.graph.addLabel(newEdge, getNextLabel("edge").toString())
+						newEdge.tag = newEdge.sourceNode.tag + "-" + newEdge.targetNode.tag
+					})
+					
+					
+				}
+			
+				
+
+			})*/
+
+			/*document.querySelector("#threeStellation").addEventListener("click", () => {
+				var selectedNodes = graphComponent.selection.selectedNodes.toArray();
+				
+				const adapter = new yfiles.layout.YGraphAdapter(graphComponent.graph);
+				var ygraph = adapter.yGraph
+				
+
+				var emb = new yfiles.algorithms.PlanarEmbedding(ygraph)
+				var faces = emb.faces.toArray()
+				
+				faces.forEach(function(face) {
+					console.log("one face")
+					face.forEach(function(dart) {
+						console.log("one edge")
+						console.log(dart.associatedEdge.source.toString())
+					})
+				})
+				
+				
+				if (selectedNodes.length == 0) {
+					// what then?
+				} else {
+					var sumX = 0;
+					var sumY = 0;
+					selectedNodes.forEach(function(n) {
+						sumX = sumX +  n.layout.center.x
+						sumY = sumY + n.layout.center.y
+					})
+					
+					var xbase = sumX / selectedNodes.length;
+					var ybase = sumY / selectedNodes.length;
+					
+					var xnew = [xbase+20, xbase-20, xbase+20]
+					var ynew = [ybase+20, ybase-20, ybase-20]
+					
+					let i;
+					for (i = 0; i<=2; i++) {
+						var newNode = graphComponent.graph.createNodeAt(xnew[i], ynew[y])
+						var newLabel = getNextLabel("node")
+						
+					}
+					
+				}
+			})*/
+
+			
+			/*
+			document.querySelector("#edgeStellation").addEventListener("click", () => {
+				var selectedEdges = graphComponent.selection.selectedEdges.toArray();
+				var selectedNodes = graphComponent.selection.selectedNodes.toArray();
+				console.log(selectedNodes.length + " " + selectedEdges.length)
+				
+				if (selectedEdges.length != 0) {
+					selectedEdges.forEach(function(e) {
+						stellateEdge(e)
+					})
+				}
+				
+				if (selectedEdges.length == 0) {
+					var edges = graphComponent.graph.edges.toArray();
+					edges.forEach(function(e) {
+						stellateEdge(e)
+					}) 
+				}
+				
+			})*/
+
+
+
+
 
 
 
@@ -1519,8 +1730,48 @@ require([
 
 		}
 
+		
+		/*
+		 * This function stellates an edge, meaning that it places a node somewhere above or below the edge and connects source and target of the edge with two new edges
+		 */
+		
+		// TODO change edge tags here DONE
+		
+		function stellateEdge(e) {
+			var xsourceNode = e.sourceNode.layout.center.x
+			var xtargetNode = e.targetNode.layout.center.x
+			var ysourceNode = e.sourceNode.layout.center.y
+			var ytargetNode = e.targetNode.layout.center.y
+			
+	
+			var xnew = xsourceNode + 0.5*(xtargetNode-xsourceNode) 		
+			var ynew = ysourceNode + 0.5*(ytargetNode-ysourceNode)
+			
+			var width = e.sourceNode.layout.width
+			var height = e.sourceNode.layout.height
+			
+			var newNode = graphComponent.graph.createNodeAt(new yfiles.geometry.Point(xnew+30, ynew+30))
+			var edge1 = graphComponent.graph.createEdge(newNode, e.sourceNode)
+			var edge2 = graphComponent.graph.createEdge(newNode, e.targetNode)						
+			
+			// adding labels and tags
+			var nodeLabel = getNextLabel("node");
+			graphComponent.graph.addLabel(newNode, nodeLabel.toString())
+			newNode.tag = getNextTag();
 
-		// resets the style of all edges to polyline (straight, black line)
+			var edge1Label = getNextLabel("edge");
+			graphComponent.graph.addLabel(edge1, edge1Label.toString())
+			edge1.tag = edge1.sourceNode.tag + "-(0)-" + edge1.targetNode.tag
+			
+			var edge2Label = getNextLabel("edge");
+			graphComponent.graph.addLabel(edge2, edge2Label.toString())
+			edge1.tag = edge2.sourceNode.tag + "-(0)-" + edge2.targetNode.tag
+		}
+
+		/*
+		 * iterates over the whole graph and resets every edge to polyline-stlye (black, straight line)
+		 */
+
 		function resetToPolylineStyle() {
 			graphComponent.graph.edges.forEach(edge => {
 				graphComponent.graph.setStyle(edge, new yfiles.styles.PolylineEdgeStyle())
@@ -1528,7 +1779,10 @@ require([
 		}
 
 
-		// sends data to server
+		/*
+		 *  Sends the data created by "createDataForCalculation" to the current (!) server and forwards the user to the view page 
+		 */
+		
 		function computeLinearLayout() {
 			var graph;
 			var responseID = -1;
@@ -1545,10 +1799,18 @@ require([
 
 				//console.log(data)
 
+				var currentServer = window.localStorage.getItem("currentServer")
+				
+				if (currentServer == null) {
+					currentServer = standardServer;
+				} else {
+					currentServer = currentServer + "/embeddings"
+				}
+				
 				var settings = {
 					"async": true,
 					"crossDomain": true,
-					"url": "http://sofa.fsi.uni-tuebingen.de:5555/embeddings",
+					"url": currentServer,
 					"method": "POST",
 					"headers": {
 						"content-type": "application/json"
@@ -1576,7 +1838,11 @@ require([
 
 		}
 
-		// creates data attribute that is needed for ajax request
+		/*
+		 * creates the "data"-element that is needed by the ajax function
+		 */
+		
+		// TODO ARE ALL THE CONSTRAINT IN THERE???
 		function createDataForCalculation(graph) {
 
 			var constraints = []
@@ -1666,11 +1932,13 @@ require([
 
 
 
-		// if redirected to #llid interprets graph as linear layout
+		/*
+		 * After a redirection to #ll+id this function interprets the graph as a linear layout
+		 */
 
 		function interpretResultAsLinearLayout(object) {
 
-			// REARRANGING NODES
+			// arranges the nodes according to the calculated linear layout
 			var orderedNodes = object.vertex_order
 			var nodes = graphComponent.graph.nodes.toArray()
 
@@ -1689,7 +1957,8 @@ require([
 			})
 
 
-			// edge handeling
+			// rearranging the edges if necessary to have the arcs of the linear layout in the right orientation (swapping source and target if necessary)
+			
 			var edges = graphComponent.graph.edges.toArray()
 			edges.forEach(function(e) {
 
@@ -1721,13 +1990,13 @@ require([
 					)
 
 					// remove old edge
-						graphComponent.graph.remove(e)
+					graphComponent.graph.remove(e)
 				}
 
 
 			})
 
-			// REGISTERING WHICH EDGES GO TO WHICH PAGES
+			// registering which edges go on which pages
 			var assignments = object.assignments
 
 			assignments.forEach(function(a) {
@@ -1735,6 +2004,10 @@ require([
 				arrayLocation = arrayLocation-1;
 
 
+				
+			// TODO change tags here NOT NECESSARY
+				
+				
 				var edges = graphComponent.graph.edges.toArray()
 				edges.forEach(function(e) {
 					var reversestring = a.edge.split("-").reverse().join("-");
@@ -1749,6 +2022,7 @@ require([
 
 
 			// assigns the colors to the edges for easier observation
+			
 			var colors = ["#FF0000", "#0000FF", "#00FF00", "#000000"]
 			let i;
 			for (i = 0; i< 4; i++) {
@@ -1762,7 +2036,8 @@ require([
 				})
 			}
 
-			// read constraints
+			
+			// interpret constraints
 			loadConstraintsFromJSON(object.constraints)
 
 
@@ -1803,7 +2078,9 @@ require([
 		}
 
 
-		// creates arcEdgeStyle for linear layouts
+		/*
+		 * creates the Arc Edge Style for a linear layout
+		 */
 		function createArcStyle(height, color) {
 			return new yfiles.styles.ArcEdgeStyle({
 				height: height,
@@ -1813,7 +2090,9 @@ require([
 
 
 
-		// calculates ArcHeight for arcEdgeStyle so it is displayed nicely
+		/*
+		 * calculates individual arc height for each edge  
+		 */
 		function getArcHeight(edge) {
 			const source = edge.sourceNode.layout.center
 			const target = edge.targetNode.layout.center
@@ -1825,7 +2104,9 @@ require([
 
 
 
-		// if redirected to #orid interprets graph as its original layout
+		/*
+		 * After a redirection to #or+id this function displays the graph and registers constraints etc.
+		 */
 		function interpretResultAsRegularLayout(object) {
 			graphComponent.fitGraphBounds();
 
