@@ -2,6 +2,8 @@
 
 On linear layouts of graphs with SAT
 
+The full documentation is checked in [here](docs/Researchproject_Mirco_Haug.pdf)
+
 ## Development
 
 This application requires lingeling which depends on UNIX. This files assumes that you run in an UNIX like environment. Currently it also seems to work as well in the Windows Subsystem for Linux.
@@ -40,8 +42,6 @@ pipenv clean            # remove unused dependencies
 ```
 
 ### Build documentation
-
-The documentation is checked in at build/docs/latex/Researchproject_Mirco_Haug.pdf
 
 run `sudo apt install graphviz plantuml` to install the runtime requirements which are not installable via pip.
 
