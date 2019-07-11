@@ -47,6 +47,10 @@ def static_assignments_vars(variables: ndarray) -> List[List[int]]:
         # each page has to be assigned to at least one page
         clauses.append(list(variables[:, i]))
         # i_on_page_j >> -i_on_page_k
+        # at most one page per edge
+        for j in range(variables.shape[1]):
+            for k in range(j + 1, variables.shape[1]):
+                clauses.append([-variables[j, i], -variables[k, i]])
     return clauses
 
 
