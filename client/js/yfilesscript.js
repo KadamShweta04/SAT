@@ -185,7 +185,7 @@ require([
 						} 
 					})
 				} else {
-					occurrance = 0;
+					var occurrance = 0;
 					edges.forEach(function(e) {
 						if (edge.sourceNode == e.sourceNode && edge.targetNode == e.targetNode) {
 							occurrance = occurrance+1;
@@ -291,10 +291,6 @@ require([
 							}
 
 						})
-
-
-
-
 					}
 				})
 
@@ -1482,42 +1478,76 @@ require([
 			})
 			
 
-			/*document.querySelector("#oneStellation").addEventListener("click", () => {
-				const adapter = new yfiles.layout.YGraphAdapter(graphComponent.graph);
-				var ygraph = adapter.yGraph
+			document.querySelector("#stellation").addEventListener("click", () => {
 
 				var selectedNodes = graphComponent.selection.selectedNodes.toArray();
 					
 				if (selectedNodes.length == 0) {
 					// what then?
-				} else {
-					var sumX = 0;
-					var sumY = 0;
-					selectedNodes.forEach(function(n) {
-						sumX = sumX +  n.layout.center.x
-						sumY = sumY + n.layout.center.y
-					})
-					
-					var xnew = sumX / selectedNodes.length;
-					var ynew = sumY / selectedNodes.length;
-					
-					var newNode = graphComponent.graph.createNodeAt(new yfiles.geometry.Point(xnew, ynew))
-					newNode.tag = getNextTag();
-					var nodeLabel = getNextLabel("node")
-					graphComponent.graph.addLabel(newNode, nodeLabel.toString())
-					
-					selectedNodes.forEach(function(n) {
-						var newEdge = graphComponent.graph.createEdge(newNode, n)
-						graphComponent.graph.addLabel(newEdge, getNextLabel("edge").toString())
-						newEdge.tag = newEdge.sourceNode.tag + "-" + newEdge.targetNode.tag
-					})
-					
-					
-				}
-			
-				
 
-			})*/
+					const adapter = new yfiles.layout.YGraphAdapter(graphComponent.graph);
+					var ygraph = adapter.yGraph;
+
+					if (!yfiles.algorithms.PlanarEmbedding.isPlanar(ygraph))
+					{
+						alert("The input graph cannot be stellated because it is not planar.");
+					}
+					var planarEmbedding = new yfiles.algorithms.PlanarEmbedding(ygraph);
+
+
+
+					planarEmbedding.faces.forEach(face => {
+						var x = 0;
+						var y = 0;
+
+						var stellate = graphComponent.graph.createNode({
+							layout: new yfiles.geometry.Rect(0,0,20,20),
+							tag: getNextTag()
+						});
+						graphComponent.graph.addLabel(stellate, getNextLabel("node").toString());
+
+						face.forEach(dart => {
+							const source =  adapter.getOriginalNode(dart.reversed ? dart.associatedEdge.source : dart.associatedEdge.target);
+							const e = graphComponent.graph.createEdge({
+								source: source,
+								target: stellate,
+								tag: source.tag+"-"+stellate.tag
+							});
+							graphComponent.graph.addLabel(e, getNextLabel("edge").toString())
+							x = x + source.layout.center.x;
+							y = y + source.layout.center.y;
+						});
+						x = x / face.size;
+						y = y / face.size;
+						graphComponent.graph.setNodeCenter(stellate, new yfiles.geometry.Point(x, y));
+					});
+
+				} else {
+					var x = 0;
+					var y = 0;
+
+					var stellate = graphComponent.graph.createNode({
+						layout: new yfiles.geometry.Rect(0,0,20,20),
+						tag: getNextTag()
+					});
+					graphComponent.graph.addLabel(stellate, getNextLabel("node").toString());
+
+					selectedNodes.forEach(node => {
+						x = x + node.layout.center.x;
+						y = y + node.layout.center.y;
+
+						const e = graphComponent.graph.createEdge({
+							source: node,
+							target: stellate,
+							tag: node.tag+"-"+stellate.tag
+						});
+						graphComponent.graph.addLabel(e, getNextLabel("edge").toString())
+					})
+					x = x / selectedNodes.length;
+					y = y / selectedNodes.length;
+					graphComponent.graph.setNodeCenter(stellate, new yfiles.geometry.Point(x, y));
+				}
+			})
 
 			/*document.querySelector("#threeStellation").addEventListener("click", () => {
 				var selectedNodes = graphComponent.selection.selectedNodes.toArray();
