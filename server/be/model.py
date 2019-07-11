@@ -48,8 +48,8 @@ def static_assignments_vars(variables: ndarray) -> List[List[int]]:
         clauses.append(list(variables[:, i]))
         # i_on_page_j >> -i_on_page_k
         # at most one page per edge
-        for j in range(variables.shape[1]):
-            for k in range(j + 1, variables.shape[1]):
+        for j in range(variables.shape[0]):
+            for k in range(j + 1, variables.shape[0]):
                 clauses.append([-variables[j, i], -variables[k, i]])
     return clauses
 
@@ -75,7 +75,7 @@ def static_get_order_clauses(node_order, *args: List[int]) -> List[List[int]]:
 
 def static_to_dimacs(clauses: list, first_line: str) -> str:
     """
-    This methon generates a string in the `DIMACS <http://www.satcompetition.org/2009/format-benchmarks2009.html>`_ format.
+    This method generates a string in the `DIMACS <http://www.satcompetition.org/2009/format-benchmarks2009.html>`_ format.
     This method is on of the hotspots for large problem instances. It was compared against various other
     implementations. The exact test done are provided in the full documentations and as
     source code comments below this method.
