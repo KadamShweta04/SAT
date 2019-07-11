@@ -38,8 +38,8 @@
 
     \begin{frame}{The bookembedding problem}
         \begin{itemize}
-            \item No crossings
             \item Multiple pages / Colors
+            \item No crossings
             \item Node order
             \item Edge assignments
         \end{itemize}
@@ -84,6 +84,15 @@
     \end{frame}
 
     \section{Implementation}\label{sec:implementation}
+
+    \begin{frame}
+        \includegraphics[height=\textheight]{flow.png}
+    \end{frame}
+
+    \begin{frame}{API $\Rightarrow$ Swagger UI}
+        \includegraphics[width=\linewidth]{swagger-UI.png}
+    \end{frame}
+
     \begin{frame}{Main classes}
         \begin{itemize}
             \item app.py
@@ -92,15 +101,21 @@
         \end{itemize}
     \end{frame}
 
-    \begin{frame}{API $\Rightarrow$ Swagger UI}
-        \includegraphics[width=\linewidth]{swagger-UI.png}
-    \end{frame}
 
     \begin{frame}{app.py}
         \begin{itemize}
             \item Schema definition
-            \item Deserialize
+            \item Deserialization
             \item Validate
+        \end{itemize}
+    \end{frame}
+
+    \begin{frame}{solver.py}
+        \begin{itemize}
+            \item Glue
+            \item Service interface
+            \item Coordination
+            \item Calls lingeling
         \end{itemize}
     \end{frame}
 
@@ -112,13 +127,6 @@
         \end{itemize}
     \end{frame}
 
-    \begin{frame}{solver.py}
-        \begin{itemize}
-            \item Glue
-            \item Calls lingeling
-            \item Service interface
-        \end{itemize}
-    \end{frame}
 
     \section{Demo}\label{sec:demo}
     \begin{frame}{Demo}
