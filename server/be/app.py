@@ -1,9 +1,7 @@
 import base64
 import datetime
-import multiprocessing
 import subprocess
 from concurrent.futures import Future
-from concurrent.futures.process import ProcessPoolExecutor
 
 from flask import Flask, request
 from flask.json import jsonify
@@ -22,8 +20,8 @@ from be.utils import get_duplicates
 class App:
     """
     This class creates the entry point for the REST interface.
-    The entry point will perform all marshalling and un marshalling operations.
-    Also will the entry point provide some basic sanitation to the given input. The non complete list of checks are:
+    The entry point will perform the deserialization and serialization .
+    Also will the entry point provide some basic sanitation to the given input. Some of the checks are for example:
 
     * Duplicated ids
     * Graph size withing fairness bounds
@@ -53,6 +51,7 @@ class App:
             the app object
         """
 
+        # check if lingeling is present
         try:
             output = subprocess.check_output(["lingeling", "--version"])
         except Exception as e:
@@ -66,7 +65,7 @@ class App:
             app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[30])
         CORS(app)
 
-        pool = ProcessPoolExecutor(max_workers=int(multiprocessing.cpu_count() / 2))
+        # pool = ProcessPoolExecutor(max_workers=int(multiprocessing.cpu_count() / 2))
 
         app.config['RESTPLUS_VALIDATE'] = True
 
@@ -76,14 +75,15 @@ class App:
                   description='Through this API one can request for a linear layout of a graph in graphml format. \n'
                               'The actual computation of the linear layout is done using SAT solving. '
                               'The instances are solved using [lingeling](http://fmv.jku.at/lingeling/)\n'
+                              'See https://github.com/linear-layouts/SAT for more information'
                   )
 
         #: The schema definition of a page
         page_schema = api.model('Page',
                                 {
                                     'id': fields.String(required=True, description='The id of this page', example="P1"),
-                                    'type': fields.String(description='The type of the page. '
-                                                                      'MIXED allows all patterns',
+                                    'type': fields.String(description='The type of the page. \n'
+                                                                      'NONE allows all patterns',
                                                           enum=['QUEUE',
                                                                 'STACK',
                                                                 'NONE'],
@@ -101,21 +101,23 @@ class App:
         #: The schema definition of a constraint
         constraint_schema = api.model('Constraint',
                                       {'type': fields.String(description="""
-                                      EDGES_ON_PAGES: assigns edges to specific pages
-                                      arguments: edge ids, the edge ids are handled independent from each other
+                                      EDGES_ON_PAGES: assigns edges to specific pages. The edges are encoded 
+                                                      independently from each other
+                                      arguments: edge ids
                                       modifier: page ids to assign the edges to (OR joined)
                                       
                                       EDGES_SAME_PAGES: assigns edges to the same page. Only implemented up to to 4 pages
-                                      arguments: the edge ids to be assigned to the same page
-                                      modifier: empty
+                                      arguments: the edge ids
+                                      modifier: none
                                       
-                                      EDGES_DIFFERENT_PAGES: all edges have to be on different pages
+                                      EDGES_DIFFERENT_PAGES: all edges have to be on different pages. Only works up to 
+                                                             as many edges as there are pages
                                       arguments: the edge ids
                                       modifier none
                                       
                                       EDGES_TO_SUB_ARC_ON_PAGES: If any node shares an edge with the nodes named in 
-                                      arguments and is between the two nodes, then this edge is restricted to the pages 
-                                      in modifier.
+                                                                 arguments and is between the two nodes, then this edge 
+                                                                 is restricted to the pages named in modifier.
                                       arguments: the two vertexes to restrict the edges from
                                       modifier: the pages to restrict the edges to
                                       
@@ -127,10 +129,10 @@ class App:
                                       arguments: the node ids to be before 
                                       modifier: the node ids to be after
                                       
-                                      NODES_ABSOLUTE_ORDER: see NODES_REQUIRE_ABSOLUTE_ORDER
+                                      NODES_ABSOLUTE_ORDER: deprecated. see NODES_REQUIRE_ABSOLUTE_ORDER
                                       
-                                      NODES_REQUIRE_ABSOLUTE_ORDER: The given nodes have to be in exactly the given order and no nodes 
-                                      are allowed in between
+                                      NODES_REQUIRE_ABSOLUTE_ORDER: The given nodes have to be in exactly the given 
+                                                                    order and no nodes are allowed in between.
                                       arguments: the nodes in the required order
                                       modifier: none 
                                       
@@ -139,12 +141,12 @@ class App:
                                       modifier: none 
                                       
                                       NODES_FORBID_PARTIAL_ORDER: The given nodes have to be NOT the given relative order. 
-                                      Two nodes flipped already satisfy this constraint
+                                                                    Two nodes flipped already satisfy this constraint.
                                       arguments: the nodes in the forbidden order
                                       modifier: none 
                                       
                                       NODES_CONSECUTIVE: The given two nodes have to be next to each other in any order. 
-                                      Currently only implemented for 2 Nodes
+                                                         Currently only implemented for 2 Nodes
                                       arguments: the two neighboring nodes
                                       modifier: none  
                                       """,
@@ -160,7 +162,6 @@ class App:
                                                                  "NODES_REQUIRE_PARTIAL_ORDER",
                                                                  "NODES_FORBID_PARTIAL_ORDER",
                                                                  "NODES_CONSECUTIVE",
-                                                                 # todo pattern constraint
                                                              ],
                                                              example="NODES_PREDECESSOR",
                                                              required=True),
@@ -315,10 +316,11 @@ class App:
                               "Please submit a graph with at least one node, edge and page")
 
                     if handle_async:
-                        future = pool.submit(SolverInterface.solve,
-                                             node_ids, edges, entity.get('pages'), entity.get('constraints'),
-                                             entity['id'])
-                        future.add_done_callback(processing_finished_callback)
+                        abort(501, "Async handling is not enabled.")
+                        # future = pool.submit(SolverInterface.solve,
+                        #                      node_ids, edges, entity.get('pages'), entity.get('constraints'),
+                        #                      entity['id'])
+                        # future.add_done_callback(processing_finished_callback)
                     else:
                         entity = handle_solver_result(SolverInterface.solve(
                             node_ids, edges, entity.get('pages'), entity.get('constraints'), entity['id']))

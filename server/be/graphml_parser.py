@@ -8,9 +8,9 @@ from be.custom_types import Edge
 def get_nodes_and_edges_from_graph(string: str) -> (List[str], List[Edge]):
     """
     Obtains node and enge information from a string containing a graphml definition.
-    For the ids or the elements, the userdata is used first. If there is none then the xml ids of the elements are used.
-    For edges the xml id is not mandatory and therefor if neither userdata nor xml id is present for edges then the used
-    ids are consisting of `<SOURCE_NODE_ID>-<TARGET_NODE_ID>`
+    Ids are taken from the following hierarchy: Userdata at the xml element, id of the xml element, for edges generated
+    from <source node>-<target node>. This hierarchy ensures that the API can use a wide variety of valid graphml as
+    input.
 
     :param: the graphml string
     :return: the lists of node ids and edges

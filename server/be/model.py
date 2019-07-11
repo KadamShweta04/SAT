@@ -420,9 +420,9 @@ class SatModel(object):
 
     def add_relative_node_order_clauses(self):
         """
-        Ensures that asymmetry and transitivity are encoded
+        Ensures that asymmetry and transitivity are encoded.
 
-                """
+        """
         node_order = self._node_order
 
         clauses = static_node_order_generation(node_order)
@@ -432,14 +432,14 @@ class SatModel(object):
         """
         Ensures that each edge is on at least one page.
 
-                """
+        """
         variables = self._assignment_variables
         clauses = static_assignments_vars(variables)
         self._add_clauses(clauses)
 
     def get_vertex_order_result(self) -> List[str]:
         """
-        Reads the result and translates it back into a the computed order of vertexes
+        Reads the result and translates it back into a the computed order of vertexes.
 
         :return: the order of the vertexes
         """
@@ -457,7 +457,7 @@ class SatModel(object):
 
     def get_page_assignments_result(self) -> List[PageAssignment]:
         """
-        Reads the result and translates it back to edge to page assignments
+        Reads the result and translates it back to edge to page assignments.
 
         :return: The list of page assignments
         """
@@ -478,7 +478,7 @@ class SatModel(object):
 
     def add_page_constraints(self):
         """
-        Generates the clauses to encode the page type as well as additional page constraints like DISPERSIBLE or TREE
+        Generates the clauses to encode the page type as well as additional page constraints like DISPERSIBLE or TREE.
         """
         edges = np.array([
             [self.edge_id_to_idx[e.id],
@@ -508,7 +508,7 @@ class SatModel(object):
 
     def add_additional_constraints(self):
         """
-        Adds the clauses to encode the given additional constraints
+        Adds the clauses to encode the given additional constraints.
         """
 
         if not self.constraints:
@@ -643,8 +643,7 @@ class SatModel(object):
         """
         generates a string in `DIMACS <http://www.satcompetition.org/2009/format-benchmarks2009.html>`_ format
         encoding all the clauses. Out to conserve memory, the clauses will be deleted after the string generation.
-
-                """
+        """
         clauses = self.clauses
         first_line = "p cnf {} {}\n".format(np.max(self.max_var), len(clauses))
         res_str = static_to_dimacs(clauses, first_line)
@@ -657,7 +656,8 @@ class SatModel(object):
         Takes the result string from lingeling and parses it back into the model.
 
         :param dimacs_string: the result string from lingeling
-                """
+
+        """
         result = {}
 
         lines = dimacs_string.split('\n')
@@ -779,7 +779,7 @@ class SatModel(object):
     @staticmethod
     def _add_forrest_constraints(ancestors, assignment_variables, clauses, edges, page_idx, parents):
         """
-        A helper method to encode a forrest constraint for the given page
+        A helper method to encode a forrest constraint for the given page.
         :param ancestors:
         :param assignment_variables:
         :param clauses:
