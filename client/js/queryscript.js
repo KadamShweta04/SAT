@@ -565,7 +565,7 @@ $( function() {
 		$("#layout").fadeToggle();
 		$("#file").hide();
 		$("#edit").hide();
-		$("tools").hide();
+		$("#tools").hide();
 		$("#view").hide();
 	});
 	
