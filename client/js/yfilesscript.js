@@ -256,7 +256,7 @@ require([
 			if (location.hash != "") {
 
 				var embeddingID = location.hash.slice(3)
-
+				let link;
 				
 				// checking if there is a preferred server in the local storage, if not use the standard server
 				var currentServer = window.localStorage.getItem("currentServer") 
