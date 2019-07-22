@@ -1,6 +1,6 @@
 import subprocess
 
-from werkzeug.exceptions import HTTPException, BadRequest
+from werkzeug.exceptions import BadRequest
 
 from be.custom_types import SolverResult
 from be.exceptions import IdRelatedException
@@ -55,10 +55,8 @@ class SolverInterface(object):
                                 entity_id=entity_id)
         except KeyError as e:
             raise BadRequest("The id {} was not found in the graph".format(str(e))) from e
-        except HTTPException as e:
-            raise e
         except Exception as e:
-            raise IdRelatedException(entity_id, "{} : {} ".format(type(e), str(e))) from e
+            raise IdRelatedException(entity_id, "{} : {} ".format(type(e), str(e)), e) from e
 
     @classmethod
     def _call_lingeling_with_string(cls, dimacstr):

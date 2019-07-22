@@ -407,7 +407,10 @@ class App:
                 entity['message'] = e.message
 
                 data_store.update_entry(id, entity)
-                raise e
+                if type(e.cause) is HTTPException:
+                    raise e.cause
+                else:
+                    raise e
 
         def handle_solver_result(result: SolverResult):
             entity = data_store.get_by_id(result.entity_id)
@@ -431,10 +434,12 @@ class App:
             print(
                 "Shutdown request. "
                 "Currently {} Jobs are in queue and will be processed on server start.".format(len(jobs)))
-            pool.close()
-            pool.terminate()
-            pool.join()
-            original_sigint_handler()
+            try:
+                pool.close()
+                pool.terminate()
+                pool.join()
+            finally:
+                original_sigint_handler()
 
         signal.signal(signal.SIGINT, signal_handler)
 
