@@ -2037,7 +2037,7 @@ require([
 		}
 
 		function redirection(id) {
-			location.href = "linearlayout.html#" + response.id
+			location.href = "linearlayout.html#" + id
 		}
 		
 		/*
