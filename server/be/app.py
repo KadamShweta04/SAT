@@ -271,7 +271,7 @@ class App:
                     len_nodes = len(node_ids)
                     len_edges = len(edges)
 
-                    if len_edges > 900 or len_nodes > 300:
+                    if len_edges > 1900 or len_nodes > 600:
                         raise BadRequest(
                             "For fairness reasons this API will only handle graphs with less than 300 vertices and 900 "
                             "edges. Your graph has {} vertices and {} edges which exceed the limit."
