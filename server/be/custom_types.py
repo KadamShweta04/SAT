@@ -1,5 +1,7 @@
 from typing import NamedTuple, List
 
+from pebble import ProcessFuture
+
 
 class Edge(NamedTuple):
     id: str
@@ -18,3 +20,8 @@ class SolverResult(NamedTuple):
     vertex_order: List[str]
     solver_output: str
     entity_id: str
+
+
+class QueueItem(NamedTuple):
+    id: str
+    future: ProcessFuture

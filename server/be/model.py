@@ -737,7 +737,7 @@ class SatModel(object):
                     if len_duplicates == 1:
                         clauses.append([-e1_page_var, -e2_page_var])
                     if len_duplicates > 1:
-                        abort(400, "Multi edges are not allowed")
+                        continue
                     else:
                         continue
         elif page_constraint == 'FOREST':

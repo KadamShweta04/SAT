@@ -36,8 +36,8 @@ require([
 		let graph = null;
 
 		var standardServer = "http://sofa.fsi.uni-tuebingen.de:5555/embeddings"
-			
-		let gridInfo = null;
+
+			let gridInfo = null;
 		let grid = null;
 
 		var nodesStableSize = true;
@@ -158,17 +158,17 @@ require([
 			/*
 			 * NODE COPY LISTENER
 			 */
-			
+
 			graphComponent.clipboard.fromClipboardCopier.addNodeCopiedListener((sender, args) => {
 				args.copy.tag = getNextTag()
 			})
 
-			
+
 			/*
 			 * EDGE COPY LISTENER
 			 * TODO change tag here DONE
 			 */
-			
+
 			graphComponent.clipboard.fromClipboardCopier.addEdgeCopiedListener((sender, args) => {
 				var edge = args.copy
 				var edges = graphComponent.graph.edges.toArray();
@@ -250,13 +250,23 @@ require([
 			configureDeletion();
 			registerCommands();
 
+			
+			
 			// check if there is a hash location, if yes display graph with #id
 			if (location.hash != "") {
 
 				var embeddingID = location.hash.slice(3)
-
-				// this is the embedding we pull
-				var link = "http://sofa.fsi.uni-tuebingen.de:5555/embeddings/" + embeddingID
+				let link;
+				
+				// checking if there is a preferred server in the local storage, if not use the standard server
+				var currentServer = window.localStorage.getItem("currentServer") 
+				if (currentServer == null) {
+					//document.getElementById("displayCurrentServer").innerHTML = "http://sofa.fsi.uni-tuebingen.de:5555/embeddings/"
+					link = "http://sofa.fsi.uni-tuebingen.de:5555/embeddings/" + embeddingID
+				} else {
+					//document.getElementById("displayCurrentServer").innerHTML = currentServer
+					link = currentServer + "/embeddings/" + embeddingID
+				}
 
 
 				let object;
@@ -298,8 +308,8 @@ require([
 			}
 
 		}
-		
-		
+
+
 		/*
 		 * creates new labels for nodes or edges
 		 */
@@ -468,11 +478,11 @@ require([
 			} else if (graphComponent.selection.selectedEdges.size == 1) {
 				selEdges = graphComponent.selection.selectedEdges.toArray();
 				contextMenu.addMenuItem('Assign to...', () => $( "#pageDialog" ).dialog( "open" ),  fillAssignDialog());
-				
+
 				//contextMenu.addMenuItem("tag", () => alert(selEdges[0].tag))
 			} else if (graphComponent.selection.selectedNodes.size == 1) {
 				//contextMenu.addMenuItem("tag", () => alert(graphComponent.selection.selectedNodes.toArray()[0].tag))
-				
+
 			} else if (graphComponent.selection.selectedNodes.size == 2) {
 				var nodesArr = graphComponent.selection.selectedNodes.toArray();
 				var a = nodesArr[0];
@@ -561,7 +571,7 @@ require([
 		/*
 		 * For the constraint "restrict edges of..." this function populates the dialog that shows up
 		 */
-		
+
 		function fillRestrictDialog(arr) {
 			if (arr.length == 2) {
 				var a = arr[0]
@@ -750,7 +760,7 @@ require([
 			graphSnapContext.nodeGridConstraintProvider = new yfiles.input.GridConstraintProvider(gridInfo)
 			graphSnapContext.bendGridConstraintProvider = new yfiles.input.GridConstraintProvider(gridInfo)
 		}
-		
+
 		// TODO change this to less
 		function updateSnapType(snaptype) {
 			const graphSnapContext = graphComponent.inputMode.snapContext
@@ -1131,7 +1141,7 @@ require([
 			reader.readAsText(file);
 
 		}
-		
+
 		/*
 		 * When a graph is loaded in, this Method checks if every node / edge has a label and a tag and if not, assigns those
 		 */
@@ -1217,12 +1227,12 @@ require([
 		 *
 		 */
 		function registerCommands(){
-			
-			
+
+
 			/*
 			 * file tab
 			 */
-			
+
 			document.querySelector("#NewButton").addEventListener("click", () => {
 				graphComponent.graph.clear();
 				deleteAllConstraints();
@@ -1259,7 +1269,12 @@ require([
 
 			document.querySelector("#okChangeServer").addEventListener("click", () => {
 				var newurl = $("#serverUrl").val()
-			
+				
+				if (newurl.split("")[newurl.length-1] == "/") {
+					newurl = newurl.split("")
+					newurl.pop()
+					newurl = newurl.join("")
+				}
 
 				// check if server is answering correctly
 				$.ajax({
@@ -1476,15 +1491,13 @@ require([
 			document.querySelector("#doubleEdges").addEventListener("click", () => {
 				allowDoubleEdges = !allowDoubleEdges;
 			})
-			
+
 
 			document.querySelector("#stellation").addEventListener("click", () => {
 
 				var selectedNodes = graphComponent.selection.selectedNodes.toArray();
-					
-				if (selectedNodes.length == 0) {
-					// what then?
 
+				if (selectedNodes.length == 0) {
 					const adapter = new yfiles.layout.YGraphAdapter(graphComponent.graph);
 					var ygraph = adapter.yGraph;
 
@@ -1493,35 +1506,39 @@ require([
 						alert("The input graph cannot be stellated because it is not planar.");
 					}
 					var planarEmbedding = new yfiles.algorithms.PlanarEmbedding(ygraph);
-
-
-
+					var outerFace = planarEmbedding.outerFace;
+				
+					var alreadyStellated =[]; 
+					
 					planarEmbedding.faces.forEach(face => {
-						var x = 0;
-						var y = 0;
+							var x = 0;
+							var y = 0;
 
-						var stellate = graphComponent.graph.createNode({
-							layout: new yfiles.geometry.Rect(0,0,20,20),
-							tag: getNextTag()
-						});
-						graphComponent.graph.addLabel(stellate, getNextLabel("node").toString());
-
-						face.forEach(dart => {
-							const source =  adapter.getOriginalNode(dart.reversed ? dart.associatedEdge.source : dart.associatedEdge.target);
-							const e = graphComponent.graph.createEdge({
-								source: source,
-								target: stellate,
-								tag: source.tag+"-"+stellate.tag
+							var stellate = graphComponent.graph.createNode({
+								layout: new yfiles.geometry.Rect(0,0,20,20),
+								tag: getNextTag()
 							});
-							graphComponent.graph.addLabel(e, getNextLabel("edge").toString())
-							x = x + source.layout.center.x;
-							y = y + source.layout.center.y;
-						});
-						x = x / face.size;
-						y = y / face.size;
-						graphComponent.graph.setNodeCenter(stellate, new yfiles.geometry.Point(x, y));
+							graphComponent.graph.addLabel(stellate, getNextLabel("node").toString());
+
+							face.forEach(dart => {
+								//console.log(adapter.getOriginalNode(dart.associatedEdge.source) + "-" + adapter.getOriginalNode(dart.associatedEdge.target))
+								const source =  adapter.getOriginalNode(dart.reversed ? dart.associatedEdge.source : dart.associatedEdge.target);
+								const e = graphComponent.graph.createEdge({
+									source: source,
+									target: stellate,
+									tag: source.tag+"-"+stellate.tag
+								});
+								graphComponent.graph.addLabel(e, getNextLabel("edge").toString())
+								x = x + source.layout.center.x;
+								y = y + source.layout.center.y;
+							});
+							x = x / face.size;
+							y = y / face.size;
+							graphComponent.graph.setNodeCenter(stellate, new yfiles.geometry.Point(x, y));
+							
 					});
 
+					
 				} else {
 					var x = 0;
 					var y = 0;
@@ -1549,72 +1566,226 @@ require([
 				}
 			})
 
-			/*document.querySelector("#threeStellation").addEventListener("click", () => {
+			
+			
+			document.querySelector("#threeStellation").addEventListener("click", () => {
 				var selectedNodes = graphComponent.selection.selectedNodes.toArray();
 				
-				const adapter = new yfiles.layout.YGraphAdapter(graphComponent.graph);
-				var ygraph = adapter.yGraph
-				
-
-				var emb = new yfiles.algorithms.PlanarEmbedding(ygraph)
-				var faces = emb.faces.toArray()
-				
-				faces.forEach(function(face) {
-					console.log("one face")
-					face.forEach(function(dart) {
-						console.log("one edge")
-						console.log(dart.associatedEdge.source.toString())
-					})
-				})
-				
-				
 				if (selectedNodes.length == 0) {
-					// what then?
-				} else {
-					var sumX = 0;
-					var sumY = 0;
-					selectedNodes.forEach(function(n) {
-						sumX = sumX +  n.layout.center.x
-						sumY = sumY + n.layout.center.y
+					const adapter = new yfiles.layout.YGraphAdapter(graphComponent.graph);
+					var ygraph = adapter.yGraph;
+
+					if (!yfiles.algorithms.PlanarEmbedding.isPlanar(ygraph))
+					{
+						alert("The input graph cannot be stellated because it is not planar.");
+					}
+					var planarEmbedding = new yfiles.algorithms.PlanarEmbedding(ygraph);
+					var outerFace = planarEmbedding.outerFace;
+					outerFace.forEach(dart => {
+						console.log(adapter.getOriginalNode(dart.associatedEdge.source) + "-" + adapter.getOriginalNode(dart.associatedEdge.target))
 					})
 					
-					var xbase = sumX / selectedNodes.length;
-					var ybase = sumY / selectedNodes.length;
+					planarEmbedding.faces.forEach(function(face) {
+						if (face.size == 3) {
+							var x = 0;
+							var y = 0;
+							
+							face.forEach(function(dart) {
+								const source =  adapter.getOriginalNode(dart.reversed ? dart.associatedEdge.source : dart.associatedEdge.target);
+								x = x + source.layout.center.x;
+								y = y + source.layout.center.y;
+							})
+							
+							x = x / face.size
+							y = y / face.size
+							
+							// create 3 new nodes
+							var s1 = graphComponent.graph.createNode({
+								layout: new yfiles.geometry.Rect(x+20,y,20,20),
+								tag: getNextTag()
+							})
+							graphComponent.graph.addLabel(s1, getNextLabel("node").toString());
+							
+							var s2 = graphComponent.graph.createNode({
+								layout: new yfiles.geometry.Rect(x,y+20,20,20),
+								tag: getNextTag()
+							})
+							graphComponent.graph.addLabel(s2, getNextLabel("node").toString());
+
+							var s3 = graphComponent.graph.createNode({
+								layout: new yfiles.geometry.Rect(x-20,y,20,20),
+								tag: getNextTag()
+							})
+							graphComponent.graph.addLabel(s3, getNextLabel("node").toString());
+							
+							
+							// create 3 new edges
+							var e1 = graphComponent.graph.createEdge({
+								source: s1,
+								target: s2,
+								tag: s1.tag+"-"+s2.tag
+							})
+							graphComponent.graph.addLabel(e1, getNextLabel("edge").toString())
+
+							var e2 = graphComponent.graph.createEdge({
+								source: s2,
+								target: s3,
+								tag: s2.tag+"-"+s3.tag
+							})
+							graphComponent.graph.addLabel(e2, getNextLabel("edge").toString())
+
+							var e3 = graphComponent.graph.createEdge({
+								source: s1,
+								target: s3,
+								tag: s1.tag+"-"+s3.tag
+							})
+							graphComponent.graph.addLabel(e3, getNextLabel("edge").toString())
+
+
+							// create 6 new edges,2 for each dart
+							var edgesToNewNodes = [[s1, s2],[s3,s1],[s2,s3]]
+							var i = 0;
+							
+							face.forEach(function(dart) {
+								const source =  adapter.getOriginalNode(dart.reversed ? dart.associatedEdge.source : dart.associatedEdge.target);
+								var ea = graphComponent.graph.createEdge({
+									source: source,
+									target: edgesToNewNodes[i][0],
+									tag: source.tag + "-(0)-" + edgesToNewNodes[i][0].tag,
+								})
+								graphComponent.graph.addLabel(ea, getNextLabel("edge").toString())
+
+								var eb = graphComponent.graph.createEdge({
+									source: source,
+									target: edgesToNewNodes[i][1],
+									tag: source.tag + "-(0)-" + edgesToNewNodes[i][1].tag
+								})
+								graphComponent.graph.addLabel(eb, getNextLabel("edge").toString())
+
+								
+								var xnew0 = source.layout.center.x + 0.5*(edgesToNewNodes[i][0].layout.center.x -source.layout.center.x)
+								var ynew0 = source.layout.center.y + 0.5*(edgesToNewNodes[i][0].layout.center.y -source.layout.center.y)
+								var xnew1 = source.layout.center.x + 0.5*(edgesToNewNodes[i][1].layout.center.x -source.layout.center.x)
+								var ynew1 = source.layout.center.y + 0.5*(edgesToNewNodes[i][1].layout.center.y -source.layout.center.y)
+								
+								graphComponent.graph.setNodeCenter(edgesToNewNodes[i][0], new yfiles.geometry.Point(xnew0, ynew0))
+								graphComponent.graph.setNodeCenter(edgesToNewNodes[i][0], new yfiles.geometry.Point(xnew1, ynew1))
+								
+								
+								i++;
+							})
+							
+						}
+					})
+				} else if (selectedNodes.length == 3) {
+					var x = 0;
+					var y = 0;
 					
-					var xnew = [xbase+20, xbase-20, xbase+20]
-					var ynew = [ybase+20, ybase-20, ybase-20]
+					selectedNodes.forEach(function(n) {
+						x = x + n.layout.center.x;
+						y = y + n.layout.center.y;
+					})
 					
-					let i;
-					for (i = 0; i<=2; i++) {
-						var newNode = graphComponent.graph.createNodeAt(xnew[i], ynew[y])
-						var newLabel = getNextLabel("node")
+					x = x / selectedNodes.length
+					y = y / selectedNodes.length
+										
+					// create 3 new nodes
+					var s1 = graphComponent.graph.createNode({
+						layout: new yfiles.geometry.Rect(x+20,y,20,20),
+						tag: getNextTag()
+					})
+					graphComponent.graph.addLabel(s1, getNextLabel("node").toString());
+					
+					var s2 = graphComponent.graph.createNode({
+						layout: new yfiles.geometry.Rect(x,y+20,20,20),
+						tag: getNextTag()
+					})
+					graphComponent.graph.addLabel(s2, getNextLabel("node").toString());
+
+					var s3 = graphComponent.graph.createNode({
+						layout: new yfiles.geometry.Rect(x-20,y,20,20),
+						tag: getNextTag()
+					})
+					graphComponent.graph.addLabel(s3, getNextLabel("node").toString());
+					
+					// create 3 new edges
+					var e1 = graphComponent.graph.createEdge({
+						source: s1,
+						target: s2,
+						tag: s1.tag+"-"+s2.tag
+					})
+					graphComponent.graph.addLabel(e1, getNextLabel("edge").toString())
+
+					var e2 = graphComponent.graph.createEdge({
+						source: s2,
+						target: s3,
+						tag: s2.tag+"-"+s3.tag
+					})
+					graphComponent.graph.addLabel(e2, getNextLabel("edge").toString())
+
+					var e3 = graphComponent.graph.createEdge({
+						source: s1,
+						target: s3,
+						tag: s1.tag+"-"+s3.tag
+					})
+					graphComponent.graph.addLabel(e3, getNextLabel("edge").toString())
+					
+					// create 6 new edges,2 for each dart
+					var edgesToNewNodes = [[s1, s2],[s3,s1],[s2,s3]]
+					var i = 0;
+					
+					selectedNodes.forEach(function(n) {
+						var ea = graphComponent.graph.createEdge({
+							source: n,
+							target: edgesToNewNodes[i][0],
+							tag: n.tag + "-(0)-" + edgesToNewNodes[i][0].tag,
+						})
+						graphComponent.graph.addLabel(ea, getNextLabel("edge").toString())
+
+						var eb = graphComponent.graph.createEdge({
+							source: n,
+							target: edgesToNewNodes[i][1],
+							tag: n.tag + "-(0)-" + edgesToNewNodes[i][1].tag
+						})
+						graphComponent.graph.addLabel(eb, getNextLabel("edge").toString())
+
 						
-					}
+						var xnew0 = n.layout.center.x + 0.5*(edgesToNewNodes[i][0].layout.center.x -n.layout.center.x)
+						var ynew0 = n.layout.center.y + 0.5*(edgesToNewNodes[i][0].layout.center.y -n.layout.center.y)
+						var xnew1 = n.layout.center.x + 0.5*(edgesToNewNodes[i][1].layout.center.x -n.layout.center.x)
+						var ynew1 = n.layout.center.y + 0.5*(edgesToNewNodes[i][1].layout.center.y -n.layout.center.y)
+						
+						graphComponent.graph.setNodeCenter(edgesToNewNodes[i][0], new yfiles.geometry.Point(xnew0, ynew0))
+						graphComponent.graph.setNodeCenter(edgesToNewNodes[i][0], new yfiles.geometry.Point(xnew1, ynew1))
+						
+						
+						i++;
+					})
 					
 				}
-			})*/
+			})
+			 
 
 			
-			/*
 			document.querySelector("#edgeStellation").addEventListener("click", () => {
 				var selectedEdges = graphComponent.selection.selectedEdges.toArray();
 				var selectedNodes = graphComponent.selection.selectedNodes.toArray();
 				console.log(selectedNodes.length + " " + selectedEdges.length)
-				
+
 				if (selectedEdges.length != 0) {
 					selectedEdges.forEach(function(e) {
 						stellateEdge(e)
 					})
 				}
-				
+
 				if (selectedEdges.length == 0) {
 					var edges = graphComponent.graph.edges.toArray();
 					edges.forEach(function(e) {
 						stellateEdge(e)
 					}) 
 				}
-				
-			})*/
+
+			})
 
 
 
@@ -1760,30 +1931,30 @@ require([
 
 		}
 
-		
+
 		/*
 		 * This function stellates an edge, meaning that it places a node somewhere above or below the edge and connects source and target of the edge with two new edges
 		 */
-		
+
 		// TODO change edge tags here DONE
-		
+
 		function stellateEdge(e) {
 			var xsourceNode = e.sourceNode.layout.center.x
 			var xtargetNode = e.targetNode.layout.center.x
 			var ysourceNode = e.sourceNode.layout.center.y
 			var ytargetNode = e.targetNode.layout.center.y
-			
-	
+
+
 			var xnew = xsourceNode + 0.5*(xtargetNode-xsourceNode) 		
 			var ynew = ysourceNode + 0.5*(ytargetNode-ysourceNode)
-			
+
 			var width = e.sourceNode.layout.width
 			var height = e.sourceNode.layout.height
-			
+
 			var newNode = graphComponent.graph.createNodeAt(new yfiles.geometry.Point(xnew+30, ynew+30))
 			var edge1 = graphComponent.graph.createEdge(newNode, e.sourceNode)
 			var edge2 = graphComponent.graph.createEdge(newNode, e.targetNode)						
-			
+
 			// adding labels and tags
 			var nodeLabel = getNextLabel("node");
 			graphComponent.graph.addLabel(newNode, nodeLabel.toString())
@@ -1792,7 +1963,7 @@ require([
 			var edge1Label = getNextLabel("edge");
 			graphComponent.graph.addLabel(edge1, edge1Label.toString())
 			edge1.tag = edge1.sourceNode.tag + "-(0)-" + edge1.targetNode.tag
-			
+
 			var edge2Label = getNextLabel("edge");
 			graphComponent.graph.addLabel(edge2, edge2Label.toString())
 			edge1.tag = edge2.sourceNode.tag + "-(0)-" + edge2.targetNode.tag
@@ -1812,7 +1983,7 @@ require([
 		/*
 		 *  Sends the data created by "createDataForCalculation" to the current (!) server and forwards the user to the view page 
 		 */
-		
+
 		function computeLinearLayout() {
 			var graph;
 			var responseID = -1;
@@ -1830,36 +2001,33 @@ require([
 				//console.log(data)
 
 				var currentServer = window.localStorage.getItem("currentServer")
-				
+
 				if (currentServer == null) {
 					currentServer = standardServer;
 				} else {
 					currentServer = currentServer + "/embeddings"
 				}
-				
+
 				var settings = {
-					"async": true,
-					"crossDomain": true,
-					"url": currentServer,
-					"method": "POST",
-					"headers": {
-						"content-type": "application/json"
-					},
-					"processData": false,
-					"error": function(jqXHR) {
-						$("#errorMessage").html("error: " + jqXHR.responseJSON.message)
-						$("#wentWrong").dialog("open")},
+						"async": true,
+						"crossDomain": true,
+						"url": currentServer,
+						"method": "POST",
+						"headers": {
+							"content-type": "application/json"
+						},
+						"success": function(response, status) {
+							redirection(response.id)
+						},
+						"processData": false,
+						"error": function(jqXHR) {
+							$("#errorMessage").html("error: " + jqXHR.responseJSON.message)
+							$("#wentWrong").dialog("open")},
 						"data": data
 				}
 
 
-				$.ajax(settings).done(function (response) {
-					responseID = response.id;
-
-					if (responseID != -1) {
-						location.href = "linearlayout.html#"+responseID
-					}
-				});
+				$.ajax(settings);
 
 
 
@@ -1868,10 +2036,14 @@ require([
 
 		}
 
+		function redirection(id) {
+			location.href = "linearlayout.html#" + id
+		}
+		
 		/*
 		 * creates the "data"-element that is needed by the ajax function
 		 */
-		
+
 		// TODO ARE ALL THE CONSTRAINT IN THERE???
 		function createDataForCalculation(graph) {
 
@@ -1988,7 +2160,7 @@ require([
 
 
 			// rearranging the edges if necessary to have the arcs of the linear layout in the right orientation (swapping source and target if necessary)
-			
+
 			var edges = graphComponent.graph.edges.toArray()
 			edges.forEach(function(e) {
 
@@ -2034,10 +2206,10 @@ require([
 				arrayLocation = arrayLocation-1;
 
 
-				
-			// TODO change tags here NOT NECESSARY
-				
-				
+
+				// TODO change tags here NOT NECESSARY
+
+
 				var edges = graphComponent.graph.edges.toArray()
 				edges.forEach(function(e) {
 					var reversestring = a.edge.split("-").reverse().join("-");
@@ -2052,7 +2224,7 @@ require([
 
 
 			// assigns the colors to the edges for easier observation
-			
+
 			var colors = ["#FF0000", "#0000FF", "#00FF00", "#000000"]
 			let i;
 			for (i = 0; i< 4; i++) {
@@ -2066,7 +2238,7 @@ require([
 				})
 			}
 
-			
+
 			// interpret constraints
 			loadConstraintsFromJSON(object.constraints)
 

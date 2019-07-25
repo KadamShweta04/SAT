@@ -1,20 +1,38 @@
 import base64
 import datetime
+import multiprocessing
+import signal
 import subprocess
-from concurrent.futures import Future
+from typing import List
 
+from dateutil.parser import parse
 from flask import Flask, request
 from flask.json import jsonify
 from flask_cors import CORS
 from flask_restplus import Resource, Api, fields
+from pebble import ProcessPool, ProcessFuture
 from werkzeug.exceptions import BadRequest, abort, NotFound, InternalServerError, HTTPException
 
-from be.custom_types import SolverResult
+from be.custom_types import SolverResult, QueueItem
 from be.data import DataStore
 from be.exceptions import IdRelatedException
 from be.graphml_parser import get_nodes_and_edges_from_graph
 from be.solver import SolverInterface
 from be.utils import get_duplicates
+
+# list to accept as true
+# sorry got carried away
+yes_list = ("yes", "y", "true", "t", "1", "yep", "aye", "yeah", "yea", "affirmative", "yup", "aye",
+            "ay", "accept", "certainly", "surely", "ja", "sirree", "oui", "ya", "sure", "yah", "yeh", "all right",
+            "all righty", "42",)
+
+jobs: List[QueueItem] = []
+
+
+def remove_old_jobs():
+    done_jobs = [j for j in jobs if j.future.done()]
+    for d in done_jobs:
+        jobs.remove(d)
 
 
 class App:
@@ -53,7 +71,7 @@ class App:
 
         # check if lingeling is present
         try:
-            output = subprocess.check_output(["lingeling", "--version"])
+            subprocess.check_output(["lingeling", "--version"])
         except Exception as e:
             raise Exception("The SAT solver binary could not be called. "
                             "Please make sure that lingeling is build and present in the path.") from e
@@ -65,7 +83,10 @@ class App:
             app.wsgi_app = ProfilerMiddleware(app.wsgi_app, restrictions=[30])
         CORS(app)
 
-        # pool = ProcessPoolExecutor(max_workers=int(multiprocessing.cpu_count() / 2))
+        # This lets the child processes ignore the SIG int signal handler.
+        original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+        pool: ProcessPool = ProcessPool(max_workers=int(multiprocessing.cpu_count() / 2))
 
         app.config['RESTPLUS_VALIDATE'] = True
 
@@ -199,7 +220,7 @@ class App:
                 'pages': fields.List(fields.Nested(page_schema), min_items=1, required=True, unique=True),
                 'constraints': fields.List(fields.Nested(constraint_schema)),
                 'status': fields.String(description='The current processing status of the computation',
-                                        enum=['IN_QUEUE', 'IN_PROGRESS', 'FINISHED', 'FAILED'], readonly=True),
+                                        enum=['IN_PROGRESS', 'FINISHED', 'FAILED'], readonly=True),
                 'assignments': fields.List(fields.Nested(assigment_schema), readonly=True,
                                            description='A list of edge to page assignments'),
                 'vertex_order': fields.List(fields.String, readonly=True,
@@ -214,12 +235,15 @@ class App:
                                          description="This field contains currently the error message from "
                                                      "the background processing"),
                 'created': fields.DateTime(readonly=True,
-                                           description='A timestamp when this instance was created')
+                                           description='A timestamp when this instance was created'),
+                'finished': fields.DateTime(readonly=True,
+                                            description='A timestamp when this instance was solved'),
             })
 
-        parser = api.parser()
-        parser.add_argument('limit', type=int, help='How many objects should be returned', location='query', default=20)
-        parser.add_argument('offset', type=int, help='Where to start counting', location='query', default=0)
+        list_parser = api.parser()
+        list_parser.add_argument('limit', type=int, help='How many objects should be returned', location='query',
+                                 default=20)
+        list_parser.add_argument('offset', type=int, help='Where to start counting', location='query', default=0)
 
         @api.route('/embeddings')
         class EmbeddingList(Resource):
@@ -227,7 +251,7 @@ class App:
             @api.doc('list_embeddings')
             @api.response(code=200, description="Success", model=[linear_layout_schema])
             @api.response(code=500, description="Server Error", model=error_schema)
-            @api.expect(parser)
+            @api.expect(list_parser)
             def get(self):
                 """
                 List all embeddings
@@ -240,11 +264,12 @@ class App:
                 if offset < 0:
                     abort(400, "offset has to be not negative")
 
-                # TODO implement pagination
                 return jsonify(data_store.get_all(limit=limit, offset=offset))
 
             @api.doc('create_embedding')
             @api.expect(linear_layout_schema)
+            @api.param('async', 'Should the processing be handled asynchronous', location="query",
+                       default=False, type=bool)
             @api.response(code=200, description="Success", model=linear_layout_schema)
             @api.response(code=500, description="Server Error", model=error_schema)
             @api.response(code=501, description="Not Implemented", model=error_schema)
@@ -255,7 +280,9 @@ class App:
                 """
                 entity = request.get_json()
 
-                handle_async = False
+                # looks weird but is the only reliable way to find out if a string value is a true boolean ;-)
+                # see https://stackoverflow.com/questions/715417/converting-from-a-string-to-boolean-in-python
+                handle_async = request.args.get('async', "", type=str).lower() in yes_list
                 try:
                     entity['created'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
 
@@ -316,14 +343,25 @@ class App:
                               "Please submit a graph with at least one node, edge and page")
 
                     if handle_async:
-                        abort(501, "Async handling is not enabled.")
-                        # future = pool.submit(SolverInterface.solve,
-                        #                      node_ids, edges, entity.get('pages'), entity.get('constraints'),
-                        #                      entity['id'])
-                        # future.add_done_callback(processing_finished_callback)
+                        # abort(501, "Async handling is not enabled.")
+                        future_result: ProcessFuture = pool.schedule(SolverInterface.solve,
+                                                                     (node_ids, edges, entity.get('pages'),
+                                                                      entity.get('constraints'),
+                                                                      entity['id']))
+                        future_result.add_done_callback(processing_finished_callback)
+
+                        future_result.done()
+                        # remove old futures
+                        remove_old_jobs()
+                        jobs.append(QueueItem(entity.get('id'), future_result))
+
                     else:
-                        entity = handle_solver_result(SolverInterface.solve(
-                            node_ids, edges, entity.get('pages'), entity.get('constraints'), entity['id']))
+                        try:
+                            entity = handle_solver_result(SolverInterface.solve(
+                                node_ids, edges, entity.get('pages'), entity.get('constraints'), entity['id']))
+                        except Exception as e1:
+                            error_callback(e1)
+                            entity = data_store.get_by_id(entity['id'])
 
                     return jsonify(entity)
                 except HTTPException as e:
@@ -333,7 +371,7 @@ class App:
                         "The error {} \noccured from this body \n{}".format(str(e),
                                                                             request.get_data(as_text=True))) from e
 
-        @api.route('/embeddings/<int:id>')
+        @api.route('/embeddings/<string:id>')
         @api.response(404, 'Embedding not found', model=error_schema)
         @api.param('id', 'The task identifier')
         class SingleEmbedding(Resource):
@@ -350,14 +388,38 @@ class App:
                 else:
                     return jsonify(element)
 
-        def processing_finished_callback(future: Future):
-            if not future.done() or future.cancelled():
-                return
+            @api.doc('delete_embedding')
+            @api.response(code=200, description="Success", model=linear_layout_schema)
+            def delete(self, id):
+                """
+                Cancel the computation for the given id.
+                """
+                element = data_store.get_by_id(id)
+                if not element:
+                    raise NotFound("The given id {} was not present in the data store".format(id))
+                j_tmp = [j for j in jobs if str(j.id) == str(id)]
+                if len(j_tmp) == 1:
+                    j_tmp[0].future.cancel()
+                    element['status'] = 'FAILED'
+                    element['message'] = 'The job was cancelled by user'
+                    data_store.update_entry(id, element)
+                    jobs.remove(j_tmp[0])
+                return jsonify(element)
+
+        def processing_finished_callback(res: ProcessFuture):
+            if not res.done() or res.cancelled():
+                pass
+            else:
+                exception = res.exception()
+                if exception is not None:
+                    error_callback(exception)
+                else:
+                    result = res.result()
+                    handle_solver_result(result)
+
+        def error_callback(e_param: BaseException):
             try:
-                result = future.result()
-
-                handle_solver_result(result)
-
+                raise e_param
             except IdRelatedException as e:
                 id = e.entity_id
                 entity = data_store.get_by_id(id)
@@ -367,9 +429,10 @@ class App:
                 entity['message'] = e.message
 
                 data_store.update_entry(id, entity)
-                raise e
-
-            pass
+                if type(e.cause) is HTTPException:
+                    raise e.cause
+                else:
+                    raise e
 
         def handle_solver_result(result: SolverResult):
             entity = data_store.get_by_id(result.entity_id)
@@ -380,8 +443,41 @@ class App:
             entity['assignments'] = result.page_assignments
             entity['vertex_order'] = result.vertex_order
             entity['rawSolverResult'] = result.solver_output
+            entity['finished'] = datetime.datetime.now(datetime.timezone.utc).isoformat()
             entity = data_store.update_entry(result.entity_id, entity)
+            print("Finished job with id {} in {} s. "
+                  "Including waiting time in the queue".format(entity['id'], str(
+                parse(entity['finished']) - parse(entity['created']))))
             return entity
+
+        def signal_handler(sig, frame):
+            data_store.prepare_shutdown()
+            remove_old_jobs()
+            print(
+                "Shutdown request. "
+                "Currently {} Jobs are in queue and will be processed on server start.".format(len(jobs)))
+            try:
+                pool.stop()
+                pool.join(timeout=2)
+            finally:
+                original_sigint_handler()
+
+        signal.signal(signal.SIGINT, signal_handler)
+
+        unfinished_jobs = data_store.get_unfinished_jobs()
+        if len(unfinished_jobs) > 0:
+            print("Resuming {} unfinished jobs".format(len(unfinished_jobs)))
+        for job in unfinished_jobs:
+            b64_graph_str = job.get('graph')
+            graph_str = base64.b64decode(b64_graph_str)
+            node_ids, edges = get_nodes_and_edges_from_graph(graph_str)
+
+            future: ProcessFuture = pool.schedule(SolverInterface.solve,
+                                                  (node_ids, edges, job.get('pages'),
+                                                   job.get('constraints'),
+                                                   job['id']))
+            future.add_done_callback(processing_finished_callback)
+            jobs.append(QueueItem(job.get('id'), future))
 
         return app
 

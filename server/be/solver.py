@@ -1,17 +1,18 @@
 import subprocess
+from concurrent.futures import CancelledError
 
-from werkzeug.exceptions import HTTPException, BadRequest
+from werkzeug.exceptions import BadRequest
 
 from be.custom_types import SolverResult
 from be.exceptions import IdRelatedException
 from be.model import SatModel
-from be.utils import CodeTimer
 
 
 class SolverInterface(object):
     """
     This class provides an simplified interface to the :class:`.SatModel`:
     """
+
     @classmethod
     def solve(cls, nodes, edges, pages, constraints, entity_id) -> SolverResult:
         """
@@ -27,32 +28,26 @@ class SolverInterface(object):
         :return: the solved result of the problem instance
         """
         try:
-            with CodeTimer("solve.SAT"):
-                with CodeTimer("solve.SAT.var_creation"):
-                    model = SatModel(pages, edges, nodes, constraints)
+            model = SatModel(pages, edges, nodes, constraints)
 
-                    model.add_relative_node_order_clauses()
+            model.add_relative_node_order_clauses()
 
-                    model.add_page_assignment_clauses()
+            model.add_page_assignment_clauses()
 
-                with CodeTimer("solve.SAT.page_constraints"):
-                    model.add_page_constraints()
+            model.add_page_constraints()
 
-                with CodeTimer("solve.SAT.additional_constraints"):
-                    model.add_additional_constraints()
+            model.add_additional_constraints()
 
-            with CodeTimer("solve.to_dimacs"):
-                dimacstr = model.to_dimacs_str()
-            with CodeTimer("solve.to_lingeline_and_back"):
-                output = cls._call_lingeling_with_string(dimacstr)
+            dimacstr = model.to_dimacs_str()
+            output = cls._call_lingeling_with_string(dimacstr)
 
-                sat_result = model.parse_lingeling_result(str(output, encoding='UTF-8'))
+            sat_result = model.parse_lingeling_result(str(output, encoding='UTF-8'))
 
-                page_assignments = None
-                vertex_order = None
-                if sat_result['satisfiable']:
-                    vertex_order = model.get_vertex_order_result()
-                    page_assignments = model.get_page_assignments_result()
+            page_assignments = None
+            vertex_order = None
+            if sat_result['satisfiable']:
+                vertex_order = model.get_vertex_order_result()
+                page_assignments = model.get_page_assignments_result()
 
             return SolverResult(satisfiable=sat_result['satisfiable'],
                                 page_assignments=page_assignments,
@@ -61,10 +56,10 @@ class SolverInterface(object):
                                 entity_id=entity_id)
         except KeyError as e:
             raise BadRequest("The id {} was not found in the graph".format(str(e))) from e
-        except HTTPException as e:
-            raise e
+        except CancelledError:
+            pass
         except Exception as e:
-            raise IdRelatedException(entity_id, "{} : {} ".format(type(e), str(e))) from e
+            raise IdRelatedException(entity_id, "{} : {} ".format(type(e), str(e)), e) from e
 
     @classmethod
     def _call_lingeling_with_string(cls, dimacstr):

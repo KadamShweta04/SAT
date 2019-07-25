@@ -21,6 +21,13 @@ FROM layouts
 ORDER BY ROWID DESC 
 LIMIT (?) OFFSET (?)"""
 
+# This is as dirty as the whole database schema. It was introduced to omit the need for introducing an additional column
+get_all_unfinished_layouts_sql = """
+SELECT content 
+FROM layouts
+WHERE layouts.content LIKE '%IN_PROGRESS%'
+ORDER BY ROWID ASC """
+
 update_layout_by_id_sql = """
 UPDATE layouts
 SET content = (?) WHERE ROWID == (?)"""
@@ -38,6 +45,7 @@ class DataStore(object):
 
         :param data_path: the path to use for the data store
         """
+        self._should_shutdown = False
         self.data_path = data_path
         with self._get_connection() as conn:
             c = conn.cursor()
@@ -63,6 +71,8 @@ class DataStore(object):
         return element
 
     def _get_connection(self):
+        if self._should_shutdown:
+            raise Exception("The application is about to shut down. No new connections will be opened.")
         return sqlite3.connect(self.data_path)
 
     def get_all(self, limit=20, offset=0):
@@ -114,3 +124,18 @@ class DataStore(object):
             c.execute(update_layout_by_id_sql, (json_str, elem_id))
             conn.commit()
         return element
+
+    def get_unfinished_jobs(self):
+        with self._get_connection() as conn:
+            c: Cursor = conn.cursor()
+            c.execute(get_all_unfinished_layouts_sql)
+            results = c.fetchall()
+        if results is None:
+            return []
+        res = []
+        for result in results:
+            res.append(json.loads(result[0]))
+        return res
+
+    def prepare_shutdown(self):
+        self._should_shutdown = True
