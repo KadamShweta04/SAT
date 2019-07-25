@@ -2017,7 +2017,7 @@ require([
 							"content-type": "application/json"
 						},
 						"success": function(response, status) {
-							direction(response.id)
+							redirection(response.id)
 						},
 						"processData": false,
 						"error": function(jqXHR) {
