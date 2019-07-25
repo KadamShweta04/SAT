@@ -1,4 +1,5 @@
 import subprocess
+from concurrent.futures import CancelledError
 
 from werkzeug.exceptions import BadRequest
 
@@ -55,6 +56,8 @@ class SolverInterface(object):
                                 entity_id=entity_id)
         except KeyError as e:
             raise BadRequest("The id {} was not found in the graph".format(str(e))) from e
+        except CancelledError:
+            pass
         except Exception as e:
             raise IdRelatedException(entity_id, "{} : {} ".format(type(e), str(e)), e) from e
 
