@@ -85,32 +85,28 @@ require([
 		function sendRequest(link) {
 			let status;
 			$.ajax({
-				url: link,
-				success: 
-					function(response) {
+				url: link + "?async=true",
+				success: function(response) {
 					status = response.status
 					if (status == "FINISHED") {
 						$("#loadingDiv").hide()
-
-						if (! response.satisfiable) {
-							registerCommands()
+						if (! response.satisfiable) { 
+							registerCommands();
 							$("#notSatisfiableNrPages").append(response.pages.length)
 							$("#notSatisfiableDialog").dialog("open")
 						} else {
 							respondedObject = response;
 							run()
 						}
+						
+					} else if (status == "IN_PROGRESS"){
+						setTimeout(sendRequest, 5000)
 					}
-				}, 
+					
+				},
 				error: function() {
-
 					$("#errorDialog").dialog("open")
 				},
-				complete: function() {
-					if (status == "IN_PROGRESS") {
-						setInterval(sendRequest, 5000)
-					}
-				}
 			})
 		}
 

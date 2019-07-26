@@ -37,7 +37,7 @@ require([
 
 		var standardServer = "http://sofa.fsi.uni-tuebingen.de:5555/embeddings"
 
-			let gridInfo = null;
+		let gridInfo = null;
 		let grid = null;
 
 		var nodesStableSize = true;
@@ -1571,7 +1571,7 @@ require([
 			document.querySelector("#threeStellation").addEventListener("click", () => {
 				var selectedNodes = graphComponent.selection.selectedNodes.toArray();
 				
-				if (selectedNodes.length == 0) {
+				if (selectedNodes.length < 3) {
 					const adapter = new yfiles.layout.YGraphAdapter(graphComponent.graph);
 					var ygraph = adapter.yGraph;
 
@@ -1601,19 +1601,19 @@ require([
 							
 							// create 3 new nodes
 							var s1 = graphComponent.graph.createNode({
-								layout: new yfiles.geometry.Rect(x+20,y,20,20),
+								layout: new yfiles.geometry.Rect(x,y,20,20),
 								tag: getNextTag()
 							})
 							graphComponent.graph.addLabel(s1, getNextLabel("node").toString());
 							
 							var s2 = graphComponent.graph.createNode({
-								layout: new yfiles.geometry.Rect(x,y+20,20,20),
+								layout: new yfiles.geometry.Rect(x,y,20,20),
 								tag: getNextTag()
 							})
 							graphComponent.graph.addLabel(s2, getNextLabel("node").toString());
 
 							var s3 = graphComponent.graph.createNode({
-								layout: new yfiles.geometry.Rect(x-20,y,20,20),
+								layout: new yfiles.geometry.Rect(x,y,20,20),
 								tag: getNextTag()
 							})
 							graphComponent.graph.addLabel(s3, getNextLabel("node").toString());
@@ -1663,15 +1663,7 @@ require([
 								graphComponent.graph.addLabel(eb, getNextLabel("edge").toString())
 
 								
-								var xnew0 = source.layout.center.x + 0.5*(edgesToNewNodes[i][0].layout.center.x -source.layout.center.x)
-								var ynew0 = source.layout.center.y + 0.5*(edgesToNewNodes[i][0].layout.center.y -source.layout.center.y)
-								var xnew1 = source.layout.center.x + 0.5*(edgesToNewNodes[i][1].layout.center.x -source.layout.center.x)
-								var ynew1 = source.layout.center.y + 0.5*(edgesToNewNodes[i][1].layout.center.y -source.layout.center.y)
-								
-								graphComponent.graph.setNodeCenter(edgesToNewNodes[i][0], new yfiles.geometry.Point(xnew0, ynew0))
-								graphComponent.graph.setNodeCenter(edgesToNewNodes[i][0], new yfiles.geometry.Point(xnew1, ynew1))
-								
-								
+							
 								i++;
 							})
 							
@@ -1691,19 +1683,19 @@ require([
 										
 					// create 3 new nodes
 					var s1 = graphComponent.graph.createNode({
-						layout: new yfiles.geometry.Rect(x+20,y,20,20),
+						layout: new yfiles.geometry.Rect(x,y,20,20),
 						tag: getNextTag()
 					})
 					graphComponent.graph.addLabel(s1, getNextLabel("node").toString());
 					
 					var s2 = graphComponent.graph.createNode({
-						layout: new yfiles.geometry.Rect(x,y+20,20,20),
+						layout: new yfiles.geometry.Rect(x,y,20,20),
 						tag: getNextTag()
 					})
 					graphComponent.graph.addLabel(s2, getNextLabel("node").toString());
 
 					var s3 = graphComponent.graph.createNode({
-						layout: new yfiles.geometry.Rect(x-20,y,20,20),
+						layout: new yfiles.geometry.Rect(x,y,20,20),
 						tag: getNextTag()
 					})
 					graphComponent.graph.addLabel(s3, getNextLabel("node").toString());
@@ -1748,15 +1740,6 @@ require([
 							tag: n.tag + "-(0)-" + edgesToNewNodes[i][1].tag
 						})
 						graphComponent.graph.addLabel(eb, getNextLabel("edge").toString())
-
-						
-						var xnew0 = n.layout.center.x + 0.5*(edgesToNewNodes[i][0].layout.center.x -n.layout.center.x)
-						var ynew0 = n.layout.center.y + 0.5*(edgesToNewNodes[i][0].layout.center.y -n.layout.center.y)
-						var xnew1 = n.layout.center.x + 0.5*(edgesToNewNodes[i][1].layout.center.x -n.layout.center.x)
-						var ynew1 = n.layout.center.y + 0.5*(edgesToNewNodes[i][1].layout.center.y -n.layout.center.y)
-						
-						graphComponent.graph.setNodeCenter(edgesToNewNodes[i][0], new yfiles.geometry.Point(xnew0, ynew0))
-						graphComponent.graph.setNodeCenter(edgesToNewNodes[i][0], new yfiles.geometry.Point(xnew1, ynew1))
 						
 						
 						i++;
