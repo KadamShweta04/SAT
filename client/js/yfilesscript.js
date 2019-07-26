@@ -2009,14 +2009,15 @@ require([
 				}
 
 				var settings = {
-						"async": true,
+						//"async": true,
 						"crossDomain": true,
-						"url": currentServer,
+						"url": currentServer + "?async=true",
 						"method": "POST",
 						"headers": {
 							"content-type": "application/json"
 						},
 						"success": function(response, status) {
+							console.log(currentServer + "?async=true")
 							redirection(response.id)
 						},
 						"processData": false,
@@ -2037,7 +2038,7 @@ require([
 		}
 
 		function redirection(id) {
-			location.href = "linearlayout.html#" + response.id
+			location.href = "linearlayout.html#" + id
 		}
 		
 		/*

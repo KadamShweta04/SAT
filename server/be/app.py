@@ -3,17 +3,17 @@ import datetime
 import multiprocessing
 import signal
 import subprocess
-from multiprocessing.pool import Pool, AsyncResult
-from typing import List, Optional
+from typing import List
 
 from dateutil.parser import parse
 from flask import Flask, request
 from flask.json import jsonify
 from flask_cors import CORS
 from flask_restplus import Resource, Api, fields
+from pebble import ProcessPool, ProcessFuture
 from werkzeug.exceptions import BadRequest, abort, NotFound, InternalServerError, HTTPException
 
-from be.custom_types import SolverResult
+from be.custom_types import SolverResult, QueueItem
 from be.data import DataStore
 from be.exceptions import IdRelatedException
 from be.graphml_parser import get_nodes_and_edges_from_graph
@@ -26,13 +26,13 @@ yes_list = ("yes", "y", "true", "t", "1", "yep", "aye", "yeah", "yea", "affirmat
             "ay", "accept", "certainly", "surely", "ja", "sirree", "oui", "ya", "sure", "yah", "yeh", "all right",
             "all righty", "42",)
 
-jobs: List[AsyncResult] = []
+jobs: List[QueueItem] = []
 
 
 def remove_old_jobs():
-    global jobs
-    jobs = [j for j in jobs if not j.ready()]
-    pass
+    done_jobs = [j for j in jobs if j.future.done()]
+    for d in done_jobs:
+        jobs.remove(d)
 
 
 class App:
@@ -71,7 +71,7 @@ class App:
 
         # check if lingeling is present
         try:
-            output = subprocess.check_output(["lingeling", "--version"])
+            subprocess.check_output(["lingeling", "--version"])
         except Exception as e:
             raise Exception("The SAT solver binary could not be called. "
                             "Please make sure that lingeling is build and present in the path.") from e
@@ -86,8 +86,7 @@ class App:
         # This lets the child processes ignore the SIG int signal handler.
         original_sigint_handler = signal.signal(signal.SIGINT, signal.SIG_IGN)
 
-        pool = Pool(int(multiprocessing.cpu_count() / 2))
-        # pool = multiprocessing.Pool(1)
+        pool: ProcessPool = ProcessPool(max_workers=int(multiprocessing.cpu_count() / 2))
 
         app.config['RESTPLUS_VALIDATE'] = True
 
@@ -299,7 +298,7 @@ class App:
                     len_nodes = len(node_ids)
                     len_edges = len(edges)
 
-                    if len_edges > 900 or len_nodes > 300:
+                    if len_edges > 1900 or len_nodes > 600:
                         raise BadRequest(
                             "For fairness reasons this API will only handle graphs with less than 300 vertices and 900 "
                             "edges. Your graph has {} vertices and {} edges which exceed the limit."
@@ -345,15 +344,16 @@ class App:
 
                     if handle_async:
                         # abort(501, "Async handling is not enabled.")
-                        async_result = pool.apply_async(SolverInterface.solve,
-                                                        (node_ids, edges, entity.get('pages'),
-                                                         entity.get('constraints'),
-                                                         entity['id']), callback=processing_finished_callback,
-                                                        error_callback=error_callback)
+                        future_result: ProcessFuture = pool.schedule(SolverInterface.solve,
+                                                                     (node_ids, edges, entity.get('pages'),
+                                                                      entity.get('constraints'),
+                                                                      entity['id']))
+                        future_result.add_done_callback(processing_finished_callback)
 
+                        future_result.done()
                         # remove old futures
                         remove_old_jobs()
-                        jobs.append(async_result)
+                        jobs.append(QueueItem(entity.get('id'), future_result))
 
                     else:
                         try:
@@ -371,7 +371,7 @@ class App:
                         "The error {} \noccured from this body \n{}".format(str(e),
                                                                             request.get_data(as_text=True))) from e
 
-        @api.route('/embeddings/<int:id>')
+        @api.route('/embeddings/<string:id>')
         @api.response(404, 'Embedding not found', model=error_schema)
         @api.param('id', 'The task identifier')
         class SingleEmbedding(Resource):
@@ -388,12 +388,34 @@ class App:
                 else:
                     return jsonify(element)
 
-        def processing_finished_callback(res: Optional[SolverResult]):
-            if res is None:
-                return
+            @api.doc('delete_embedding')
+            @api.response(code=200, description="Success", model=linear_layout_schema)
+            def delete(self, id):
+                """
+                Cancel the computation for the given id.
+                """
+                element = data_store.get_by_id(id)
+                if not element:
+                    raise NotFound("The given id {} was not present in the data store".format(id))
+                j_tmp = [j for j in jobs if str(j.id) == str(id)]
+                if len(j_tmp) == 1:
+                    j_tmp[0].future.cancel()
+                    element['status'] = 'FAILED'
+                    element['message'] = 'The job was cancelled by user'
+                    data_store.update_entry(id, element)
+                    jobs.remove(j_tmp[0])
+                return jsonify(element)
+
+        def processing_finished_callback(res: ProcessFuture):
+            if not res.done() or res.cancelled():
+                pass
             else:
-                result = res
-                handle_solver_result(result)
+                exception = res.exception()
+                if exception is not None:
+                    error_callback(exception)
+                else:
+                    result = res.result()
+                    handle_solver_result(result)
 
         def error_callback(e_param: BaseException):
             try:
@@ -435,9 +457,8 @@ class App:
                 "Shutdown request. "
                 "Currently {} Jobs are in queue and will be processed on server start.".format(len(jobs)))
             try:
-                pool.close()
-                pool.terminate()
-                pool.join()
+                pool.stop()
+                pool.join(timeout=2)
             finally:
                 original_sigint_handler()
 
@@ -451,12 +472,12 @@ class App:
             graph_str = base64.b64decode(b64_graph_str)
             node_ids, edges = get_nodes_and_edges_from_graph(graph_str)
 
-            async_result = pool.apply_async(SolverInterface.solve,
-                                            (node_ids, edges, job.get('pages'),
-                                             job.get('constraints'),
-                                             job['id']), callback=processing_finished_callback,
-                                            error_callback=error_callback)
-            jobs.append(async_result)
+            future: ProcessFuture = pool.schedule(SolverInterface.solve,
+                                                  (node_ids, edges, job.get('pages'),
+                                                   job.get('constraints'),
+                                                   job['id']))
+            future.add_done_callback(processing_finished_callback)
+            jobs.append(QueueItem(job.get('id'), future))
 
         return app
 
