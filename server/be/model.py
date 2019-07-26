@@ -11,7 +11,7 @@ from be.utils import get_duplicates
 def static_node_order_generation(node_order: ndarray) -> List[List[int]]:
     """
     Generates the clauses to ensure that the node order is asymmetric and transitive. It is static in order to make
-    optimising more easy
+    optimizing more easy
 
     :param node_order: all node order variables
     :return: the list of generated clauses
@@ -538,7 +538,7 @@ class SatModel(object):
             elif con['type'] == 'EDGES_DIFFERENT_PAGES':
 
                 if len(self.pages) < len(con_args):
-                    abort(400, "It is not possible to fir {} egedes on {} different pages.".format(len(con_args),
+                    abort(400, "It is not possible to fit {} edges on {} different pages.".format(len(con_args),
                                                                                                    len(self.pages)))
 
                 for i, ignore1 in enumerate(con_args):
@@ -677,7 +677,7 @@ class SatModel(object):
                     v_markers.extend(splits_without_leading_v)
             if "0" in v_markers:
                 v_markers.remove("0")
-            assert len(v_markers) == self.max_var, "Could not parse the expected numer of variables from the " \
+            assert len(v_markers) == self.max_var, "Could not parse the expected number of variables from the " \
                                                    "lingeling result. Expected {} got {}".format(self.max_var,
                                                                                                  len(v_markers))
             vars = np.array(list(map(int, v_markers)))
@@ -779,7 +779,7 @@ class SatModel(object):
     @staticmethod
     def _add_forrest_constraints(ancestors, assignment_variables, clauses, edges, page_idx, parents):
         """
-        A helper method to encode a forrest constraint for the given page.
+        A helper method to encode a forest constraint for the given page.
         :param ancestors:
         :param assignment_variables:
         :param clauses:

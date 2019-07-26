@@ -143,7 +143,7 @@ class App:
                                       modifier: the pages to restrict the edges to
                                       
                                       EDGES_FROM_NODES_ON_PAGES: All edges involving the nodes have to be on the given page. 
-                                      arguments: the vertexes to restrict the edges from
+                                      arguments: the vertices to restrict the edges from
                                       modifier: the pages to restrict the edges to
                                       
                                       NODES_PREDECESSOR: one set of nodes are before another set of nodes
