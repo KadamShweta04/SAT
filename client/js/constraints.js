@@ -102,6 +102,20 @@ class DifferentPages extends Constraint {
 	}
 }
 
+class NotAllInSamePage extends Constraint {
+	constructor(_objects) {
+		super("NOT_ALL_IN_SAME_PAGE",_objects)
+
+		this.printable ="notInSamePage(" + this.objects.toString() + ")"
+	}
+
+
+
+	updatePrintable() {
+		this.printable = "notAllInSamePage(" + this.objects.toString() + ")"
+	}
+}
+
 class AssignedTo extends Constraint {
 	constructor(_objects) {
 		super("EDGES_ON_PAGES",_objects)
