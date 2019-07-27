@@ -167,6 +167,22 @@ require([
 					$("#constraintTags").tagit("createTag", con.getPrintable() )
 
 					break;
+				case "NODES_SET_FIRST":
+						var objItems = []
+
+						c.arguments.forEach(function(a) {
+							graphComponent.graph.nodes.toArray().forEach(function(n) {
+								if (n.tag == a) {
+									objItems.push(n)
+								}
+							})
+						})
+
+						var con = new SetAsFirst(objItems)
+						constraintsArray.push(con);
+						$("#constraintTags").tagit("createTag", con.getPrintable() )
+
+						break;
 				case "EDGES_SAME_PAGES":
 					var objItems = [];
 

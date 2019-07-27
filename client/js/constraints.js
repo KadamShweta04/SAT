@@ -70,6 +70,19 @@ class Consecutive extends Constraint {
 
 }
 
+class SetAsFirst extends Constraint {
+	constructor(_objects) {
+		super("NODES_SET_FIRST",_objects)
+
+		this.printable = "setFirst(" + this.objects.toString() + ")"
+	}
+
+	updatePrintable() {
+		this.printable = "setFirst(" + this.objects.toString() + ")"
+	}
+
+}
+
 
 
 class SamePage extends Constraint {
