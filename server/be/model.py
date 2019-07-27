@@ -650,7 +650,7 @@ class SatModel(object):
                 for i in range(self._node_order.shape[0]):
                     if i == self._node_id_to_idx[con_args[0]]: 
                         continue
-                    clauses.append(node_order[self._node_id_to_idx[con_args[0]], i])
+                    clauses.append(self.node_order[self._node_id_to_idx[con_args[0]], i])
             else:
                 raise abort(500, "The given constraint {} is not implemented yet".format(con['type']))
             self._add_clauses(clauses)
