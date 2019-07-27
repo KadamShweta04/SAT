@@ -578,7 +578,7 @@ require([
                     });
                 }
 
-                if(graphComponent.selection.selectedEdges.size >= 2) {
+                if(graphComponent.selection.selectedEdges.size >= 2 && avPages.length>1) {
                     contextMenu.addMenuItem('Not all at the same page', () =>{
 
                         var arr = []

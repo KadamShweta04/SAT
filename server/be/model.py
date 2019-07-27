@@ -569,8 +569,7 @@ class SatModel(object):
                 
                 page_number = self._assignment_variables.shape[0]
                 
-                for p in range(page_number):
-                        
+                for p in range(page_number):                        
                         clause = []
                         for e_id in con_args:
                             e_idx = self.edge_id_to_idx[e_id]
