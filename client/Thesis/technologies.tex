@@ -1,0 +1,89 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Technologies and Implementation
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Used technologies}
+  \label{technologies}
+
+In this chapter the implemenation will be explained, starting with the used technologies and software libaries.
+\section{Languages}
+\subsection{HTML}
+HTML, short for \textit{Hypertext Markup Language} is the standard markup language used for displaying content in a web browser, currently in it's fifth major version (HTML 5).\\
+Each \textit{HTML 5} document has to start with the declaration 
+\begin{center}
+\textless !DOCTYPE html\textgreater
+\end{center}
+This instructs the web browser to interpret the contents as \textit{HTML} and also specifies the version of \textit{HTML}, since this decaration varied for the former versions.\\
+A HTML document consists of HTML elements that structure the web page. Each element is introduced by an opening tag (e.g. \textless div\textgreater, \textless img\textgreater) and besides a few exceptions each element has to be ended by a closing tag (e.g. \textless /div\textgreater). These tags have to be organized in a tree structure with the \textless html\textgreater-Tag as the unique root of the tree, followed by its two children, the \textless header\textgreater-element, where meta info is located and the \textless body\textgreater-element, where the content of the website is specified. Each tag can be assigned attributes such as a class, id, name and specific attributes like a standard value or a source, as seen in \autoref{exHTML}.\\
+\textit{HTML 5} provides the user with an abundance of predefined elements such as the aforementioned divs, which are box containers providing the general structure of a page as well as headlines, paragraphs, tables, elements of forms and tags for embedding external sources, like images and audio.\\
+Because \textit{HTML} creates static websites the \textit{Document Object Model} (DOM) was developed as an interface between markup languages and scripting languages, e.g. \textit{JavaScript}. The DOM requires the user to assign ids, names or classes to the elements in order to adress them. \\
+The standardisation of \textit{HTML} (as well as \textit{CSS}) is maintained by the \textit{World Wide Web Consortium (W3C)}. This project follows the HTML5-standard.
+\lstset{basicstyle=\fontsize{8}{13}\selectfont\ttfamily, tabsize=2,frame=single,numbers=left}
+
+\begin{figure}[!h]
+\lstinputlisting{Examplecodes/example1.html}
+\caption{Examplecode in HTML}
+\label{exHTML}
+\end{figure}
+
+\subsection{CSS}
+\textit{Cascading Style Sheets}, almost always referred to as \textit{CSS}, is a language to define the presentation of HTML elements. It is, amongst HTML and Javascript, one of the main technologies used in todays web development.\\
+Usually styling rules are specified in the header of a html document, either as a reference to a \textit{.css-file} or inside the \textless  style\textgreater-tag. Which \textit{HTML} element is affected by each rule is down to the selector that precedes the rule. Selectors can be a multitude of things, first of all ids and classes or tag names, as well as different relations between elements, such as successors, descendants or states of the element such as \textit{disabled} or \textit{hover} (see in \autoref{exCSS}).\\
+Styling rules can also be defined as \textit{Inline Styles}, meaning that the rule is specified within the tag. This makes a simple and fast way to change appearances without defining a class or id to the element.
+
+\begin{figure}[!h]
+\lstinputlisting{Examplecodes/example2.css}
+\caption{CSS example code}
+\label{exCSS}
+\end{figure}
+
+\subsection{XML and graphML}
+\subsubsection{XML}
+\textit{XML} is a markup language similar to \textit{HTML}. It is used to encode documents of all sorts in a way that is readable for machines and humans alike. 
+It's standards are also monitored by the \textit{W3C}.\\
+The type of an \textit{XML} document does not need to be declared but may be by
+\begin{center}
+\textless  ?xml version="1.0" encoding="UTF-8"? \textgreater
+\end{center}
+The insides of an XML document are made up by \textit{markup} and \textit{content}.\\
+Usually \textit{markup} parts of the document start with "\textless " and end with "\textgreater", what makes them similar to \textit{HTML} elements, but they also may be started with "\&" and ended with ";". The syntax allows opening tags e.g. "\textless  item\textgreater" which have to be at some point afterwards ended by a closing tag "\textless  \textbackslash item\textgreater", or one lined tags as "\textless  item \textbackslash \textgreater". The tags are again organized in a tree structure, allowing only one unique root of the tree.\\
+Anything that is not \textit{markup} is \textit{content}.
+\subsubsection{GraphML}
+\textit{GraphML}\footnote{http://graphml.graphdrawing.org/} is a widely used format to encode graphs, that is based upon \textit{XML}. It was initiated by the \textit{Graph Drawing Steering Committee} \ref{wikipediaGraphML}. It's root is required to be "\textless  graphMl \textgreater" and the defining tags are "\textless  node \textgreater" and "\textless  edge\textgreater" but a  \textit{GraphML} document can be extended to fit the users needs.\\
+The \textit{yFiles for HTML} library provides means to encode and decode graphs in GraphML. For this project the \textit{GraphML} code was extended to also hold informations about the pages of each graph, (see in section \autoref{imp_pages}) and the constraints imposed on the graph (see in section \autoref{imp_constr}).
+\subsection{Javascript}
+Javascript is a script language developed for client side programming of websites, although today it is also possible to implement server sided applications with \textit{JavaScript} and \textit{Node.js}\footnote{https://nodejs.org/en/about/}. In a majority of today's websites \textit{JavaScript} components can be found. Its main application is to add flexibility and interactiveness to the otherwise static html elements. This is achieved by accessing the elements with the aforementioned \textit{DOM} and adding 
+\begin{itemize}
+\item event listeners: An event listener is triggered by the specified event, for example hovering over an element, clicking on an element or using the keyboard \autoref{exJS}.
+\item reading and writing: the value of an html input element such as a text area, checkbox or select menu can be read and evaluated at any time or even manipulated. The content of an element can also be read and changed.
+\item changing appearances: the appearance of an html element can be changed to the same extend \textit{CSS} can.
+\end{itemize}
+In addition to the usual datatypes (\textit{boolean}, \textit{number}, \textit{string} and \textit{null}, \textit{JavaScript} yields \textit{object literals} which are customizable by the developer to hold values of any form. An object literal is enclosed by curly brackets and holds key value pairs defining the object, see example code in figure \autoref{exJS}.
+
+\begin{figure}[!h]
+\lstinputlisting{Examplecodes/example3.js}
+\caption{JavaScript example code}
+\label{exJS}
+\end{figure}
+
+\subsubsection{JSON} 
+\textit{JSON} (JavaScript Object Notation) is a format for exchanging structured data. As the intent of \textit{JSON} was to be able to send data from \textit{JavaScript} to a server application, a \textit{JSON}-object has the same structure as \textit{JavaScript} object literals. Today \textit{JSON} is a language-independent format. \textit{JavaScript}, among other languages, provides methods to easily encode and decode objects in \textit{JSON}.
+\section{Software libraries}
+\subsection{yFiles for HTML}
+\textit{yFiles for HTML}\footnote{https://www.yworks.com/products/yfiles-for-html} is a software library by the company yWorks, who specializes in software solutions for visualizing graphs, diagrams and networks for various platforms.
+The software library is written in Javascript and compatible with all modern web browsers without the need of any additions. It offers support for interactive user interfaces to edit and view graphs, starting at basic interactions up to complex algorithms to analyze graphs.\\
+The documentation for \textit{yFiles for HTML}\footnote{https://docs.yworks.com/yfileshtml/\# /dguide/introduction} is accompanied by a multitude of demo applications to demonstrate the various possibilities.\\
+For this implementation the version \textit{yFiles for HTML 2.1.0.6} was used.
+\subsection{jQuery}
+The javascript library \textit{jQuery}\footnote{https://jquery.com/} is by far the most used javascript extension. \textit{jQuery} provides shorter, easier to use and read syntax for the same functionalities as JavaScript.\\
+It especially simplifies the usage of the document object model, since it shortens the needed code significantly, as seen in \autoref{exJQU}.
+This implementation uses version \textit{jQuery 1.12.4}. The GUI uses plugins such as \textit{jQuery Tag-it!}\footnote{http://aehlke.github.io/tag-it/} and \textit{ColorPick.js}\footnote{https://github.com/philzet/ColorPick.js} which are based on \textit{jQuery}.
+\begin{figure}[!h]
+\lstinputlisting{Examplecodes/example4.js}
+\caption{jQuery example code}
+\label{exJQU}
+\end{figure}
+\subsection{jQuery UI}
+\textit{jQuery UI} extends \textit{jQuery} by a collection of modern, free to use widgets and effects for a wide range of website types. Each module can be used independently as the design is neutral and fits into most environments. This project uses the buttons, checkboxes and selectmenus as well as dialogs provided by \textit{jQuery UI}.
+
+\clearpage

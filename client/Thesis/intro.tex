@@ -1,0 +1,13 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Einleitung
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\chapter{Introduction}\label{Introduction}
+
+In graph theory there are \textcolor{red}{several / a few} methods of drawing and analyzing graphs. \\
+\textcolor{red}{One of those is linear layouts}, where all vertices are placed on one line in some order and all edges are drawn as half circles above and below this line.\\
+The interesting point of these linear layouts then is to determine an order of the vertices in which the edges connecting these are laid out in a special way. \textcolor{red}{I go more into detail about the different constraints in the following chapter}.\\
+As much as the \textcolor{red}{field} of linear layouts is an \textcolor{red}{interesting} topic it is also quite tiresome to find a linear layout with a particular attribute by hand, since the researcher would have to either strategically determine for each edge where it should be placed to obtain the desired attribute or iterate through a good portion of the permutations of the vertices, to find this attribute by \textcolor{red}{chance / accident}.\\
+For this exact reason researchers found different ways to automate the computation of these linear layouts \textcolor{green}{REFERENCE}.\\
+\textcolor{red}{A few years ago} the \textcolor{red}{Arbeitsbereich / Lehrstuhl für Algorithmen} of University of Tübingen proposed an approach to automation by formulating the desired layout as a SAT-formula \textcolor{green}{REFERENCE} and passing it to a SAT-Solver. While this was a notable achievement \textcolor{red}{to the field} it still needed a lot of manual work to convert a graph into the SAT-Formula
+
