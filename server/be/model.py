@@ -567,14 +567,14 @@ class SatModel(object):
                 if len(self.pages) < 2:
                     abort(400, "There is only one available page.")
                 
-                page_number = self._assignment_variables.shape[0]
-
-                for e_id in con_args:
-                    clause = []
-                    e_idx = self.edge_id_to_idx[e_id]
-                    for p in range(page_number):
-                        clause.append(-self._assignment_variables[p, e_idx])                        
-                    clauses.append(clause)
+                p_idxs = [self.page_id_to_idx[p_id] for p_id in con_modifier]              
+                for p_idx in p_idxs:
+                        p_idx = self.page_id_to_idx[p_id]
+                        clause = []
+                        for e_id in con_args:
+                            e_idx = self.edge_id_to_idx[e_id]
+                            clause.append(-self._assignment_variables[p_idx, e_idx])                        
+                        clauses.append(clause)
                      
                      
             elif con['type'] == 'EDGES_TO_SUB_ARC_ON_PAGES':
