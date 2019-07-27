@@ -566,11 +566,13 @@ class SatModel(object):
 
                 if len(self.pages) < 2:
                     abort(400, "There is only one available page.")
+                
+                page_number = self._assignment_variables.shape[0]
 
                 for i in enumerate(con_args): 
                     clause = []
                     for p in range(page_number):
-                        clause.append(-assignment_variables[p, self.edge_id_to_idx[con_args[i]]])
+                        clause.append(-self._assignment_variables[p, self.edge_id_to_idx[con_args[i]]])
                     clauses.append(clause)
                      
                      
