@@ -240,6 +240,20 @@ def static_encode_nodes_as_neighbors(node_order, n1, n2) -> List[List[int]]:
         clauses.append([node_order[n1, n2], -node_order[i, n1], -node_order[n2, i]])
     return clauses
 
+def static_encode_nodes_set_first(node_order, n1) -> List[List[int]]:
+    """
+    Encodes that the given node is frst.
+
+    :param node_order:
+    :param n1:
+        """
+    clauses = []
+    for i in range(node_order.shape[0]):
+        if i == n1:
+            continue
+        clauses.append([node_order[n1, i]])
+    return clauses
+
 
 def static_encode_page_constraint_stack(assignment_variables: ndarray, edges: ndarray, node_order: ndarray,
                                         page_idx: int) -> List[List[int]]:
@@ -647,10 +661,9 @@ class SatModel(object):
                 if len(con_args) != 1:
                     abort(400, "The NODES_SET_FIRST constraint only allows exactly one argument")
                 
-                for i in range(self._node_order.shape[0]):
-                    if i == self._node_id_to_idx[con_args[0]]: 
-                        continue
-                    clauses.append([self.node_order[self._node_id_to_idx[con_args[0]]], i])
+                clauses.extend(static_encode_nodes_set_first(self._node_order,
+                                                            self._node_id_to_idx[con_args[0]]))
+
             else:
                 raise abort(500, "The given constraint {} is not implemented yet".format(con['type']))
             self._add_clauses(clauses)
