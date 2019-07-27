@@ -136,6 +136,11 @@ class App:
                                       arguments: the edge ids
                                       modifier none
                                       
+                                      NOT_ALL_IN_SAME_PAGE: not all edges can be on the same page. Only works when at least  
+                                                             two pages are available
+                                      arguments: the edge ids
+                                      modifier none
+                                      
                                       EDGES_TO_SUB_ARC_ON_PAGES: If any node shares an edge with the nodes named in 
                                                                  arguments and is between the two nodes, then this edge 
                                                                  is restricted to the pages named in modifier.
@@ -175,6 +180,7 @@ class App:
                                                                  "EDGES_ON_PAGES",
                                                                  "EDGES_SAME_PAGES",
                                                                  "EDGES_DIFFERENT_PAGES",
+                                                                 "NOT_ALL_IN_SAME_PAGE",
                                                                  "EDGES_TO_SUB_ARC_ON_PAGES",
                                                                  "EDGES_FROM_NODES_ON_PAGES",
                                                                  "NODES_PREDECESSOR",

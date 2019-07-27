@@ -548,6 +548,20 @@ class SatModel(object):
                         clauses.extend(static_encode_different_pages(self.edge_id_to_idx[con_args[i]],
                                                                      self.edge_id_to_idx[con_args[j]],
                                                                      self._assignment_variables))
+            elif con['type'] == 'NOT_ALL_IN_SAME_PAGE':
+
+                if len(self.pages) < 2:
+                    abort(400, "There is only one available page.")
+
+                
+                for i, ignore1 in enumerate(con_args): 
+                    clause = []
+                    for p in range(page_number):
+                        clause.append(-assignment_variables[p, self.edge_id_to_idx[con_args[i]]])
+                        clauses.append(clause)
+                     
+                     
+                     
             elif con['type'] == 'EDGES_TO_SUB_ARC_ON_PAGES':
                 if len(con_args) != 2:
                     abort(400, "The EDGES_TO_SUB_ARC_ON_PAGES constraint only allows exactly two arguments")
