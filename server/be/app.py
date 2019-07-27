@@ -173,7 +173,11 @@ class App:
                                       
                                       NODES_CONSECUTIVE: The given two nodes have to be next to each other in any order. 
                                                          Currently only implemented for 2 Nodes
-                                      arguments: the two neighboring nodes
+                                      arguments: the two nodes to be made consecutive
+                                      modifier: none 
+                                      
+                                      NODES_SET_FIRST: The given node has to be the first in any order.
+                                      arguments: the node to be the first
                                       modifier: none  
                                       """,
                                                              enum=[
@@ -189,6 +193,7 @@ class App:
                                                                  "NODES_REQUIRE_PARTIAL_ORDER",
                                                                  "NODES_FORBID_PARTIAL_ORDER",
                                                                  "NODES_CONSECUTIVE",
+                                                                 "NODES_SET_FIRST"
                                                              ],
                                                              example="NODES_PREDECESSOR",
                                                              required=True),

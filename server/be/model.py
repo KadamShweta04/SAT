@@ -643,6 +643,14 @@ class SatModel(object):
                 clauses.extend(static_encode_nodes_as_neighbors(self._node_order,
                                                                 self._node_id_to_idx[con_args[0]],
                                                                 self._node_id_to_idx[con_args[1]]))
+            elif con['type'] == 'NODES_SET_FIRST':
+                if len(con_args) != 1:
+                    abort(400, "The NODES_SET_FIRST constraint only allows exactly one argument")
+                
+                for i in range(node_order.shape[0]):
+                    if i == self._node_id_to_idx[con_args[0]]: 
+                        continue
+                    clauses.append(node_order[self._node_id_to_idx[con_args[0]], i])
             else:
                 raise abort(500, "The given constraint {} is not implemented yet".format(con['type']))
             self._add_clauses(clauses)
