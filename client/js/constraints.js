@@ -70,6 +70,19 @@ class Consecutive extends Constraint {
 
 }
 
+class SetAsFirst extends Constraint {
+	constructor(_objects) {
+		super("NODES_SET_FIRST",_objects)
+
+		this.printable = "setFirst(" + this.objects.toString() + ")"
+	}
+
+	updatePrintable() {
+		this.printable = "setFirst(" + this.objects.toString() + ")"
+	}
+
+}
+
 
 
 class SamePage extends Constraint {
@@ -99,6 +112,20 @@ class DifferentPages extends Constraint {
 
 	updatePrintable() {
 		this.printable = "differentPages(" + this.objects.toString() + ")"
+	}
+}
+
+class NotAllInSamePage extends Constraint {
+	constructor(_objects) {
+		super("NOT_ALL_IN_SAME_PAGE",_objects)
+
+		this.printable ="notInSamePage(" + this.objects.toString() + ")"
+	}
+
+
+
+	updatePrintable() {
+		this.printable = "notAllInSamePage(" + this.objects.toString() + ")"
 	}
 }
 

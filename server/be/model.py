@@ -11,7 +11,7 @@ from be.utils import get_duplicates
 def static_node_order_generation(node_order: ndarray) -> List[List[int]]:
     """
     Generates the clauses to ensure that the node order is asymmetric and transitive. It is static in order to make
-    optimising more easy
+    optimizing more easy
 
     :param node_order: all node order variables
     :return: the list of generated clauses
@@ -240,6 +240,20 @@ def static_encode_nodes_as_neighbors(node_order, n1, n2) -> List[List[int]]:
         clauses.append([node_order[n1, n2], -node_order[i, n1], -node_order[n2, i]])
     return clauses
 
+def static_encode_nodes_set_first(node_order, n1) -> List[List[int]]:
+    """
+    Encodes that the given node is frst.
+
+    :param node_order:
+    :param n1:
+        """
+    clauses = []
+    for i in range(node_order.shape[0]):
+        if i == n1:
+            continue
+        clauses.append([node_order[n1, i]])
+    return clauses
+
 
 def static_encode_page_constraint_stack(assignment_variables: ndarray, edges: ndarray, node_order: ndarray,
                                         page_idx: int) -> List[List[int]]:
@@ -364,7 +378,7 @@ class SatModel(object):
 
     def __init__(self, pages, edges: Edge, node_ids: List[int], constraints):
         """
-        Initialises the model with the given params. Also does some basic validation.
+        Initializes the model with the given params. Also does some basic validation.
 
         :param pages: the pages
         :param edges: the edges
@@ -387,7 +401,7 @@ class SatModel(object):
             abort(400, "Edge ids have to be unique. The id(s) {} occurred multiple times".format(edge_id_dupes_dupes))
         page_id_dupes_dupes = get_duplicates([p['id'] for p in pages])
         if len(page_id_dupes_dupes) > 0:
-            abort(400, "Page ids have to be unique. The id(s) {} occured multiple times".format(page_id_dupes_dupes))
+            abort(400, "Page ids have to be unique. The id(s) {} occurred multiple times".format(page_id_dupes_dupes))
 
         node_id_size = len(node_ids)
         self._node_idxs = list(range(node_id_size))
@@ -538,7 +552,7 @@ class SatModel(object):
             elif con['type'] == 'EDGES_DIFFERENT_PAGES':
 
                 if len(self.pages) < len(con_args):
-                    abort(400, "It is not possible to fir {} egedes on {} different pages.".format(len(con_args),
+                    abort(400, "It is not possible to fit {} edges on {} different pages.".format(len(con_args),
                                                                                                    len(self.pages)))
 
                 for i, ignore1 in enumerate(con_args):
@@ -548,6 +562,21 @@ class SatModel(object):
                         clauses.extend(static_encode_different_pages(self.edge_id_to_idx[con_args[i]],
                                                                      self.edge_id_to_idx[con_args[j]],
                                                                      self._assignment_variables))
+            elif con['type'] == 'NOT_ALL_IN_SAME_PAGE':
+
+                if len(self.pages) < 2:
+                    abort(400, "There is only one available page.")
+                
+                p_idxs = [self.page_id_to_idx[p_id] for p_id in con_modifier]              
+                for p_idx in p_idxs:
+                        p_idx = self.page_id_to_idx[p_id]
+                        clause = []
+                        for e_id in con_args:
+                            e_idx = self.edge_id_to_idx[e_id]
+                            clause.append(-self._assignment_variables[p_idx, e_idx])                        
+                        clauses.append(clause)
+                     
+                     
             elif con['type'] == 'EDGES_TO_SUB_ARC_ON_PAGES':
                 if len(con_args) != 2:
                     abort(400, "The EDGES_TO_SUB_ARC_ON_PAGES constraint only allows exactly two arguments")
@@ -631,6 +660,13 @@ class SatModel(object):
                 clauses.extend(static_encode_nodes_as_neighbors(self._node_order,
                                                                 self._node_id_to_idx[con_args[0]],
                                                                 self._node_id_to_idx[con_args[1]]))
+            elif con['type'] == 'NODES_SET_FIRST':
+                if len(con_args) != 1:
+                    abort(400, "The NODES_SET_FIRST constraint only allows exactly one argument")
+                
+                clauses.extend(static_encode_nodes_set_first(self._node_order,
+                                                            self._node_id_to_idx[con_args[0]]))
+
             else:
                 raise abort(500, "The given constraint {} is not implemented yet".format(con['type']))
             self._add_clauses(clauses)
@@ -677,7 +713,7 @@ class SatModel(object):
                     v_markers.extend(splits_without_leading_v)
             if "0" in v_markers:
                 v_markers.remove("0")
-            assert len(v_markers) == self.max_var, "Could not parse the expected numer of variables from the " \
+            assert len(v_markers) == self.max_var, "Could not parse the expected number of variables from the " \
                                                    "lingeling result. Expected {} got {}".format(self.max_var,
                                                                                                  len(v_markers))
             vars = np.array(list(map(int, v_markers)))
@@ -779,7 +815,7 @@ class SatModel(object):
     @staticmethod
     def _add_forrest_constraints(ancestors, assignment_variables, clauses, edges, page_idx, parents):
         """
-        A helper method to encode a forrest constraint for the given page.
+        A helper method to encode a forest constraint for the given page.
         :param ancestors:
         :param assignment_variables:
         :param clauses:

@@ -217,15 +217,21 @@ require([
 						$("#constraintTags").tagit("updateTag", printable, c.getPrintable())
 
 					} else if (c instanceof Consecutive) {
-						$("#constraintTags").tagit("updateTag", printable, c.getPrintable())
+                        $("#constraintTags").tagit("updateTag", printable, c.getPrintable())
 
-					} else if (c instanceof SamePage) {
+                    } else if (c instanceof SetAsFirst) {
+                        $("#constraintTags").tagit("updateTag", printable, c.getPrintable())
+
+                    } else if (c instanceof SamePage) {
 						$("#constraintTags").tagit("updateTag", printable, c.getPrintable())
 
 					} else if (c instanceof DifferentPages) {
-						$("#constraintTags").tagit("updateTag", printable, c.getPrintable())
+                        $("#constraintTags").tagit("updateTag", printable, c.getPrintable())
 
-					} else if (c instanceof AssignedTo) {
+                    } else if (c instanceof NotAllInSamePage) {
+                        $("#constraintTags").tagit("updateTag", printable, c.getPrintable())
+
+                    } else if (c instanceof AssignedTo) {
 						$("#constraintTags").tagit("updateTag", printable, c.getPrintable())
 
 					} else {console.log("error")}
@@ -483,6 +489,13 @@ require([
 			} else if (graphComponent.selection.selectedNodes.size == 1) {
 				//contextMenu.addMenuItem("tag", () => alert(graphComponent.selection.selectedNodes.toArray()[0].tag))
 
+                contextMenu.addMenuItem('Set as first in the order', () => {
+
+                    let constr = new SetAsFirst(graphComponent.selection.selectedNodes.toArray());
+                    constraintsArray.push(constr)
+                    $("#constraintTags").tagit("createTag", constr.getPrintable())
+                });
+
 			} else if (graphComponent.selection.selectedNodes.size == 2) {
 				var nodesArr = graphComponent.selection.selectedNodes.toArray();
 				var a = nodesArr[0];
@@ -549,21 +562,37 @@ require([
 					}
 				}
 
-				if(graphComponent.selection.selectedEdges.size <= avPages.length) {
-					contextMenu.addMenuItem('Assign to different Pages', () =>{
+                if(graphComponent.selection.selectedEdges.size <= avPages.length) {
+                    contextMenu.addMenuItem('Assign to pairwise different pages', () =>{
 
-						var arr = []
+                        var arr = []
 
 
-						selEdges.forEach(function(a) {
-							arr.push(a.toString())
-						})
+                        selEdges.forEach(function(a) {
+                            arr.push(a.toString())
+                        })
 
-						let constr = new DifferentPages(selEdges);
-						constraintsArray.push(constr)
-						$("#constraintTags").tagit("createTag", constr.getPrintable())
-					});
-				}
+                        let constr = new DifferentPages(selEdges);
+                        constraintsArray.push(constr)
+                        $("#constraintTags").tagit("createTag", constr.getPrintable())
+                    });
+                }
+
+                if(graphComponent.selection.selectedEdges.size >= 2) {
+                    contextMenu.addMenuItem('Not all at the same page', () =>{
+
+                        var arr = []
+
+
+                        selEdges.forEach(function(a) {
+                            arr.push(a.toString())
+                        })
+
+                        let constr = new NotAllInSamePage(selEdges);
+                        constraintsArray.push(constr)
+                        $("#constraintTags").tagit("createTag", constr.getPrintable())
+                    });
+                }
 			}
 		}
 
@@ -861,20 +890,34 @@ require([
 				$("#constraintTags").tagit("createTag", con.getPrintable() )
 
 				break;
-			case "NODES_CONSECUTIVE":
-				var objString = objects.split(",")
+            case "NODES_CONSECUTIVE":
+                    var objString = objects.split(",")
 
-				var objItems = [];
+                    var objItems = [];
 
-				objString.forEach(function(os) {
-					objItems = objItems.concat(findObjectByTag(os, "node"))
-				})
+                    objString.forEach(function(os) {
+                        objItems = objItems.concat(findObjectByTag(os, "node"))
+                    })
 
-				var con = new Consecutive(objItems)
-				constraintsArray.push(con);
-				$("#constraintTags").tagit("createTag", con.getPrintable() )
+                    var con = new Consecutive(objItems)
+                    constraintsArray.push(con);
+                    $("#constraintTags").tagit("createTag", con.getPrintable() )
 
-				break;
+                    break;
+            case "NODES_SET_FIRST":
+                    var objString = objects.split(",")
+
+                    var objItems = [];
+
+                    objString.forEach(function(os) {
+                        objItems = objItems.concat(findObjectByTag(os, "node"))
+                    })
+
+                    var con = new SetAsFirst(objItems)
+                    constraintsArray.push(con);
+                    $("#constraintTags").tagit("createTag", con.getPrintable() )
+
+                    break;
 			case "EDGES_SAME_PAGES":
 				objString = objects;
 				var objString = objects.split(",")
@@ -889,20 +932,34 @@ require([
 				$("#constraintTags").tagit("createTag", con.getPrintable() )
 
 				break;
-			case "EDGES_DIFFERENT_PAGES":
-				var objString = objects.split(",")
-				var objItems = [];
+                case "EDGES_DIFFERENT_PAGES":
+                    var objString = objects.split(",")
+                    var objItems = [];
 
-				objString.forEach(function(os) {
-					objItems = objItems.concat(findObjectByTag(os, "edge"))
-				})
+                    objString.forEach(function(os) {
+                        objItems = objItems.concat(findObjectByTag(os, "edge"))
+                    })
 
 
-				var con = new DifferentPages(objItems)
-				constraintsArray.push(con);
-				$("#constraintTags").tagit("createTag", con.getPrintable() )
+                    var con = new DifferentPages(objItems)
+                    constraintsArray.push(con);
+                    $("#constraintTags").tagit("createTag", con.getPrintable() )
 
-				break;
+                    break;
+                case "NOT_ALL_IN_SAME_PAGE":
+                    var objString = objects.split(",")
+                    var objItems = [];
+
+                    objString.forEach(function(os) {
+                        objItems = objItems.concat(findObjectByTag(os, "edge"))
+                    })
+
+
+                    var con = new NotAllInSamePage(objItems)
+                    constraintsArray.push(con);
+                    $("#constraintTags").tagit("createTag", con.getPrintable() )
+
+                    break;
 			case "EDGES_ON_PAGES":
 				var objString = filterStringByTag(objects, "objectsA")[0]
 				objString = objString.split(",")
@@ -2401,22 +2458,38 @@ require([
 					$("#constraintTags").tagit("createTag", con.getPrintable())
 
 					break;
-				case "NODES_CONSECUTIVE":
-					var objItems = []
+                    case "NODES_CONSECUTIVE":
+                        var objItems = []
 
-					c.arguments.forEach(function(a) {
-						graphComponent.graph.nodes.toArray().forEach(function(n) {
-							if (n.tag == a) {
-								objItems.push(n)
-							}
-						})
-					})
+                        c.arguments.forEach(function(a) {
+                            graphComponent.graph.nodes.toArray().forEach(function(n) {
+                                if (n.tag == a) {
+                                    objItems.push(n)
+                                }
+                            })
+                        })
 
-					var con = new Consecutive(objItems)
-					constraintsArray.push(con);
-					$("#constraintTags").tagit("createTag", con.getPrintable() )
+                        var con = new Consecutive(objItems)
+                        constraintsArray.push(con);
+                        $("#constraintTags").tagit("createTag", con.getPrintable() )
 
-					break;
+                        break;
+                    case "NODES_SET_FIRST":
+                        var objItems = []
+
+                        c.arguments.forEach(function(a) {
+                            graphComponent.graph.nodes.toArray().forEach(function(n) {
+                                if (n.tag == a) {
+                                    objItems.push(n)
+                                }
+                            })
+                        })
+
+                        var con = new SetAsFirst(objItems)
+                        constraintsArray.push(con);
+                        $("#constraintTags").tagit("createTag", con.getPrintable() )
+
+                        break;
 				case "EDGES_SAME_PAGES":
 					var objItems = [];
 
@@ -2433,22 +2506,38 @@ require([
 					$("#constraintTags").tagit("createTag", con.getPrintable() )
 
 					break;
-				case "EDGES_DIFFERENT_PAGES":
-					var objItems = [];
+                    case "EDGES_DIFFERENT_PAGES":
+                        var objItems = [];
 
-					c.arguments.forEach(function(a) {
-						graphComponent.graph.edges.toArray().forEach(function(e) {
-							if (e.tag == a) {
-								objItems.push(e)
-							}
-						})
-					})
+                        c.arguments.forEach(function(a) {
+                            graphComponent.graph.edges.toArray().forEach(function(e) {
+                                if (e.tag == a) {
+                                    objItems.push(e)
+                                }
+                            })
+                        })
 
-					var con = new DifferentPages(objItems)
-					constraintsArray.push(con);
-					$("#constraintTags").tagit("createTag", con.getPrintable() )
+                        var con = new DifferentPages(objItems)
+                        constraintsArray.push(con);
+                        $("#constraintTags").tagit("createTag", con.getPrintable() )
 
-					break;
+                        break;
+                    case "NOT_ALL_IN_SAME_PAGE":
+                        var objItems = [];
+
+                        c.arguments.forEach(function(a) {
+                            graphComponent.graph.edges.toArray().forEach(function(e) {
+                                if (e.tag == a) {
+                                    objItems.push(e)
+                                }
+                            })
+                        })
+
+                        var con = new NotAllInSamePage(objItems)
+                        constraintsArray.push(con);
+                        $("#constraintTags").tagit("createTag", con.getPrintable() )
+
+                        break;
 				case "EDGES_ON_PAGES":
 
 					var objItems = [];

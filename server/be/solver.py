@@ -16,7 +16,7 @@ class SolverInterface(object):
     @classmethod
     def solve(cls, nodes, edges, pages, constraints, entity_id) -> SolverResult:
         """
-        Initialises the class :class `.SatModel`: with the given parameters and triggers the clause generation. Afterwards
+        Initializes the class :class `.SatModel`: with the given parameters and triggers the clause generation. Afterwards
         the created clauses are send to the SAT solver and the result is parsed back and returned.
 
         :param nodes: the nodes/vertexes of the problem instance

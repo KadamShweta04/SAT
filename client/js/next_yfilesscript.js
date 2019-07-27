@@ -167,6 +167,22 @@ require([
 					$("#constraintTags").tagit("createTag", con.getPrintable() )
 
 					break;
+				case "NODES_SET_FIRST":
+						var objItems = []
+
+						c.arguments.forEach(function(a) {
+							graphComponent.graph.nodes.toArray().forEach(function(n) {
+								if (n.tag == a) {
+									objItems.push(n)
+								}
+							})
+						})
+
+						var con = new SetAsFirst(objItems)
+						constraintsArray.push(con);
+						$("#constraintTags").tagit("createTag", con.getPrintable() )
+
+						break;
 				case "EDGES_SAME_PAGES":
 					var objItems = [];
 
@@ -183,22 +199,38 @@ require([
 					$("#constraintTags").tagit("createTag", con.getPrintable() )
 
 					break;
-				case "EDGES_DIFFERENT_PAGES":
-					var objItems = [];
+					case "EDGES_DIFFERENT_PAGES":
+						var objItems = [];
 
-					c.arguments.forEach(function(a) {
-						graphComponent.graph.edges.toArray().forEach(function(e) {
-							if (e.tag == a) {
-								objItems.push(e)
-							}
+						c.arguments.forEach(function(a) {
+							graphComponent.graph.edges.toArray().forEach(function(e) {
+								if (e.tag == a) {
+									objItems.push(e)
+								}
+							})
 						})
-					})
 
-					var con = new DifferentPages(objItems)
-					constraintsArray.push(con);
-					$("#constraintTags").tagit("createTag", con.getPrintable() )
+						var con = new DifferentPages(objItems)
+						constraintsArray.push(con);
+						$("#constraintTags").tagit("createTag", con.getPrintable() )
 
-					break;
+						break;
+					case "NOT_ALL_IN_SAME_PAGE":
+						var objItems = [];
+
+						c.arguments.forEach(function(a) {
+							graphComponent.graph.edges.toArray().forEach(function(e) {
+								if (e.tag == a) {
+									objItems.push(e)
+								}
+							})
+						})
+
+						var con = new NotAllInSamePage(objItems)
+						constraintsArray.push(con);
+						$("#constraintTags").tagit("createTag", con.getPrintable() )
+
+						break;
 				case "EDGES_ON_PAGES":
 
 					var objItems = [];

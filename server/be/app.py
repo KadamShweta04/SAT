@@ -136,6 +136,11 @@ class App:
                                       arguments: the edge ids
                                       modifier none
                                       
+                                      NOT_ALL_IN_SAME_PAGE: not all edges can be on the same page. Only works when at least  
+                                                             two pages are available
+                                      arguments: the edge ids
+                                      modifier none
+                                      
                                       EDGES_TO_SUB_ARC_ON_PAGES: If any node shares an edge with the nodes named in 
                                                                  arguments and is between the two nodes, then this edge 
                                                                  is restricted to the pages named in modifier.
@@ -143,7 +148,7 @@ class App:
                                       modifier: the pages to restrict the edges to
                                       
                                       EDGES_FROM_NODES_ON_PAGES: All edges involving the nodes have to be on the given page. 
-                                      arguments: the vertexes to restrict the edges from
+                                      arguments: the vertices to restrict the edges from
                                       modifier: the pages to restrict the edges to
                                       
                                       NODES_PREDECESSOR: one set of nodes are before another set of nodes
@@ -168,13 +173,18 @@ class App:
                                       
                                       NODES_CONSECUTIVE: The given two nodes have to be next to each other in any order. 
                                                          Currently only implemented for 2 Nodes
-                                      arguments: the two neighboring nodes
+                                      arguments: the two nodes to be made consecutive
+                                      modifier: none 
+                                      
+                                      NODES_SET_FIRST: The given node has to be the first in any order.
+                                      arguments: the node to be the first
                                       modifier: none  
                                       """,
                                                              enum=[
                                                                  "EDGES_ON_PAGES",
                                                                  "EDGES_SAME_PAGES",
                                                                  "EDGES_DIFFERENT_PAGES",
+                                                                 "NOT_ALL_IN_SAME_PAGE",
                                                                  "EDGES_TO_SUB_ARC_ON_PAGES",
                                                                  "EDGES_FROM_NODES_ON_PAGES",
                                                                  "NODES_PREDECESSOR",
@@ -183,6 +193,7 @@ class App:
                                                                  "NODES_REQUIRE_PARTIAL_ORDER",
                                                                  "NODES_FORBID_PARTIAL_ORDER",
                                                                  "NODES_CONSECUTIVE",
+                                                                 "NODES_SET_FIRST"
                                                              ],
                                                              example="NODES_PREDECESSOR",
                                                              required=True),
