@@ -556,8 +556,8 @@ class SatModel(object):
                 for i in enumerate(con_args): 
                     clause = []
                     for p in range(page_number):
-                        clause.append(assignment_variables[p, self.edge_id_to_idx[con_args[i]]])
-                    clauses.append(-clause)
+                        clause.append(-assignment_variables[p, self.edge_id_to_idx[con_args[i]]])
+                    clauses.append(clause)
                      
                      
             elif con['type'] == 'EDGES_TO_SUB_ARC_ON_PAGES':
