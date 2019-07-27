@@ -364,7 +364,7 @@ class SatModel(object):
 
     def __init__(self, pages, edges: Edge, node_ids: List[int], constraints):
         """
-        Initialises the model with the given params. Also does some basic validation.
+        Initializes the model with the given params. Also does some basic validation.
 
         :param pages: the pages
         :param edges: the edges
@@ -387,7 +387,7 @@ class SatModel(object):
             abort(400, "Edge ids have to be unique. The id(s) {} occurred multiple times".format(edge_id_dupes_dupes))
         page_id_dupes_dupes = get_duplicates([p['id'] for p in pages])
         if len(page_id_dupes_dupes) > 0:
-            abort(400, "Page ids have to be unique. The id(s) {} occured multiple times".format(page_id_dupes_dupes))
+            abort(400, "Page ids have to be unique. The id(s) {} occurred multiple times".format(page_id_dupes_dupes))
 
         node_id_size = len(node_ids)
         self._node_idxs = list(range(node_id_size))
