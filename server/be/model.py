@@ -647,7 +647,7 @@ class SatModel(object):
                 if len(con_args) != 1:
                     abort(400, "The NODES_SET_FIRST constraint only allows exactly one argument")
                 
-                for i in range(node_order.shape[0]):
+                for i in range(self._node_order.shape[0]):
                     if i == self._node_id_to_idx[con_args[0]]: 
                         continue
                     clauses.append(node_order[self._node_id_to_idx[con_args[0]], i])
