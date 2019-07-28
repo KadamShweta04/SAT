@@ -30,7 +30,7 @@ class SolverInterface(object):
         try:
             model = SatModel(pages, edges, nodes, constraints)
 
-            model.add_relative_node_order_clauses()
+            model.add_relative_order_clauses()
 
             model.add_page_assignment_clauses()
 
@@ -47,7 +47,7 @@ class SolverInterface(object):
             vertex_order = None
             if sat_result['satisfiable']:
                 vertex_order = model.get_vertex_order_result()
-                page_assignments = model.get_page_assignments_result()
+                page_assignments = model.get_page_assignment_result()
 
             return SolverResult(satisfiable=sat_result['satisfiable'],
                                 page_assignments=page_assignments,

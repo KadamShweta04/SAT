@@ -115,7 +115,6 @@ class App:
                                                                     'DISPERSIBLE',
                                                                     'TREE',
                                                                     'FOREST'
-                                                                    # TODO Order of 1(DISPERSIBLE) 2(2edges per node)
                                                                 ])
                                 })
 
@@ -127,7 +126,8 @@ class App:
                                       arguments: edge ids
                                       modifier: page ids to assign the edges to (OR joined)
                                       
-                                      EDGES_SAME_PAGES: assigns edges to the same page. Only implemented up to to 4 pages
+                                      EDGES_SAME_PAGES: assigns edges to the same page. Only implemented up to to 
+                                                        four pages
                                       arguments: the edge ids
                                       modifier: none
                                       
@@ -137,7 +137,7 @@ class App:
                                       modifier none
                                       
                                       NOT_ALL_IN_SAME_PAGE: not all edges can be on the same page. Only works when at least  
-                                                             two pages are available
+                                                            two pages are available
                                       arguments: the edge ids
                                       modifier none
                                       
@@ -235,7 +235,7 @@ class App:
                 'assignments': fields.List(fields.Nested(assigment_schema), readonly=True,
                                            description='A list of edge to page assignments'),
                 'vertex_order': fields.List(fields.String, readonly=True,
-                                            description='The order in which the vertexes have to be placed on the spine.'),
+                                            description='The order in which the vertices have to be placed on the spine.'),
                 'satisfiable': fields.Boolean(readonly=True,
                                               description='On finished instances this field indicates if the given '
                                                           'problem is satisfiable'),

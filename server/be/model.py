@@ -8,69 +8,69 @@ from be.custom_types import Edge, PageAssignment
 from be.utils import get_duplicates
 
 
-def static_node_order_generation(node_order: ndarray) -> List[List[int]]:
+def static_encode_vertex_order(precedes: ndarray) -> List[List[int]]:
     """
-    Generates the clauses to ensure that the node order is asymmetric and transitive. It is static in order to make
-    optimizing more easy
+    Generates the clauses to ensure that the node order is asymmetric and transitive.
+    It is static in order to make optimizing more easy
 
-    :param node_order: all node order variables
+    :param precedes: precedes[i, j] <=> vertex i precedes vertex j
     :return: the list of generated clauses
     """
     clauses = []
     # Ensure asymmetry
-    for i in range(node_order.shape[0]):
-        for j in range(i):
-            if i == j:
+    for u in range(precedes.shape[0]):
+        for v in range(u):
+            if u == v:
                 continue
-            # i before j XOR j before i
-            clauses.append([node_order[i, j], node_order[j, i]])
-            clauses.append([-node_order[i, j], -node_order[j, i]])
+            # i precedes j XOR j precedes i
+            clauses.append([precedes[u, v], precedes[v, u]])
+            clauses.append([-precedes[u, v], -precedes[v, u]])
 
             # ensure transitivity
-            for k in range(node_order.shape[0]):
-                if i == j or j == k or k == i:
+            for w in range(precedes.shape[0]):
+                if u == v or v == w or w == u:
                     continue
-                # (i_before_j & j_before_k) >> i_before_k   simplified => i_before_k | ~i_before_j | ~j_before_k
-                clauses.append([node_order[i, k], -node_order[i, j], -node_order[j, k]])
+                # (u_precedes_v & j_precedes_w) >> u_precedes_w   simplified => u_precedes_w | ~u_precedes_v | ~v_precedes_w
+                clauses.append([precedes[u, w], -precedes[u, v], -precedes[v, w]])
 
     return clauses
 
 
-def static_assignments_vars(variables: ndarray) -> List[List[int]]:
+def static_encode_page_assignment(edge_to_page: ndarray) -> List[List[int]]:
     """
     Generates the clauses to assign each edge to at least one page
 
-    :param variables:
+    :param edge_to_page: edge_to_page[p, e] <=> edge e is assigned to page p
         """
     clauses = []
-    for i in range(variables.shape[1]):
-        # each page has to be assigned to at least one page
-        clauses.append(list(variables[:, i]))
+    for e in range(edge_to_page.shape[1]):
+        # each edge has to be assigned to at least one page
+        clauses.append(list(edge_to_page[:, e]))
         # i_on_page_j >> -i_on_page_k
         # at most one page per edge
-        for j in range(variables.shape[0]):
-            for k in range(j + 1, variables.shape[0]):
-                clauses.append([-variables[j, i], -variables[k, i]])
+        for p in range(edge_to_page.shape[0]):
+            for q in range(p + 1, edge_to_page.shape[0]):
+                clauses.append([-edge_to_page[p, e], -edge_to_page[q, e]])
     return clauses
 
 
-def static_get_order_clauses(node_order, *args: List[int]) -> List[List[int]]:
+def static_encode_partial_order(precedes, *vertices: List[int]) -> List[List[int]]:
     """
-    This helper method generates clauses to ensure the given relative node order is met.
+    This method generates clauses to ensure that a given relative order of the given vertices is met.
 
-    :param node_order: All node order variables
-    :param args: The relative node order to meet.
+    :param precedes: precedes[i, j] <=> vertex i precedes vertex j
+    :param vertices: A list of vertices, whose relative node order must be met.
     :return: the generated clauses.
     """
-    arg_len = len(args)
+    arg_len = len(vertices)
     assert 2 <= arg_len < 5, "Must pass at least two and at most four arguments"
-    orders = [
-        node_order[args[0], args[1]],
-        node_order[args[1], args[2]],
+    clauses = [
+        precedes[vertices[0], vertices[1]],
+        precedes[vertices[1], vertices[2]],
     ]
     if arg_len == 4:
-        orders.append(node_order[args[2], args[3]])
-    return orders
+        clauses.append(precedes[vertices[2], vertices[3]])
+    return clauses
 
 
 def static_to_dimacs(clauses: list, first_line: str) -> str:
@@ -110,39 +110,40 @@ def static_to_dimacs(clauses: list, first_line: str) -> str:
     #     ",", " ")
 
 
-def static_encode_same_page(e1_idx: int, e2_idx: int, assignment_variables: ndarray) -> List[List[int]]:
+def static_encode_same_page(e1: int, e2: int, edge_to_page: ndarray) -> List[List[int]]:
     """
-    This method generates the clauses to encode that two edges are on the same page. Because the corresponding CNF
-    gets bloated on many pages, this method only handles page number up to including 4.
+    This method generates the clauses to encode that two edges must be assigned to the same page.
+    Because the corresponding CNF formula gets bloated on many pages, this method only handles up to four pages.
 
-    :param e1_idx: the index of the first edge
-    :param e2_idx:  the index of the second edge
-    :param assignment_variables: all edge to page assignment variables
+    :param e1: the index of the first edge
+    :param e2: the index of the second edge
+    :param edge_to_page: edge_to_page[p, e] <=> edge e is assigned to page p
     :return: the generated clauses
     """
     # to generate the clauses to add
     # print(str(sympy.to_cnf((e1_p1 & e2_p1) | (e1_p2 & e2_p2) | **...** ))
     # .translate(str.maketrans({'&': '\n', ' ': None, '~': "-", "|":",","(":'[',')':']'})))
     clauses = []
-    page_number = assignment_variables.shape[0]
+    page_number = edge_to_page.shape[0]
     if page_number == 1:
         pass
     elif page_number == 2:
-        e1_p1 = assignment_variables[0, e1_idx]
-        e2_p1 = assignment_variables[0, e2_idx]
-        e1_p2 = assignment_variables[1, e1_idx]
-        e2_p2 = assignment_variables[1, e2_idx]
+        e1_p1 = edge_to_page[0, e1]
+        e2_p1 = edge_to_page[0, e2]
+        e1_p2 = edge_to_page[1, e1]
+        e2_p2 = edge_to_page[1, e2]
+
         clauses.append([e1_p1, e1_p2])
         clauses.append([e1_p1, e2_p2])
         clauses.append([e1_p2, e2_p1])
         clauses.append([e2_p1, e2_p2])
     elif page_number == 3:
-        e1_p1 = assignment_variables[0, e1_idx]
-        e2_p1 = assignment_variables[0, e2_idx]
-        e1_p2 = assignment_variables[1, e1_idx]
-        e2_p2 = assignment_variables[1, e2_idx]
-        e1_p3 = assignment_variables[2, e1_idx]
-        e2_p3 = assignment_variables[2, e2_idx]
+        e1_p1 = edge_to_page[0, e1]
+        e2_p1 = edge_to_page[0, e2]
+        e1_p2 = edge_to_page[1, e1]
+        e2_p2 = edge_to_page[1, e2]
+        e1_p3 = edge_to_page[2, e1]
+        e2_p3 = edge_to_page[2, e2]
 
         clauses.append([e1_p1, e1_p2, e1_p3])
         clauses.append([e1_p1, e1_p2, e2_p3])
@@ -153,14 +154,14 @@ def static_encode_same_page(e1_idx: int, e2_idx: int, assignment_variables: ndar
         clauses.append([e1_p3, e2_p1, e2_p2])
         clauses.append([e2_p1, e2_p2, e2_p3])
     elif page_number == 4:
-        e1_p1 = assignment_variables[0, e1_idx]
-        e2_p1 = assignment_variables[0, e2_idx]
-        e1_p2 = assignment_variables[1, e1_idx]
-        e2_p2 = assignment_variables[1, e2_idx]
-        e1_p3 = assignment_variables[2, e1_idx]
-        e2_p3 = assignment_variables[2, e2_idx]
-        e1_p4 = assignment_variables[3, e1_idx]
-        e2_p4 = assignment_variables[3, e2_idx]
+        e1_p1 = edge_to_page[0, e1]
+        e2_p1 = edge_to_page[0, e2]
+        e1_p2 = edge_to_page[1, e1]
+        e2_p2 = edge_to_page[1, e2]
+        e1_p3 = edge_to_page[2, e1]
+        e2_p3 = edge_to_page[2, e2]
+        e1_p4 = edge_to_page[3, e1]
+        e2_p4 = edge_to_page[3, e2]
 
         clauses.append([e1_p1, e1_p2, e1_p3, e1_p4])
         clauses.append([e1_p1, e1_p2, e1_p3, e2_p4])
@@ -183,105 +184,100 @@ def static_encode_same_page(e1_idx: int, e2_idx: int, assignment_variables: ndar
     return clauses
 
 
-def static_encode_different_pages(e1_idx, e2_idx, assignment_variables) -> List[List[int]]:
+def static_encode_different_pages(e1, e2, edge_to_page) -> List[List[int]]:
     """
     Encodes different pages for two edges.
 
-    :param e1_idx: the first edge id
-    :param e2_idx: the second edge id
-    :param assignment_variables: all edge to page assignment variables
+    :param e1: the index of the first edge
+    :param e2: the index of the second edge
+    :param edge_to_page: edge_to_page[p, e] <=> edge e is assigned to page p
     :return: the generated clauses
     """
     clauses = []
-    page_number = assignment_variables.shape[0]
-
-    if page_number == 1:
-        abort(400, "It is not possible to encode different pages if there is only one page")
+    page_number = edge_to_page.shape[0]
 
     for p in range(page_number):
-        clauses.append([-assignment_variables[p, e1_idx], -assignment_variables[p, e2_idx]])
+        clauses.append([-edge_to_page[p, e1], -edge_to_page[p, e2]])
 
     return clauses
 
 
-def static_encode_node_absolute_order(node_order, n1, n2) -> List[List[int]]:
+def static_encode_absolute_order(precedes, v1, v2) -> List[List[int]]:
     """
-    Encodes that two nodes are direct adjacent to each other with n1 being the first. In contrast
-    to :func:`~be.model.static_encode_nodes_as_neighbors` which does not require the intrinsic order.
+    Encodes that two vertices are direct adjacent to each other with v1 being the first of the two.
+    In contrast to :func:`~be.model.static_encode_consecutivity` which does not require the intrinsic order.
 
-    :param node_order: all node order variables
-    :param n1: the first node
-    :param n2: the second node
+    :param precedes: precedes[i, j] <=> vertex i precedes vertex j
+    :param v1: the index of the first vertex
+    :param v2: the index of the second vertex
     :return: the generated clauses
     """
     clauses = []
-    for i in range(node_order.shape[0]):
-        if i == n1 or i == n2:
+    for v in range(precedes.shape[0]):
+        if v == v1 or v == v2:
             continue
-        clauses.append([node_order[n1, n2]])
-        clauses.append([node_order[i, n1], node_order[n2, i]])
+        clauses.append([precedes[v1, v2]])
+        clauses.append([precedes[v, v1], precedes[v2, v]])
     return clauses
 
 
-def static_encode_nodes_as_neighbors(node_order, n1, n2) -> List[List[int]]:
+def static_encode_consecutivity(precedes, v1, v2) -> List[List[int]]:
     """
-    Encodes that two nodes are next to each other without requiring a particular order. In contrast
-    to :func:`~be.model.static_encode_node_absolute_order` which requires the intrinsic order as well.
+    Encodes that two vertices are consecutive, i.e., next to each other in any order.
+    In contrast to :func:`~be.model.static_encode_node_absolute_order`, here there is no requiring a particular order
+    between v1 and v2
 
-    :param node_order:
-    :param n1:
-    :param n2:
+    :param precedes: precedes[i, j] <=> vertex i precedes vertex j
+    :param v1: the index of the first vertex
+    :param v2: the index of the second vertex
+    :return: the generated clauses
         """
     clauses = []
-    for i in range(node_order.shape[0]):
-        if i == n1 or i == n2:
+    for v in range(precedes.shape[0]):
+        if v == v1 or v == v2:
             continue
-        clauses.append([-node_order[n1, n2], node_order[i, n1], node_order[n2, i]])
-        clauses.append([node_order[n1, n2], -node_order[i, n1], -node_order[n2, i]])
+        clauses.append([-precedes[v1, v2], precedes[v, v1], precedes[v2, v]])
+        clauses.append([precedes[v1, v2], -precedes[v, v1], -precedes[v2, v]])
     return clauses
 
-def static_encode_nodes_set_first(node_order, n1) -> List[List[int]]:
-    """
-    Encodes that the given node is frst.
 
-    :param node_order:
-    :param n1:
+def static_encode_first_vertex(precedes, v) -> List[List[int]]:
+    """
+    Encodes that the given vertex is first.
+
+    :param precedes: precedes[i, j] <=> vertex i precedes vertex j
+    :param v: the index of the vertex to be the first
         """
     clauses = []
-    for i in range(node_order.shape[0]):
-        if i == n1:
+    for u in range(precedes.shape[0]):
+        if u == v:
             continue
-        clauses.append([node_order[n1, i]])
+        clauses.append([precedes[v, u]])
     return clauses
 
 
-def static_encode_page_constraint_stack(assignment_variables: ndarray, edges: ndarray, node_order: ndarray,
-                                        page_idx: int) -> List[List[int]]:
+def static_encode_stack_page(precedes: ndarray, edge_to_page: ndarray, edges: ndarray, p: int) -> List[List[int]]:
     """
-    Encodes the page type stack
+    Encodes a stack page
 
-    :param assignment_variables: all edge to page assignments
+    :param precedes: precedes[i, j] <=> vertex i precedes vertex j
+    :param edge_to_page: edge_to_page[p, e] <=> edge e is assigned to page p
     :param edges: all edges
-    :param node_order: all node order variables
-    :param page_idx: the index of the current page
+    :param p: the index of the current page
             """
     clauses = []
-    for i in range(edges.shape[0]):
-        e1 = edges[i]
-        e1_idx = e1[0]
-        e1n1 = e1[1]
-        e1n2 = e1[2]
-        e1_page_var = assignment_variables[page_idx, e1_idx]
-        for j in range(i):
-            e2 = edges[j]
-            if e1[0] == e2[0]:
+    for e in range(edges.shape[0]):
+        e1 = edges[e][0]
+        e1v1 = edges[e][1]
+        e1v2 = edges[e][2]
+        for f in range(e):
+            e2 = edges[f][0]
+            if e1 == e2:
                 continue
-            e2_idx = e2[0]
-            e2_page_var = assignment_variables[page_idx, e2_idx]
-            e2n1 = e2[1]
-            e2n2 = e2[2]
+            e2v1 = edges[f][1]
+            e2v2 = edges[f][2]
 
-            duplicates = get_duplicates([e1[1], e1[2], e2[1], e2[2]])
+            duplicates = get_duplicates([e1v1, e1v2, e2v1, e2v2])
 
             if len(duplicates) > 1:
                 # ignore double edges
@@ -289,85 +285,77 @@ def static_encode_page_constraint_stack(assignment_variables: ndarray, edges: nd
                 # abort(400,
                 #       "Got more than one shared nodes. Multi edges are not allowed. "
                 #       "The duplicated nodes where {}".format(duplicates))
-            # if the edges share one node
+            # if the edges share one vertex
             elif len(duplicates) == 1:
                 # adjacent edges do not need handling
                 continue
             else:
+                # forbid alternating patterns
+                forbidden_patterns = np.array([
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e1v1, e2v1, e1v2, e2v2),
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e1v1, e2v2, e1v2, e2v1),
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e1v2, e2v1, e1v1, e2v2),
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e1v2, e2v2, e1v1, e2v1),
 
-                # forbid alternating patterns of node from e1 and e2
-                order_clauses = np.array([
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n1, e2n1, e1n2, e2n2),
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n1, e2n2, e1n2, e2n1),
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n2, e2n1, e1n1, e2n2),
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n2, e2n2, e1n1, e2n1),
-
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n1, e1n1, e2n2, e1n2),
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n1, e1n2, e2n2, e1n1),
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n2, e1n1, e2n1, e1n2),
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n2, e1n2, e2n1, e1n1),
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e2v1, e1v1, e2v2, e1v2),
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e2v1, e1v2, e2v2, e1v1),
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e2v2, e1v1, e2v1, e1v2),
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e2v2, e1v2, e2v1, e1v1),
                 ])
-                clauses.extend((order_clauses * -1).tolist())
-
+                clauses.extend((forbidden_patterns * -1).tolist())
     return clauses
 
 
-def static_encode_page_constraint_queue(assignment_variables: ndarray, edges: ndarray, node_order: ndarray,
-                                        page_idx: int) -> List[List[int]]:
+def static_encode_queue_page(precedes: ndarray, edge_to_page: ndarray, edges: ndarray, p: int) -> List[List[int]]:
     """
-           Encodes the page type queue
+    Encodes the page type queue
 
-           :param assignment_variables: all edge to page assignments
-           :param edges: all edges
-           :param node_order: all node order variables
-           :param page_idx: the index of the current page
-                          """
+    :param precedes: precedes[i, j] <=> vertex i precedes vertex j
+    :param edge_to_page: edge_to_page[p, e] <=> edge e is assigned to page p
+    :param edges: all edges
+    :param p: the index of the current page
+    """
     clauses = []
-    for i in range(edges.shape[0]):
-        e1 = edges[i]
-        e1_idx = e1[0]
-        e1n1 = e1[1]
-        e1n2 = e1[2]
-        e1_page_var = assignment_variables[page_idx, e1_idx]
-        for j in range(i):
-            e2 = edges[j]
-            if e1[0] == e2[0]:
+    for e in range(edges.shape[0]):
+        e1 = edges[e][0]
+        e1v1 = edges[e][1]
+        e1v2 = edges[e][2]
+        for f in range(e):
+            e2 = edges[f][0]
+            if e1 == e2:
                 continue
-            e2_idx = e2[0]
-            e2_page_var = assignment_variables[page_idx, e2_idx]
-            e2n1 = e2[1]
-            e2n2 = e2[2]
+            e2v1 = edges[f][1]
+            e2v2 = edges[f][2]
 
-            duplicates = get_duplicates([e1[1], e1[2], e2[1], e2[2]])
+            duplicates = get_duplicates([e1v1, e1v2, e2v1, e2v2])
 
             if len(duplicates) > 1:
-
                 # ignore double edges
                 continue
                 # abort(400,
                 #       "Got more than one shared nodes. Multi edges are not allowed. "
                 #       "The duplicated nodes where {}".format(duplicates))
-            # if the edges share one node
+            # if the edges share one vertex
             elif len(duplicates) == 1:
                 # adjacent edges do not need handling
                 continue
             else:
 
                 # forbid enclosing patterns
-                order_clauses = np.array([
+                forbidden_patterns = np.array([
                     # e1 encloses e2
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n1, e2n1, e2n2, e1n2),
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n1, e2n2, e2n1, e1n2),
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n2, e2n1, e2n2, e1n1),
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e1n2, e2n2, e2n1, e1n1),
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e1v1, e2v1, e2v2, e1v2),
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e1v1, e2v2, e2v1, e1v2),
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e1v2, e2v1, e2v2, e1v1),
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e1v2, e2v2, e2v1, e1v1),
 
                     # e2 encloses e1
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n1, e1n1, e1n2, e2n2),
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n1, e1n2, e1n1, e2n2),
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n2, e1n1, e1n2, e2n1),
-                    [e1_page_var, e2_page_var] + static_get_order_clauses(node_order, e2n2, e1n2, e1n1, e2n1),
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e2v1, e1v1, e1v2, e2v2),
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e2v1, e1v2, e1v1, e2v2),
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e2v2, e1v1, e1v2, e2v1),
+                    [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e2v2, e1v2, e1v1, e2v1),
                 ])
-                clauses.extend((order_clauses * -1).tolist())
+                clauses.extend((forbidden_patterns * -1).tolist())
     return clauses
 
 
@@ -376,117 +364,112 @@ class SatModel(object):
     This class is responsible for generating the clauses corresponding to the given Problem instance.
     """
 
-    def __init__(self, pages, edges: Edge, node_ids: List[int], constraints):
+    def __init__(self, pages, edges: Edge, vertices: List[int], constraints):
         """
         Initializes the model with the given params. Also does some basic validation.
 
         :param pages: the pages
         :param edges: the edges
-        :param node_ids: the node id
+        :param vertices: the vertices
         :param constraints: the constraints
         """
 
         self.result = {}
-        self.node_ids = node_ids
-        self.edges = edges
         self.pages = pages
+        self.edges = edges
+        self.vertices = vertices
         self.constraints = constraints
         self.clauses = []
 
-        node_id_dupes = get_duplicates(node_ids)
-        if len(node_id_dupes) > 0:
-            abort(400, "Node ids have to be unique. The id(s) {} occurred multiple times".format(node_id_dupes))
-        edge_id_dupes_dupes = get_duplicates([e.id for e in edges])
-        if len(edge_id_dupes_dupes) > 0:
-            abort(400, "Edge ids have to be unique. The id(s) {} occurred multiple times".format(edge_id_dupes_dupes))
-        page_id_dupes_dupes = get_duplicates([p['id'] for p in pages])
-        if len(page_id_dupes_dupes) > 0:
-            abort(400, "Page ids have to be unique. The id(s) {} occurred multiple times".format(page_id_dupes_dupes))
+        # Check for dublicates in ids.
+        if len(get_duplicates(vertices)) > 0:
+            abort(400, "Vertex ids have to be unique. The id(s) {} occurred multiple times".format(get_duplicates(vertices)))
 
-        node_id_size = len(node_ids)
-        self._node_idxs = list(range(node_id_size))
-        self._node_idx_to_id = {i: n_id for i, n_id in enumerate(node_ids)}
-        self._node_id_to_idx = {n_id: i for i, n_id in enumerate(node_ids)}
+        if len(get_duplicates([e.id for e in edges])) > 0:
+            abort(400, "Edge ids have to be unique. The id(s) {} occurred multiple times".format(get_duplicates([e.id for e in edges])))
 
-        pages_len = len(pages)
-        self._page_idxs = list(range(pages_len))
-        self.page_idx_to_id = {i: p['id'] for i, p in enumerate(pages)}
-        self.page_id_to_idx = {p['id']: i for i, p in enumerate(pages)}
+        if len(get_duplicates([p['id'] for p in pages])) > 0:
+            abort(400, "Page ids have to be unique. The id(s) {} occurred multiple times".format(get_duplicates([p['id'] for p in pages])))
 
-        edges_len = len(edges)
-        self._edge_idxs = list(range(edges_len))
-        self.edge_idx_to_id = {i: e.id for i, e in enumerate(edges)}
-        self.edge_id_to_idx = {e.id: i for i, e in enumerate(edges)}
+        n = len(vertices)
+        self._node_idxs = list(range(n))
+        self._node_idx_to_id = {i: n_id for i, n_id in enumerate(vertices)}
+        self._node_id_to_idx = {n_id: i for i, n_id in enumerate(vertices)}
+
+        page_number = len(pages)
+        self._page_idxs = list(range(page_number))
+        self._page_idx_to_id = {i: p['id'] for i, p in enumerate(pages)}
+        self._page_id_to_idx = {p['id']: i for i, p in enumerate(pages)}
+
+        m = len(edges)
+        self._edge_idxs = list(range(m))
+        self._edge_idx_to_id = {i: e.id for i, e in enumerate(edges)}
+        self._edge_id_to_idx = {e.id: i for i, e in enumerate(edges)}
 
         # enumerates all constraints from one on. zero is excluded because its delimiter meaning in dimacs format
         self.max_var = 0
 
-        # self._node_order[i,j] means i is before j
-        self._node_order = self._create_new_vars(node_id_size * node_id_size).reshape((node_id_size, node_id_size))
+        # self._precedes[i,j] <=> vertex i precedes vertex j
+        self._precedes = self._create_variables(n * n).reshape((n, n))
 
-        self._assignment_variables = self._create_new_vars(pages_len * edges_len).reshape((pages_len, edges_len))
+        # self._edges_to_pages[e,p] <=> edge e is assigned to page p
+        self._edge_to_page = self._create_variables(page_number * m).reshape((page_number, m))
 
-    def _create_new_vars(self, number: int = 1) -> ndarray:
+    def _create_variables(self, number: int = 1) -> ndarray:
         assert number >= 1, "cannot create less than 1 new variables"
         new_vars = np.arange(self.max_var + 1, self.max_var + 1 + number)
         self.max_var = np.max(new_vars)
         return new_vars
 
-    def add_relative_node_order_clauses(self):
+    def add_relative_order_clauses(self):
         """
         Ensures that asymmetry and transitivity are encoded.
 
         """
-        node_order = self._node_order
-
-        clauses = static_node_order_generation(node_order)
-        self._add_clauses(clauses)
+        self._add_clauses(static_encode_vertex_order(self._precedes))
 
     def add_page_assignment_clauses(self):
         """
-        Ensures that each edge is on at least one page.
+        Ensures that each edge is assigned to least one page.
 
         """
-        variables = self._assignment_variables
-        clauses = static_assignments_vars(variables)
-        self._add_clauses(clauses)
+        self._add_clauses(static_encode_page_assignment(self._edge_to_page))
 
     def get_vertex_order_result(self) -> List[str]:
         """
-        Reads the result and translates it back into a the computed order of vertexes.
+        Reads the result and translates it back into the computed order of vertices.
 
-        :return: the order of the vertexes
+        :return: the order of the vertices
         """
-        if not self.result or not np.size(self.result['node_order']) > 0:
+        if not self.result or not np.size(self.result['precedes']) > 0:
             raise Exception("Please set the result first")
-        ordered = np.argsort(self.result['node_order'].sum(axis=1))[::-1]
+        ordered = np.argsort(self.result['precedes'].sum(axis=1))[::-1]
 
-        ret_val = []
+        order = []
         for v in ordered:
-            ret_val.append(self._node_idx_to_id[v])
-        assert len(ret_val) == len(
-            self.node_ids), "Not all nodes from >{}< are present in the ordered dict >{}<".format(self.node_ids,
-                                                                                                  ordered)
-        return ret_val
+            order.append(self._node_idx_to_id[v])
+        assert len(order) == len(self.vertices), \
+            "Not all nodes from >{}< are present in the ordered dict >{}<".format(self.vertices, ordered)
+        return order
 
-    def get_page_assignments_result(self) -> List[PageAssignment]:
+    def get_page_assignment_result(self) -> List[PageAssignment]:
         """
-        Reads the result and translates it back to edge to page assignments.
+        Reads the result and translates it back to an assignment of the edges to the pages.
 
         :return: The list of page assignments
         """
 
-        if not self.result or not np.size(self.result['page_assignment']):
+        if not self.result or not np.size(self.result['edge_to_page']):
             raise Exception("Please set the result first")
 
         # get the indexes of the page assignment variables which evaluated to True
-        as_idxs = np.argwhere(self.result['page_assignment'])
+        as_idxs = np.argwhere(self.result['edge_to_page'])
 
         # Create a PageAssignment for each True variable and translate the index beck to the given id
         ret_val = []
         for idx in as_idxs:
-            edge_id = self.edge_idx_to_id[idx[1]]
-            page_id = self.page_idx_to_id[idx[0]]
+            edge_id = self._edge_idx_to_id[idx[1]]
+            page_id = self._page_idx_to_id[idx[0]]
             ret_val.append(PageAssignment(edge=edge_id, page=page_id))
         return ret_val
 
@@ -495,30 +478,24 @@ class SatModel(object):
         Generates the clauses to encode the page type as well as additional page constraints like DISPERSIBLE or TREE.
         """
         edges = np.array([
-            [self.edge_id_to_idx[e.id],
+            [self._edge_id_to_idx[e.id],
              self._node_id_to_idx[e.source],
              self._node_id_to_idx[e.target]] for
             e in self.edges])
-        assignment_variables = self._assignment_variables
-        node_order = self._node_order
+        edge_to_page = self._edge_to_page
+        precedes = self._precedes
         for page in self.pages:
-            page_idx = self.page_id_to_idx[page['id']]
-            page_constraint = page.get('constraint', "NONE")
-            page_constraint_clauses = self._add_additional_page_constraint(assignment_variables, edges, page_constraint,
-                                                                           page_idx)
-            self._add_clauses(page_constraint_clauses)
-            page_type = page['type']
-            if page_type == 'STACK':
-                clauses = static_encode_page_constraint_stack(assignment_variables, edges, node_order, page_idx)
-                self._add_clauses(clauses)
+            p = self._page_id_to_idx[page['id']]
+            self._add_clauses(self._add_additional_page_constraint(edge_to_page, edges, page.get('constraint', "NONE"), p))
 
-            elif page_type == 'QUEUE':
-                clauses = static_encode_page_constraint_queue(assignment_variables, edges, node_order, page_idx)
-                self._add_clauses(clauses)
-            elif page_type == 'NONE':
+            if page['type'] == 'STACK':
+                self._add_clauses(static_encode_stack_page(precedes, edge_to_page, edges, p))
+            elif page['type'] == 'QUEUE':
+                self._add_clauses(static_encode_queue_page(precedes, edge_to_page, edges, p))
+            elif page['type'] == 'NONE':
                 continue
             else:
-                abort(501, "Page type {} is currently not implemented".format(page_type))
+                abort(501, "Page type {} is currently not implemented".format(page['type']))
 
     def add_additional_constraints(self):
         """
@@ -527,148 +504,141 @@ class SatModel(object):
 
         if not self.constraints:
             return
-        for con in self.constraints:
+        for constraint in self.constraints:
             clauses = []
-            con_args = con['arguments']
-            con_modifier = con.get('modifier')
-            if con['type'] == 'EDGES_ON_PAGES':
-                if not con_modifier:
+            arguments = constraint['arguments']
+            modifier = constraint.get('modifier')
+
+            if constraint['type'] == 'EDGES_ON_PAGES':
+                if not modifier:
                     abort(400, "EDGES_ON_PAGES constraints need the modifier set")
-                for e_id in con_args:
-                    sympy_clause = []
-                    e_idx = self.edge_id_to_idx[e_id]
-                    for p_id in con['modifier']:
-                        p_idx = self.page_id_to_idx[p_id]
-                        sympy_clause.append(self._assignment_variables[p_idx, e_idx])
-                    clauses.append(sympy_clause)
-            elif con['type'] == 'EDGES_SAME_PAGES':
-                e_idxs = [self.edge_id_to_idx[e_id] for e_id in con_args]
+                for e_id in arguments:
+                    clause = []
+                    e_idx = self._edge_id_to_idx[e_id]
+                    for p_id in constraint['modifier']:
+                        p_idx = self._page_id_to_idx[p_id]
+                        clause.append(self._edge_to_page[p_idx, e_idx])
+                    clauses.append(clause)
+
+            elif constraint['type'] == 'EDGES_SAME_PAGES':
+                e_idxs = [self._edge_id_to_idx[e_id] for e_id in arguments]
 
                 for i in range(len(e_idxs)):
                     if i == 0:
                         continue
-                    clauses.extend(static_encode_same_page(e_idxs[i - 1], e_idxs[i],
-                                                           self._assignment_variables))
-            elif con['type'] == 'EDGES_DIFFERENT_PAGES':
+                    clauses.extend(static_encode_same_page(e_idxs[i - 1], e_idxs[i], self._edge_to_page))
 
-                if len(self.pages) < len(con_args):
-                    abort(400, "It is not possible to fit {} edges on {} different pages.".format(len(con_args),
-                                                                                                   len(self.pages)))
-
-                for i, ignore1 in enumerate(con_args):
+            elif constraint['type'] == 'EDGES_DIFFERENT_PAGES':
+                for i, ignore1 in enumerate(arguments):
                     for j in range(i):
                         if i == j:
                             continue
-                        clauses.extend(static_encode_different_pages(self.edge_id_to_idx[con_args[i]],
-                                                                     self.edge_id_to_idx[con_args[j]],
-                                                                     self._assignment_variables))
-            elif con['type'] == 'NOT_ALL_IN_SAME_PAGE':
-
-                if len(self.pages) < 2:
-                    abort(400, "There is only one available page.")
-                
-                page_number = self._assignment_variables.shape[0]
-                
-                for p in range(page_number):                        
+                        clauses.extend(static_encode_different_pages(self._edge_id_to_idx[arguments[i]],
+                                                                     self._edge_id_to_idx[arguments[j]],
+                                                                     self._edge_to_page))
+            elif constraint['type'] == 'NOT_ALL_IN_SAME_PAGE':
+                page_number = self._edge_to_page.shape[0]
+                for p in range(page_number):
                         clause = []
-                        for e_id in con_args:
-                            e_idx = self.edge_id_to_idx[e_id]
-                            clause.append(-self._assignment_variables[p, e_idx])                        
+                        for e_id in arguments:
+                            e_idx = self._edge_id_to_idx[e_id]
+                            clause.append(-self._edge_to_page[p, e_idx])
                         clauses.append(clause)
-                     
-                     
-            elif con['type'] == 'EDGES_TO_SUB_ARC_ON_PAGES':
-                if len(con_args) != 2:
+
+            elif constraint['type'] == 'EDGES_TO_SUB_ARC_ON_PAGES':
+                if len(arguments) != 2:
                     abort(400, "The EDGES_TO_SUB_ARC_ON_PAGES constraint only allows exactly two arguments")
 
-                if not con_modifier or not len(con_modifier) >= 1:
+                if not modifier or not len(modifier) >= 1:
                     abort(400, "The EDGES_TO_SUB_ARC_ON_PAGES constraint requires at least one modifiers.")
-                s_idx = self._node_id_to_idx[con_args[0]]
-                t_idx = self._node_id_to_idx[con_args[1]]
+                s_idx = self._node_id_to_idx[arguments[0]]
+                t_idx = self._node_id_to_idx[arguments[1]]
                 clauses = []
                 for e in self.edges:
-                    node_set = {e.target, e.source, con_args[0], con_args[1]}
+                    node_set = {e.target, e.source, arguments[0], arguments[1]}
                     if len(node_set) == 3:
                         nodes = node_set
-                        nodes.remove(con_args[0])
-                        nodes.remove(con_args[1])
+                        nodes.remove(arguments[0])
+                        nodes.remove(arguments[1])
                         v = list(nodes)[0]
                         v_idx = self._node_id_to_idx[v]
-                        e_idx = self.edge_id_to_idx[e.id]
-                        clause = [-self._node_order[s_idx, v_idx],
-                                  -self._node_order[v_idx, t_idx]]
+                        e_idx = self._edge_id_to_idx[e.id]
+                        clause = [-self._precedes[s_idx, v_idx],
+                                  -self._precedes[v_idx, t_idx]]
 
-                        for p in con_modifier:
-                            p_idx = self.page_id_to_idx[p]
-                            clause.append(self._assignment_variables[p_idx, e_idx])
+                        for p in modifier:
+                            p_idx = self._page_id_to_idx[p]
+                            clause.append(self._edge_to_page[p_idx, e_idx])
 
                         clauses.append(clause)
                     else:
                         continue
 
-            elif con['type'] == 'EDGES_FROM_NODES_ON_PAGES':
-                if not len(con_args) >= 1:
+            elif constraint['type'] == 'EDGES_FROM_NODES_ON_PAGES':
+                if not len(arguments) >= 1:
                     abort(400, "The EDGES_FROM_NODES_ON_PAGES constraint requires at least on vertex")
 
-                if not con_modifier or not len(con_modifier) >= 1:
+                if not modifier or not len(modifier) >= 1:
                     abort(400, "The EDGES_FROM_NODES_ON_PAGES constraint requires at least on page")
-                p_idxs = [self.page_id_to_idx[p_id] for p_id in con_modifier]
+                p_idxs = [self._page_id_to_idx[p_id] for p_id in modifier]
                 clauses = []
                 for e in self.edges:
-                    if e.target in con_args or e.source in con_args:
+                    if e.target in arguments or e.source in arguments:
                         clause = []
-                        e_idx = self.edge_id_to_idx[e.id]
+                        e_idx = self._edge_id_to_idx[e.id]
                         for p_idx in p_idxs:
-                            clause.append(self._assignment_variables[p_idx, e_idx])
+                            clause.append(self._edge_to_page[p_idx, e_idx])
                         clauses.append(clause)
                     else:
                         continue
 
-            elif con['type'] == 'NODES_PREDECESSOR':
-                if not con_modifier:
+            elif constraint['type'] == 'NODES_PREDECESSOR':
+                if not modifier:
                     abort(400, "NODES_PREDECESSOR constraints need the modifier set")
-                for first in con_args:
-                    for second in con['modifier']:
+                for first in arguments:
+                    for second in constraint['modifier']:
                         if first == second:
                             abort(400,
                                   "The key '{}' is in arguments and modifier which is not allowed".format(first))
-                        clauses.append([self._node_order[self._node_id_to_idx[first], self._node_id_to_idx[second]]])
-            elif con['type'] == 'NODES_ABSOLUTE_ORDER' or con['type'] == 'NODES_REQUIRE_ABSOLUTE_ORDER':
-                for i in range(len(con_args)):
+                        clauses.append([self._precedes[self._node_id_to_idx[first], self._node_id_to_idx[second]]])
+
+            elif constraint['type'] == 'NODES_ABSOLUTE_ORDER' or constraint['type'] == 'NODES_REQUIRE_ABSOLUTE_ORDER':
+                for i in range(len(arguments)):
                     if i == 0:
                         continue
-                    clauses.extend(static_encode_node_absolute_order(self._node_order,
-                                                                     self._node_id_to_idx[con_args[i - 1]],
-                                                                     self._node_id_to_idx[con_args[i]]))
-            elif con['type'] == 'NODES_FORBID_PARTIAL_ORDER':
+                    clauses.extend(static_encode_absolute_order(self._precedes,
+                                                                self._node_id_to_idx[arguments[i - 1]],
+                                                                self._node_id_to_idx[arguments[i]]))
+
+            elif constraint['type'] == 'NODES_FORBID_PARTIAL_ORDER':
                 clause = []
-                for i in range(len(con_args)):
+                for i in range(len(arguments)):
                     if i == 0:
                         continue
-                    clause.append(-self._node_order[self._node_id_to_idx[con_args[i - 1]],
-                                                    self._node_id_to_idx[con_args[i]]])
+                    clause.append(-self._precedes[self._node_id_to_idx[arguments[i - 1]],
+                                                  self._node_id_to_idx[arguments[i]]])
                 clauses.append(clause)
-            elif con['type'] == 'NODES_REQUIRE_PARTIAL_ORDER':
-                for i in range(len(con_args)):
+                
+            elif constraint['type'] == 'NODES_REQUIRE_PARTIAL_ORDER':
+                for i in range(len(arguments)):
                     if i == 0:
                         continue
-                    clauses.append([self._node_order[self._node_id_to_idx[con_args[i - 1]],
-                                                     self._node_id_to_idx[con_args[i]]]])
-            elif con['type'] == 'NODES_CONSECUTIVE':
-                if len(con_args) != 2:
+                    clauses.append([self._precedes[self._node_id_to_idx[arguments[i - 1]],
+                                                   self._node_id_to_idx[arguments[i]]]])
+
+            elif constraint['type'] == 'NODES_CONSECUTIVE':
+                if len(arguments) != 2:
                     abort(400, "The NODES_CONSECUTIVE constraint only allows exactly two arguments")
-                clauses.extend(static_encode_nodes_as_neighbors(self._node_order,
-                                                                self._node_id_to_idx[con_args[0]],
-                                                                self._node_id_to_idx[con_args[1]]))
-            elif con['type'] == 'NODES_SET_FIRST':
-                if len(con_args) != 1:
+                clauses.extend(static_encode_consecutivity(self._precedes,
+                                                           self._node_id_to_idx[arguments[0]],
+                                                           self._node_id_to_idx[arguments[1]]))
+            elif constraint['type'] == 'NODES_SET_FIRST':
+                if len(arguments) != 1:
                     abort(400, "The NODES_SET_FIRST constraint only allows exactly one argument")
-                
-                clauses.extend(static_encode_nodes_set_first(self._node_order,
-                                                            self._node_id_to_idx[con_args[0]]))
+                clauses.extend(static_encode_first_vertex(self._precedes, self._node_id_to_idx[arguments[0]]))
 
             else:
-                raise abort(500, "The given constraint {} is not implemented yet".format(con['type']))
+                raise abort(500, "The given constraint {} is not implemented yet".format(constraint['type']))
             self._add_clauses(clauses)
         pass
 
@@ -722,12 +692,12 @@ class SatModel(object):
 
             # in the result format the positive variable number is used to indicate True and the negative for false
             # the > 0 evaluates to true for all true variables in the result.
-            result['node_order'] = vars[
-                                   :np.size(self._node_order)].reshape(self._node_order.shape) > 0
-            result['page_assignment'] = vars[
-                                        np.size(self._node_order):np.size(self._node_order) + np.size(
-                                            self._assignment_variables)].reshape(
-                self._assignment_variables.shape) > 0
+            result['precedes'] = vars[
+                                   :np.size(self._precedes)].reshape(self._precedes.shape) > 0
+            result['edge_to_page'] = vars[
+                                        np.size(self._precedes):np.size(self._precedes) + np.size(
+                                            self._edge_to_page)].reshape(
+                self._edge_to_page.shape) > 0
             pass
 
         else:
@@ -737,34 +707,33 @@ class SatModel(object):
 
         return result
 
-    def _add_additional_page_constraint(self, assignment_variables: ndarray, edges: ndarray, page_constraint: str,
-                                        page_idx: int):
+    def _add_additional_page_constraint(self, edge_to_page: ndarray, edges: ndarray, constraint: str, p: int):
         """
         This method generates the clauses to encode additional page constraints like dispensable or tree.
 
-        :param assignment_variables: all edge to page variables
+        :param edge_to_page: all edge to page variables
         :param edges: all edges
-        :param page_constraint: the constraint for this page
-        :param page_idx: the index of the current page
+        :param constraint: the constraint for this page
+        :param p: the index of the current page
         :return: the generated clauses
         """
 
         clauses = []
-        if page_constraint == 'NONE' or page_constraint is None:
+        if constraint == 'NONE' or constraint is None:
             pass
-        elif page_constraint == 'DISPERSIBLE':
+        elif constraint == 'DISPERSIBLE':
             for i in range(edges.shape[0]):
                 e1 = edges[i]
                 e1_idx = e1[0]
                 e1n1 = e1[1]
                 e1n2 = e1[2]
-                e1_page_var = assignment_variables[page_idx, e1_idx]
+                e1_page_var = edge_to_page[p, e1_idx]
                 for j in range(i):
                     e2 = edges[j]
                     if e1[0] == e2[0]:
                         continue
                     e2_idx = e2[0]
-                    e2_page_var = assignment_variables[page_idx, e2_idx]
+                    e2_page_var = edge_to_page[p, e2_idx]
                     e2n1 = e2[1]
                     e2n2 = e2[2]
 
@@ -776,18 +745,18 @@ class SatModel(object):
                         continue
                     else:
                         continue
-        elif page_constraint == 'FOREST':
-            node_len = len(self.node_ids)
-            parents = self._create_new_vars(node_len ** 2).reshape((node_len, node_len))
-            ancestors = self._create_new_vars(node_len ** 2).reshape((node_len, node_len))
-            self._add_forrest_constraints(ancestors, assignment_variables, clauses, edges, page_idx, parents)
+        elif constraint == 'FOREST':
+            node_len = len(self.vertices)
+            parents = self._create_variables(node_len ** 2).reshape((node_len, node_len))
+            ancestors = self._create_variables(node_len ** 2).reshape((node_len, node_len))
+            self._add_forrest_constraints(ancestors, edge_to_page, clauses, edges, p, parents)
 
-        elif page_constraint == 'TREE':
-            node_len = len(self.node_ids)
-            parents = self._create_new_vars(node_len ** 2).reshape((node_len, node_len))
-            ancestors = self._create_new_vars(node_len ** 2).reshape((node_len, node_len))
-            is_root = self._create_new_vars(node_len).reshape((node_len,))
-            self._add_forrest_constraints(ancestors, assignment_variables, clauses, edges, page_idx, parents)
+        elif constraint == 'TREE':
+            node_len = len(self.vertices)
+            parents = self._create_variables(node_len ** 2).reshape((node_len, node_len))
+            ancestors = self._create_variables(node_len ** 2).reshape((node_len, node_len))
+            is_root = self._create_variables(node_len).reshape((node_len,))
+            self._add_forrest_constraints(ancestors, edge_to_page, clauses, edges, p, parents)
 
             for i in range(parents.shape[0]):
                 parents_of_i: List[int] = list(parents[:, i])
@@ -809,18 +778,18 @@ class SatModel(object):
                     clauses.append([-is_root[i], -is_root[j]])
 
         else:
-            abort(501, "The page constraint {} is not implemented yet".format(page_constraint))
+            abort(501, "The page constraint {} is not implemented yet".format(constraint))
         return clauses
 
     @staticmethod
-    def _add_forrest_constraints(ancestors, assignment_variables, clauses, edges, page_idx, parents):
+    def _add_forrest_constraints(ancestors, edge_to_page, clauses, edges, p, parents):
         """
         A helper method to encode a forest constraint for the given page.
         :param ancestors:
-        :param assignment_variables:
+        :param edge_to_page:
         :param clauses:
         :param edges:
-        :param page_idx:
+        :param p:
         :param parents:
                 """
         for i in range(edges.shape[0]):
@@ -828,7 +797,7 @@ class SatModel(object):
             e1_idx = e1[0]
             e1n1 = e1[1]
             e1n2 = e1[2]
-            edge_on_page = assignment_variables[page_idx, e1_idx]
+            edge_on_page = edge_to_page[p, e1_idx]
             n1_is_parent_of_n2 = parents[e1n1, e1n2]
             n2_is_parent_of_n1 = parents[e1n2, e1n1]
 
@@ -847,7 +816,7 @@ class SatModel(object):
             for j in range(parents.shape[0]):
                 if parents[j, i] not in used_ids:
                     clauses.append([-parents[j, i]])
-        # at most one parent for each node
+        # at most one parent for each vertex
         for i in range(parents.shape[0]):
             parents_of_i = parents[:, i]
             for j in range(len(parents_of_i)):
@@ -857,7 +826,7 @@ class SatModel(object):
                     if k == i or j == k:
                         continue
                     clauses.append([-parents[j, i], -parents[k, i]])
-        # every node is not its own parent
+        # every vertex is not its own parent
         for i in range(parents.shape[0]):
             clauses.append([-parents[i, i]])
         # if i is parent of j then i is also ancestor of j
