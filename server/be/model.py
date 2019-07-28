@@ -54,6 +54,21 @@ def static_encode_page_assignment(edge_to_page: ndarray) -> List[List[int]]:
     return clauses
 
 
+def static_encode_not_all_in_page(edge_to_page: ndarray, edges: ndarray, p: int) -> List[List[int]]:
+    """
+    Encodes the constraint that not all given edges go to the same given page.
+
+    :param edge_to_page: the index of the first edge
+    :param edges: the given edges
+    :param p: the page
+    :return: the generated clauses
+    """
+    clause = []
+    for e in edges:
+        clause.append(-edge_to_page[p, e])
+    return clause
+
+
 def static_encode_partial_order(precedes, *vertices: List[int]) -> List[List[int]]:
     """
     This method generates clauses to ensure that a given relative order of the given vertices is met.
@@ -249,10 +264,10 @@ def static_encode_first_vertex(precedes, v) -> List[List[int]]:
     :param v: the index of the vertex to be the first
         """
     clauses = []
-    for u in range(precedes.shape[0]):
-        if u == v:
+    for w in range(precedes.shape[0]):
+        if w == v:
             continue
-        clauses.append([precedes[v, u]])
+        clauses.append([precedes[v, w]])
     return clauses
 
 
@@ -537,11 +552,9 @@ class SatModel(object):
 
             elif constraint['type'] == 'NOT_ALL_IN_SAME_PAGE':
                 page_number = self._edge_to_page.shape[0]
+                edges = [self._edge_id_to_idx[e_id] for e_id in arguments]
                 for p in range(page_number):
-                    clause = []
-                    for e in arguments:
-                        clause.append(-self._edge_to_page[p, self._edge_id_to_idx[e]])
-                    clauses.append(clause)
+                    clauses.append(static_encode_not_all_in_page(self._edge_to_page, edges, p))
 
             elif constraint['type'] == 'EDGES_TO_SUB_ARC_ON_PAGES':
                 if len(arguments) != 2:
