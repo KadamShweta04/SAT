@@ -318,6 +318,31 @@ def static_encode_stack_page(precedes: ndarray, edge_to_page: ndarray, edges: nd
                     [edge_to_page[p, e1], edge_to_page[p, e2]] + static_encode_partial_order(precedes, e2v2, e1v2, e2v1, e1v1),
                 ])
                 clauses.extend((forbidden_patterns * -1).tolist())
+
+    # If the graph is not big, add additional constraint regarding k4s
+    if precedes.shape[0] < 300:
+        n = precedes.shape[0]
+        m = edges.shape[0]
+        matrix = [[0 for u in range(n)] for v in range(n)]
+        map = [[0 for u in range(n)] for v in range(n)]
+        # Create the adjacent matrix
+        for e in range(m):
+            s = edges[e][1]
+            t = edges[e][2]
+            matrix[s][t] = 1
+            matrix[t][s] = 1
+            map[s][t] = e
+            map[t][s] = e
+
+        for u in range(n):
+            for v in range(u,n):
+                for w in range(v,n):
+                    for z in range(w,n):
+                        if (matrix[u][v] == 1 and matrix[u][w] == 1 and matrix[u][z] == 1 and
+                            matrix[v][w] == 1 and matrix[v][z] == 1 and matrix[w][z] == 1):
+                            clauses.append(static_encode_not_all_in_page(edge_to_page,
+                                                                         np.array([map[u][v], map[u][w], map[u][z],
+                                                                          map[v][w], map[v][z], map[w][z]]), p))
     return clauses
 
 

@@ -30,6 +30,8 @@ class SolverInterface(object):
         try:
             model = SatModel(pages, edges, nodes, constraints)
 
+            print("Adding constraints")
+
             model.add_relative_order_clauses()
 
             model.add_page_assignment_clauses()
@@ -38,8 +40,12 @@ class SolverInterface(object):
 
             model.add_additional_constraints()
 
+            print("Start solving")
+
             dimacstr = model.to_dimacs_str()
             output = cls._call_lingeling_with_string(dimacstr)
+
+            print("Finished solving")
 
             sat_result = model.parse_lingeling_result(str(output, encoding='UTF-8'))
 
