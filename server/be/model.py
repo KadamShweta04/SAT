@@ -110,7 +110,7 @@ def static_to_dimacs(clauses: list, first_line: str) -> str:
     #     ",", " ")
 
 
-def static_encode_same_page(e1: int, e2: int, edge_to_page: ndarray) -> List[List[int]]:
+def static_encode_same_page(edge_to_page: ndarray, e1: int, e2: int) -> List[List[int]]:
     """
     This method generates the clauses to encode that two edges must be assigned to the same page.
     Because the corresponding CNF formula gets bloated on many pages, this method only handles up to four pages.
@@ -184,7 +184,7 @@ def static_encode_same_page(e1: int, e2: int, edge_to_page: ndarray) -> List[Lis
     return clauses
 
 
-def static_encode_different_pages(e1, e2, edge_to_page) -> List[List[int]]:
+def static_encode_different_pages(edge_to_page, e1, e2) -> List[List[int]]:
     """
     Encodes different pages for two edges.
 
@@ -512,38 +512,36 @@ class SatModel(object):
             if constraint['type'] == 'EDGES_ON_PAGES':
                 if not modifier:
                     abort(400, "EDGES_ON_PAGES constraints need the modifier set")
-                for e_id in arguments:
+                for e in arguments:
                     clause = []
-                    e_idx = self._edge_id_to_idx[e_id]
-                    for p_id in constraint['modifier']:
-                        p_idx = self._page_id_to_idx[p_id]
-                        clause.append(self._edge_to_page[p_idx, e_idx])
+                    for p in constraint['modifier']:
+                        clause.append(self._edge_to_page[self._page_id_to_idx[p], self._edge_id_to_idx[e]])
                     clauses.append(clause)
 
             elif constraint['type'] == 'EDGES_SAME_PAGES':
                 e_idxs = [self._edge_id_to_idx[e_id] for e_id in arguments]
 
-                for i in range(len(e_idxs)):
-                    if i == 0:
+                for e in range(len(e_idxs)):
+                    if e == 0:
                         continue
-                    clauses.extend(static_encode_same_page(e_idxs[i - 1], e_idxs[i], self._edge_to_page))
+                    clauses.extend(static_encode_same_page(self._edge_to_page, e_idxs[e - 1], e_idxs[e]))
 
             elif constraint['type'] == 'EDGES_DIFFERENT_PAGES':
-                for i, ignore1 in enumerate(arguments):
-                    for j in range(i):
-                        if i == j:
+                for e, ignore1 in enumerate(arguments):
+                    for f in range(e):
+                        if e == f:
                             continue
-                        clauses.extend(static_encode_different_pages(self._edge_id_to_idx[arguments[i]],
-                                                                     self._edge_id_to_idx[arguments[j]],
-                                                                     self._edge_to_page))
+                        clauses.extend(static_encode_different_pages(self._edge_to_page,
+                                                                     self._edge_id_to_idx[arguments[e]],
+                                                                     self._edge_id_to_idx[arguments[f]]))
+
             elif constraint['type'] == 'NOT_ALL_IN_SAME_PAGE':
                 page_number = self._edge_to_page.shape[0]
                 for p in range(page_number):
-                        clause = []
-                        for e_id in arguments:
-                            e_idx = self._edge_id_to_idx[e_id]
-                            clause.append(-self._edge_to_page[p, e_idx])
-                        clauses.append(clause)
+                    clause = []
+                    for e in arguments:
+                        clause.append(-self._edge_to_page[p, self._edge_id_to_idx[e]])
+                    clauses.append(clause)
 
             elif constraint['type'] == 'EDGES_TO_SUB_ARC_ON_PAGES':
                 if len(arguments) != 2:
@@ -562,13 +560,13 @@ class SatModel(object):
                         nodes.remove(arguments[1])
                         v = list(nodes)[0]
                         v_idx = self._node_id_to_idx[v]
-                        e_idx = self._edge_id_to_idx[e.id]
+                        e = self._edge_id_to_idx[e.id]
                         clause = [-self._precedes[s_idx, v_idx],
                                   -self._precedes[v_idx, t_idx]]
 
                         for p in modifier:
-                            p_idx = self._page_id_to_idx[p]
-                            clause.append(self._edge_to_page[p_idx, e_idx])
+                            p = self._page_id_to_idx[p]
+                            clause.append(self._edge_to_page[p, e])
 
                         clauses.append(clause)
                     else:
@@ -585,9 +583,9 @@ class SatModel(object):
                 for e in self.edges:
                     if e.target in arguments or e.source in arguments:
                         clause = []
-                        e_idx = self._edge_id_to_idx[e.id]
-                        for p_idx in p_idxs:
-                            clause.append(self._edge_to_page[p_idx, e_idx])
+                        e = self._edge_id_to_idx[e.id]
+                        for p in p_idxs:
+                            clause.append(self._edge_to_page[p, e])
                         clauses.append(clause)
                     else:
                         continue
@@ -603,28 +601,28 @@ class SatModel(object):
                         clauses.append([self._precedes[self._node_id_to_idx[first], self._node_id_to_idx[second]]])
 
             elif constraint['type'] == 'NODES_ABSOLUTE_ORDER' or constraint['type'] == 'NODES_REQUIRE_ABSOLUTE_ORDER':
-                for i in range(len(arguments)):
-                    if i == 0:
+                for e in range(len(arguments)):
+                    if e == 0:
                         continue
                     clauses.extend(static_encode_absolute_order(self._precedes,
-                                                                self._node_id_to_idx[arguments[i - 1]],
-                                                                self._node_id_to_idx[arguments[i]]))
+                                                                self._node_id_to_idx[arguments[e - 1]],
+                                                                self._node_id_to_idx[arguments[e]]))
 
             elif constraint['type'] == 'NODES_FORBID_PARTIAL_ORDER':
                 clause = []
-                for i in range(len(arguments)):
-                    if i == 0:
+                for e in range(len(arguments)):
+                    if e == 0:
                         continue
-                    clause.append(-self._precedes[self._node_id_to_idx[arguments[i - 1]],
-                                                  self._node_id_to_idx[arguments[i]]])
+                    clause.append(-self._precedes[self._node_id_to_idx[arguments[e - 1]],
+                                                  self._node_id_to_idx[arguments[e]]])
                 clauses.append(clause)
-                
+
             elif constraint['type'] == 'NODES_REQUIRE_PARTIAL_ORDER':
-                for i in range(len(arguments)):
-                    if i == 0:
+                for e in range(len(arguments)):
+                    if e == 0:
                         continue
-                    clauses.append([self._precedes[self._node_id_to_idx[arguments[i - 1]],
-                                                   self._node_id_to_idx[arguments[i]]]])
+                    clauses.append([self._precedes[self._node_id_to_idx[arguments[e - 1]],
+                                                   self._node_id_to_idx[arguments[e]]]])
 
             elif constraint['type'] == 'NODES_CONSECUTIVE':
                 if len(arguments) != 2:
