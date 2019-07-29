@@ -45,8 +45,9 @@ The drawing of a graph is referred to as \textit{plane} if no edges cross. Note 
 \end{figure}
 \newpage
 \section{Linear layouts}
+\label{LL}
 %\cite{dujmovic2004linear}
-A linear layout of a graph is a layout in which all the vertices $V \in G$ are positioned along a line called the \textit{spine}.\\
+A linear layout of a graph is a layout in which all the vertices $V$ are positioned along a line called the \textit{spine}.\\
 The order in which these vertices are placed on the spine, is described by a bijective function $$\sigma : V \mapsto \{1,...,n\} $$. This function defines a relation where the following statements hold:
 \begin{itemize}
 \item Antisymmetry: if $\sigma(v_0) \leq sigma(v_1)$ and $\sigma(v_1) \leq \sigma(v_1)$ then $v_0 = v_1$
@@ -59,29 +60,41 @@ $$ \pi: E \rightarrow \{1,..,p\} $$ making it a partition of $E$.\\
 In the linear layout each subset represents one half-plane, delimited by the spine, on which all the edges will be placed.
 In order to make it possible to draw these graphs in a 2D setting each half-plane is usually colored differently which is why the subsets are sometimes also referred to as \textit{colors}.\\
 The following sections explain which requirements the order of vertices and the assignment of edges follow.
+\begin{figure}[!h]
+\begin{center}
+\includegraphics[width=1\textwidth]{figures/CrossingNesting.png}
+\caption{a) crossing edges, b) nesting edges}
+\label{img:crossNest}
+\end{center}
+\end{figure}
 \subsection{Stack layouts}
-For a stack layout, sometimes also referred to as a \textit{book embedding}, $\mathcal{E}(G,p)$ the vertices of the graph $G$ need to be ordered in a way that now two edges $e_i, e_j$ assinged to the same subset (called \textit{pages} of a book embedding) $\pi(e_i) = \pi(e_j)$ cross, that is to say each each half-plane contains a \textit{planar} subgraph.\\
-The \textit{book thickness} or \textit{stack number} of a graph defines the minimal number of pages that is needed to embed the graph in such a layout.\\
-In the past remarkable insights about these embeddings could be gained:
-\textcolor{red}{Insights}\\
-\subsection{Queue layouts}
-For a queue layout $\mathcal{Q}(G,q)$ the order of the vertices is chosen so that no two edges $e_i, e_j$ where $\pi(e_i) = \pi(e_j)$ are nested. Two edges $e_i, e_j$ are nested if both endpoints of edge $e_i$ are between both endpoints of edge $e_j$, as shown in \textcolor{red}{Figure somewhat}.
+For a stack layout $\mathcal{E}(G,p)$ , sometimes also referred to as a \textit{book embedding}, the vertices $V$ need to be ordered in a way that now two edges $e_i, e_j$ assinged to the same subset $\pi(e_i) = \pi(e_j)$ cross, that is to say each each half plane contains a \textit{planar} subgraph. The subsets of $E_p$ in a stack layout are calles \textit{pages}.\\
+The \textit{book thickness} or \textit{stack number} of a graph defines the minimal number of pages that is needed to embed the graph.\\
+In 1968 Prof. Dr. Mihalis Yannakakis \cite{yannakakis1986four} was able to prove that every planar graph admits to a stack layout with a \textit{book thickness} $p \leq 4$. Prof. Yannakakis also sketched the construction of a graph whose book thickness $p = 4$. However, his sketch was never completed and to this day researchers have not been able to find a graph that requires four pages.
 \begin{figure}[!h]
 \begin{center}
 \includegraphics[width=1\textwidth]{figures/Platzhalter.png}
-\caption{Crossing and Nesting Edges}
-\label{img:plzhltr}
+\caption{$K_4$ and the corresponding stack layout}
+\label{img:stackGHG}
 \end{center}
 \end{figure}
-Similar to the \textit{book thickness} in stack layouts a queue layout has a \textit{queue number} that states in how many queues the graph can be embedded minimally.\\
-\textcolor{red}{research}.
+\subsection{Queue layouts}
+For a queue layout $\mathcal{Q}(G,q)$ the order of the vertices is chosen so that no two edges $e_i, e_j$ where $\pi(e_i) = \pi(e_j)$ are nested. Two edges $e_i, e_j$ are nested if both endpoints of edge $e_i$ are between both endpoints of edge $e_j$, as shown in \autoref{img:crossNest}. This property is not violated if edges $e_i, e_j$ share the same source or target vertex.\\
+Similar to the \textit{book thickness} in stack layouts a queue layout has a \textit{queue number} that states in how many queues the graph can be embedded in minimally.\\
+\begin{figure}[!h]
+\begin{center}
+\includegraphics[width=1\textwidth]{figures/Platzhalter.png}
+\caption{$K_4$ and the corresponding queue layout}
+\label{img:queueK4}
+\end{center}
+\end{figure}
 \subsection{Further restrictions}
 In addition to either being a stack or a queue, each half plane can be restricted further to have a special graph structure:
 \subsubsection{Tree or forest subgraphs}
 A half plane or page of the layout has to be in the structure of a \textit{tree} or \textit{forest}, meaning that it is \textit{acyclic} and in the case of a \textit{tree} also connected.
 \subsubsection{Dispersible subgraphs}
-A \textit{dispersible} subgraph is a graph in which no two edges share one endpoint. This kind of graph is also called a \textit{matching}.
-\begin{figure}[!h]
+A \textit{dispersible} subgraph is a graph in which no two edges share one endpoint. This kind of graph is also called a \textit{matching}. 
+\begin{figure}[h!]
 \begin{center}
 \includegraphics[width=1\textwidth]{figures/Platzhalter.png}
 \caption{Dispersible Subgraphs}
@@ -90,20 +103,26 @@ A \textit{dispersible} subgraph is a graph in which no two edges share one endpo
 \end{figure} 
 \newpage
 \section{Boolean satisfiability problem}
-In 2015 the Algorithms Research Group of University of Tübingen proposed a new method to compute linear layouts automatically. \\
-They found a way to formulate linear layouts as SAT-Formulas and used SAT-Solvers in order to get the order of vertices $V$ and the assignments of edges to stacks (or queues) efficiently.\\
-The following section provides the theory behind SAT-formulas and  a rough explanation of how the properties of a linear layout are translated.
+In 2015 the Algorithms Research Group of University of Tübingen proposed a new method to compute linear layouts automatically \cite{Bekos2015TheBE}, by formulating the problems as SAT instances which can then be solved by a SAT solver in reasonable time.
+The following sections provide the theory behind SAT-formulas and a rough explanation of how the properties of a linear layout are translated.
 \subsection{SAT problem}
-SAT is short for satisfiability and means the \textit{Boolean satisfiability problem}, which is the problem of determining whether there exists an assignment of truth values that satisfies a Boolean formula in \textit{conjunctive normal form} (see below). This problem is np-complete. \\
+SAT is short for satisfiability and means the \textit{Boolean satisfiability problem}, which is the problem of determining whether there exists an assignment of truth values that satisfies a Boolean formula in \textit{conjunctive normal form}. This problem is np-complete. \\
 A Boolean formula consists of variables and operators ($\land$ for AND, $\lor$ for OR, $\neg$ for negation) which may be organized by parantheses. A formula is satisfiable if there exists an assignment of truth variables \textbf{true} and \textbf{false} to the variables, such that the formula evaluates to \textbf{true}.\\
-Problems for SAT are formulated in \textit{conjunctive normal form}.
-This means that the formula is a conjunction of clauses, where each clause is a disjunction of variables. That is to say the variables in a clause are connected by OR ($\lor$) and the clauses are connected by AND ($\land$). The opposite of CNF would be the \textit{disjunctive normal form}, where the formula is disjunction of clauses which are are conjunction of variables. 
+Instances in SAT are in \textit{conjunctive normal form}.
+This means that the formula is a conjunction of clauses (or literals), where each clause is a disjunction of literals. That is to say the variables in a clause are connected by OR ($\lor$) and the clauses are connected by AND ($\land$). The opposite of CNF would be the \textit{disjunctive normal form}, where the formula is disjunction of clauses which are are conjunction of variables. 
 \begin{figure}[!h]
 \begin{center}
-\includegraphics[width=1\textwidth]{figures/Platzhalter.png}
-\caption{Sat formula?}
-\label{img:plzhltr}
+$\lnot A \land (B \lor \lnot C \lor D) \land (A \lor \lnot D)$\\[5px]
+\begin{tabular}{c}
+$A$ = false\\
+$B$ = true\\
+$C$ = false\\
+$D$ = false\\
+\end{tabular}
+\caption{A formula in conjunctive normal form and an assignment of truth variables that satisfies the formula}
+\label{cnf}
 \end{center}
 \end{figure}
 \subsection{The linear layout as a SAT instance}
-Let $G=(V,E)$ be the graph, and $\mathcal{F}(G,p)$ the corresponding linear layout. In this case $\mathcal{F}(G,p)$ might either be a stack embedding $\mathcal{E}(G,p)$ or queue embedding $\mathcal{Q}(G,q)$.\\
+Let $G=(V,E)$ be the graph and $\mathcal{F}(G,p)$ the logic formula that describes the problem in \textit{conjunctive normal form}.\\
+For each pair of vertices $v_i, v_j \in V$ 

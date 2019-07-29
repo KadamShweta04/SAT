@@ -89,6 +89,7 @@ require([
 				success: function(response) {
 					status = response.status
 					if (status == "FINISHED") {
+						console.log("finished")
 						$("#loadingDiv").hide()
 						if (! response.satisfiable) { 
 							registerCommands();
@@ -100,7 +101,10 @@ require([
 						}
 						
 					} else if (status == "IN_PROGRESS"){
-						setTimeout(sendRequest, 5000)
+						console.log("In Progress")
+						setTimeout(function() {
+							sendRequest(link)
+						}, 5000)
 					}
 					
 				},
