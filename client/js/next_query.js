@@ -50,6 +50,18 @@ $( function() {
 		allowDuplicates: true,
 
 	});
+	
+	$("#ProgressDialog").dialog({
+		autoOpen: true,
+		resizable: false, 
+		width: 400, 
+	})
+	
+	$("#failedComputationDialog").dialog({
+		autoOpen: false,
+		resizable: false,
+		width: 400,
+	})
 
 	$("#EditDialog").dialog({
 		autoOpen: false,

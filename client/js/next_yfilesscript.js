@@ -48,7 +48,9 @@ require([
 
 		var pagesArray = [[],[],[],[]]
 		var respondedObject = null;
+		var link;  
 
+		
 		var constraintsArray =[]
 
 		let clientSideImageExport = null;		
@@ -60,14 +62,14 @@ require([
 		/* Main Function */
 
 		function request() {
+			registerCommands();
 
 			var embeddingID = location.hash
 			if (embeddingID == "") {
+				$("#ProgressDialog").dialog("close")
 				$("#noIDDialog").dialog("open")
 			} else {
 				embeddingID = embeddingID.slice(1)
-
-				var link;  embeddingID
 				
 				var currentServer = window.localStorage.getItem("currentServer") 
 				if (currentServer == null) {
@@ -87,12 +89,15 @@ require([
 			$.ajax({
 				url: link + "?async=true",
 				success: function(response) {
+					
 					status = response.status
+					
 					if (status == "FINISHED") {
 						console.log("finished")
 						$("#loadingDiv").hide()
+						$("#ProgressDialog").dialog("close")
 						if (! response.satisfiable) { 
-							registerCommands();
+							$("#ProgressDialog").dialog("close")
 							$("#notSatisfiableNrPages").append(response.pages.length)
 							$("#notSatisfiableDialog").dialog("open")
 						} else {
@@ -105,6 +110,10 @@ require([
 						setTimeout(function() {
 							sendRequest(link)
 						}, 5000)
+					} else if (status == "FAILED") {
+						$("#ProgressDialog").dialog("close")
+						$("#errorMessage").append(response.message)
+						$("#failedComputationDialog").dialog("open")
 					}
 					
 				},
@@ -803,6 +812,25 @@ require([
 
 
 		function registerCommands(){
+			
+			/* 
+			 * progress dialog
+			 */
+			
+			document.querySelector("#cancelComputation").addEventListener("click", () => {
+				
+				$.ajax({
+					url: link,
+					method: "DELETE",
+					success: function() {
+						location.href = "index.html#or" + location.hash.slice(1);
+					},
+					error: function() {
+						alert("Something went wrong")
+					}
+				})
+
+			})
 
 			/*
 			 * file tab
@@ -915,6 +943,10 @@ require([
 
 				$("#exportDialog").dialog("close");
 			})
+			
+			/**
+			 * Stats Button
+			 */
 
 			$("#statsButton").click(function() {
 				var graph = graphComponent.graph

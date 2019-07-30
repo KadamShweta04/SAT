@@ -40,7 +40,11 @@
 </head>
 <body>
 	<div id="loadingDiv">
-		<div id="progressbar"></div>
+		<div id="ProgressDialog" style="text-align: left" title="Computation is in progress...">
+		<div id="progressbar" style="width: 100%"></div>
+		<p>The linear layout is being computed. This might take a while.
+		<p><button class="ui-button ui-widget ui-corner-all" id="cancelComputation">Cancel and back to edit</button>
+		</div>
 	</div>
 	<div id="greyDiv"></div>
 
@@ -229,6 +233,11 @@
 	<p><button class="ui-button ui-widget ui-corner-all" id="closeEdgeNeighborhood">Close</button></p>
 	</div>
 	
+	<div id="failedComputationDialog" title="Computation failed">
+	The computation failed, due to the following reason:
+	<p id="errorMessage"> </p>
+	<p><button class="ui-button ui-widget ui-corner-all" id="yesBackToEdit">Back to edit</button>
+	</div>
 
 
 	<!--  Necessary  -->
