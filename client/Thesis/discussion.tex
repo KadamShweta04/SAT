@@ -5,3 +5,12 @@
 \chapter{Discussion and Outlook}
   \label{Discussion}
 
+All in all this project is considered a success. We achieved the intention of developing an easy to use graph drawing editor....\\
+%% some more praising?
+Though, through using the tool regularly and for large graphs, it proved to be \textcolor{red}{inelegant} and inefficient in some aspects.\\
+One of the deficiencies was that stellating faces of a graph (a process that is used regularly in the research of linear layouts?) turned out to be very cumbersome, considering one had to add a node to each face and then connect this new node to each node delimiting the face. This insight lead to the implementation of the stellation buttons within the tools submenu (see \autoref{xyz}) and to the elimination of the first problem.\\
+The other big issue concernes the creation of constraints. On big graphs, for example the graphs that were proposed by Prof. Dr. Yannakakis \cite{yannakakis1986four} and explained in \autoref{}, there were at one point 150 constraints to be created. While for \textcolor{red}{us} this issue could be resolved through a script and copying the constraints into the already created graphML file, this is not really a solution for everyday usage as it is not user-friendly and very errorprone.\\
+A considered solution was to add the constraints to the copy and paste commands, so when a set of elements is pasted all corresponding constraints should be as well. While this is certainly possible, it might turn out to be rather hindering than helpful. The other idea this behalf was to allow text input to the constraints field, which is actually supported by the \textit{Tag-It} plugin used for this feature. This would make the creation of constraitns faster and more effective. As \textit{Tag-It} even offers the possibility for auto completion, the user wouldn't even have to remember the constraints in their entirety. This idea will also come in handy in future, since the plan is to add more costraints. Ultimately the opions will overcrowd the context menu and make it (even more) cumbersome to use.\\
+
+
+

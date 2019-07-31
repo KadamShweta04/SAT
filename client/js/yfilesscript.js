@@ -176,7 +176,6 @@ require([
 				if (! allowDoubleEdges) {
 					edges.forEach(function(e) {
 						if (((edge.sourceNode == e.sourceNode && edge.targetNode == e.targetNode) || (edge.sourceNode == e.targetNode && edge.targetNode == e.sourceNode)) && edge != e){
-							console.log("double Edge")
 							setTimeout(function() {
 								if (graphComponent.graph.contains(edge)) {
 									graphComponent.graph.remove(edge);
@@ -1578,7 +1577,6 @@ require([
 							graphComponent.graph.addLabel(stellate, getNextLabel("node").toString());
 
 							face.forEach(dart => {
-								//console.log(adapter.getOriginalNode(dart.associatedEdge.source) + "-" + adapter.getOriginalNode(dart.associatedEdge.target))
 								const source =  adapter.getOriginalNode(dart.reversed ? dart.associatedEdge.source : dart.associatedEdge.target);
 								const e = graphComponent.graph.createEdge({
 									source: source,
@@ -1638,9 +1636,7 @@ require([
 					}
 					var planarEmbedding = new yfiles.algorithms.PlanarEmbedding(ygraph);
 					var outerFace = planarEmbedding.outerFace;
-					outerFace.forEach(dart => {
-						console.log(adapter.getOriginalNode(dart.associatedEdge.source) + "-" + adapter.getOriginalNode(dart.associatedEdge.target))
-					})
+			
 					
 					planarEmbedding.faces.forEach(function(face) {
 						if (face.size == 3) {
@@ -1810,7 +1806,6 @@ require([
 			document.querySelector("#edgeStellation").addEventListener("click", () => {
 				var selectedEdges = graphComponent.selection.selectedEdges.toArray();
 				var selectedNodes = graphComponent.selection.selectedNodes.toArray();
-				console.log(selectedNodes.length + " " + selectedEdges.length)
 
 				if (selectedEdges.length != 0) {
 					selectedEdges.forEach(function(e) {
@@ -2038,8 +2033,6 @@ require([
 
 				var data = JSON.stringify(createDataForCalculation(graphEncoded64))
 
-				//console.log(data)
-
 				var currentServer = window.localStorage.getItem("currentServer")
 
 				if (currentServer == null) {
@@ -2057,7 +2050,6 @@ require([
 							"content-type": "application/json"
 						},
 						"success": function(response, status) {
-							console.log(currentServer + "?async=true")
 							redirection(response.id)
 						},
 						"processData": false,

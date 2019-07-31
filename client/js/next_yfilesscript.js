@@ -93,7 +93,6 @@ require([
 					status = response.status
 					
 					if (status == "FINISHED") {
-						console.log("finished")
 						$("#loadingDiv").hide()
 						$("#ProgressDialog").dialog("close")
 						if (! response.satisfiable) { 
@@ -106,7 +105,6 @@ require([
 						}
 						
 					} else if (status == "IN_PROGRESS"){
-						console.log("In Progress")
 						setTimeout(function() {
 							sendRequest(link)
 						}, 5000)
@@ -155,6 +153,7 @@ require([
 					c.modifier.forEach(function(m) {
 						graphComponent.graph.nodes.toArray().forEach(function(n) {
 							if (n.tag == m) {
+								objItems.push(m)
 							}
 						})
 					})
@@ -892,6 +891,10 @@ require([
 			})
 
 			document.querySelector("#yesBackToEdit").addEventListener("click", () => {
+				location.href = "index.html#or" + location.hash.slice(1)
+			})
+			
+			document.querySelector("#yesBackToEdit2").addEventListener("click", () => {
 				location.href = "index.html#or" + location.hash.slice(1)
 			})
 
