@@ -43,7 +43,6 @@ require([
 		var nodesStableSize = true;
 		var allowDoubleEdges = false;
 
-
 		let myGraph;
 
 		let clientSidePdfExport= null;
