@@ -43,7 +43,6 @@ require([
 		var nodesStableSize = true;
 		var allowDoubleEdges = false;
 
-
 		let myGraph;
 
 		let clientSidePdfExport= null;
@@ -103,7 +102,7 @@ require([
 				if (node.tag == null) {
 					node.tag = getNextTag()
 
-				}  
+				}
 
 			})
 
@@ -116,7 +115,7 @@ require([
 
 				if (edge.labels.size == 0) {
 					let label = getNextLabel("edge");
-					var newLabel = graphComponent.graph.addLabel(edge, label.toString())	
+					var newLabel = graphComponent.graph.addLabel(edge, label.toString())
 
 
 					// for each edge assign edge label style (label above edge)
@@ -143,7 +142,7 @@ require([
 										graphComponent.graph.remove(edge);
 									}
 								},10)
-							} 
+							}
 						})
 					} else {
 						// double Edges are allowed
@@ -181,7 +180,7 @@ require([
 									graphComponent.graph.remove(edge);
 								}
 							},10)
-						} 
+						}
 					})
 				} else {
 					var occurrance = 0;
@@ -255,19 +254,19 @@ require([
 			configureDeletion();
 			registerCommands();
 
-			
-			
+
+
 			// check if there is a hash location, if yes display graph with #id
 			if (location.hash != "") {
 
 				var embeddingID = location.hash.slice(3)
 				let link;
-				
+
 				// checking if there is a preferred server in the local storage, if not use the standard server
-				var currentServer = window.localStorage.getItem("currentServer") 
+				var currentServer = window.localStorage.getItem("currentServer")
 				if (currentServer == null) {
 					//document.getElementById("displayCurrentServer").innerHTML = "http://sofa.fsi.uni-tuebingen.de:5555/embeddings/"
-					link = "http://sofa.fsi.uni-tuebingen.de:5555/embeddings/" + embeddingID
+					link = standardServer + "/" + embeddingID
 				} else {
 					//document.getElementById("displayCurrentServer").innerHTML = currentServer
 					link = currentServer + "/embeddings/" + embeddingID
@@ -365,7 +364,7 @@ require([
 		 */
 		function configureDeletion() {
 
-			// change command binding of deleting to first showing 
+			// change command binding of deleting to first showing
 			graphComponent.inputMode.keyboardInputMode.addCommandBinding(
 					yfiles.input.ICommand.DELETE,
 					() => {
@@ -435,7 +434,7 @@ require([
 		/*
 		 *
 		 *  configuring the context menu
-		 *	
+		 *
 		 */
 
 		function configureContextMenu(graphComponent) {
@@ -699,9 +698,9 @@ require([
 		}
 
 		/*
-		 * 
-		 *  For the partial order constraint this function fills the dialog that shows up 
-		 * 
+		 *
+		 *  For the partial order constraint this function fills the dialog that shows up
+		 *
 		 */
 		function fillOrderDialog() {
 			let miniGraphComponent = new yfiles.view.GraphComponent("#miniGraphComponent");
@@ -1325,7 +1324,7 @@ require([
 
 			document.querySelector("#okChangeServer").addEventListener("click", () => {
 				var newurl = $("#serverUrl").val()
-				
+
 				if (newurl.split("")[newurl.length-1] == "/") {
 					newurl = newurl.split("")
 					newurl.pop()
@@ -1539,7 +1538,7 @@ require([
 				if (nodesStableSize) {
 					graphComponent.inputMode.showHandleItems = yfiles.graph.GraphItemTypes.ALL & ~yfiles.graph.GraphItemTypes.NODE;
 				} else if (!nodesStableSize) {
-					graphComponent.inputMode.showHandleItems = yfiles.graph.GraphItemTypes.ALL; 
+					graphComponent.inputMode.showHandleItems = yfiles.graph.GraphItemTypes.ALL;
 				}
 
 			})
@@ -1563,9 +1562,9 @@ require([
 					}
 					var planarEmbedding = new yfiles.algorithms.PlanarEmbedding(ygraph);
 					var outerFace = planarEmbedding.outerFace;
-				
-					var alreadyStellated =[]; 
-					
+
+					var alreadyStellated =[];
+
 					planarEmbedding.faces.forEach(face => {
 							var x = 0;
 							var y = 0;
@@ -1590,10 +1589,10 @@ require([
 							x = x / face.size;
 							y = y / face.size;
 							graphComponent.graph.setNodeCenter(stellate, new yfiles.geometry.Point(x, y));
-							
+
 					});
 
-					
+
 				} else {
 					var x = 0;
 					var y = 0;
@@ -1621,11 +1620,11 @@ require([
 				}
 			})
 
-			
-			
+
+
 			document.querySelector("#threeStellation").addEventListener("click", () => {
 				var selectedNodes = graphComponent.selection.selectedNodes.toArray();
-				
+
 				if (selectedNodes.length < 3) {
 					const adapter = new yfiles.layout.YGraphAdapter(graphComponent.graph);
 					var ygraph = adapter.yGraph;
@@ -1636,29 +1635,29 @@ require([
 					}
 					var planarEmbedding = new yfiles.algorithms.PlanarEmbedding(ygraph);
 					var outerFace = planarEmbedding.outerFace;
-			
-					
+
+
 					planarEmbedding.faces.forEach(function(face) {
 						if (face.size == 3) {
 							var x = 0;
 							var y = 0;
-							
+
 							face.forEach(function(dart) {
 								const source =  adapter.getOriginalNode(dart.reversed ? dart.associatedEdge.source : dart.associatedEdge.target);
 								x = x + source.layout.center.x;
 								y = y + source.layout.center.y;
 							})
-							
+
 							x = x / face.size
 							y = y / face.size
-							
+
 							// create 3 new nodes
 							var s1 = graphComponent.graph.createNode({
 								layout: new yfiles.geometry.Rect(x,y,20,20),
 								tag: getNextTag()
 							})
 							graphComponent.graph.addLabel(s1, getNextLabel("node").toString());
-							
+
 							var s2 = graphComponent.graph.createNode({
 								layout: new yfiles.geometry.Rect(x,y,20,20),
 								tag: getNextTag()
@@ -1670,8 +1669,8 @@ require([
 								tag: getNextTag()
 							})
 							graphComponent.graph.addLabel(s3, getNextLabel("node").toString());
-							
-							
+
+
 							// create 3 new edges
 							var e1 = graphComponent.graph.createEdge({
 								source: s1,
@@ -1698,7 +1697,7 @@ require([
 							// create 6 new edges,2 for each dart
 							var edgesToNewNodes = [[s1, s2],[s3,s1],[s2,s3]]
 							var i = 0;
-							
+
 							face.forEach(function(dart) {
 								const source =  adapter.getOriginalNode(dart.reversed ? dart.associatedEdge.source : dart.associatedEdge.target);
 								var ea = graphComponent.graph.createEdge({
@@ -1715,32 +1714,32 @@ require([
 								})
 								graphComponent.graph.addLabel(eb, getNextLabel("edge").toString())
 
-								
-							
+
+
 								i++;
 							})
-							
+
 						}
 					})
 				} else if (selectedNodes.length == 3) {
 					var x = 0;
 					var y = 0;
-					
+
 					selectedNodes.forEach(function(n) {
 						x = x + n.layout.center.x;
 						y = y + n.layout.center.y;
 					})
-					
+
 					x = x / selectedNodes.length
 					y = y / selectedNodes.length
-										
+
 					// create 3 new nodes
 					var s1 = graphComponent.graph.createNode({
 						layout: new yfiles.geometry.Rect(x,y,20,20),
 						tag: getNextTag()
 					})
 					graphComponent.graph.addLabel(s1, getNextLabel("node").toString());
-					
+
 					var s2 = graphComponent.graph.createNode({
 						layout: new yfiles.geometry.Rect(x,y,20,20),
 						tag: getNextTag()
@@ -1752,7 +1751,7 @@ require([
 						tag: getNextTag()
 					})
 					graphComponent.graph.addLabel(s3, getNextLabel("node").toString());
-					
+
 					// create 3 new edges
 					var e1 = graphComponent.graph.createEdge({
 						source: s1,
@@ -1774,11 +1773,11 @@ require([
 						tag: s1.tag+"-"+s3.tag
 					})
 					graphComponent.graph.addLabel(e3, getNextLabel("edge").toString())
-					
+
 					// create 6 new edges,2 for each dart
 					var edgesToNewNodes = [[s1, s2],[s3,s1],[s2,s3]]
 					var i = 0;
-					
+
 					selectedNodes.forEach(function(n) {
 						var ea = graphComponent.graph.createEdge({
 							source: n,
@@ -1793,16 +1792,16 @@ require([
 							tag: n.tag + "-(0)-" + edgesToNewNodes[i][1].tag
 						})
 						graphComponent.graph.addLabel(eb, getNextLabel("edge").toString())
-						
-						
+
+
 						i++;
 					})
-					
+
 				}
 			})
-			 
 
-			
+
+
 			document.querySelector("#edgeStellation").addEventListener("click", () => {
 				var selectedEdges = graphComponent.selection.selectedEdges.toArray();
 				var selectedNodes = graphComponent.selection.selectedNodes.toArray();
@@ -1817,7 +1816,7 @@ require([
 					var edges = graphComponent.graph.edges.toArray();
 					edges.forEach(function(e) {
 						stellateEdge(e)
-					}) 
+					})
 				}
 
 			})
@@ -1946,10 +1945,10 @@ require([
 				var isBipartite = yfiles.algorithms.GraphChecker.isBipartite(ygraph)
 
 				document.getElementById("nrOfVertices").innerHTML =  nrOfVertices
-				document.getElementById("nrOfEdges").innerHTML = nrOfEdges 
+				document.getElementById("nrOfEdges").innerHTML = nrOfEdges
 				document.getElementById("isPlanar").innerHTML = isPlanar
 				if (isPlanar) {document.getElementById("isPlanar").style.color = "green"} else {document.getElementById("isPlanar").style.color = "red"}
-				document.getElementById("isConnected").innerHTML = isConnected	
+				document.getElementById("isConnected").innerHTML = isConnected
 				if (isConnected) {document.getElementById("isConnected").style.color = "green"} else {document.getElementById("isConnected").style.color = "red"}
 				document.getElementById("isAcyclic").innerHTML = isAcyclic
 				if (isAcyclic) {document.getElementById("isAcyclic").style.color = "green"} else {document.getElementById("isAcyclic").style.color = "red"}
@@ -1980,7 +1979,7 @@ require([
 			var ytargetNode = e.targetNode.layout.center.y
 
 
-			var xnew = xsourceNode + 0.5*(xtargetNode-xsourceNode) 		
+			var xnew = xsourceNode + 0.5*(xtargetNode-xsourceNode)
 			var ynew = ysourceNode + 0.5*(ytargetNode-ysourceNode)
 
 			var width = e.sourceNode.layout.width
@@ -1988,7 +1987,7 @@ require([
 
 			var newNode = graphComponent.graph.createNodeAt(new yfiles.geometry.Point(xnew+30, ynew+30))
 			var edge1 = graphComponent.graph.createEdge(newNode, e.sourceNode)
-			var edge2 = graphComponent.graph.createEdge(newNode, e.targetNode)						
+			var edge2 = graphComponent.graph.createEdge(newNode, e.targetNode)
 
 			// adding labels and tags
 			var nodeLabel = getNextLabel("node");
@@ -2016,7 +2015,7 @@ require([
 
 
 		/*
-		 *  Sends the data created by "createDataForCalculation" to the current (!) server and forwards the user to the view page 
+		 *  Sends the data created by "createDataForCalculation" to the current (!) server and forwards the user to the view page
 		 */
 
 		function computeLinearLayout() {
@@ -2072,7 +2071,7 @@ require([
 		function redirection(id) {
 			location.href = "linearlayout.html#" + id
 		}
-		
+
 		/*
 		 * creates the "data"-element that is needed by the ajax function
 		 */
@@ -2326,7 +2325,7 @@ require([
 
 
 		/*
-		 * calculates individual arc height for each edge  
+		 * calculates individual arc height for each edge
 		 */
 		function getArcHeight(edge) {
 			const source = edge.sourceNode.layout.center
@@ -2618,6 +2617,6 @@ require([
 		}
 
 
-		// run main method 
+		// run main method
 		run()
 	})
