@@ -17,9 +17,11 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{xcolor}
+\usepackage{cite}
 \usepackage{listings}
 \usepackage{hyperref}
-\renewcommand{\sectionautorefname}{Section}
+\renewcommand{\sectionautorefname}{Section}\renewcommand{\subsectionautorefname}{Subsection}
+\renewcommand{\chapterautorefname}{Chapter}
 
 
 \textwidth 14cm
@@ -58,7 +60,7 @@ Datum\\[3cm]
 	
 
 {\small\bf Advisor}\\[0.3cm]
-{\large Dr. Michaelis Bekos}\\
+{\large Dr. Michalis Bekos}\\
   {\footnotesize Algorithms Research Group\\
 	Universität Tübingen}\end{center}
 	
@@ -179,20 +181,7 @@ Diese Arbeit beschreibt die Entwicklung einer webbasierten Benutzeroberfläche u
 
 % can be removed
 \addcontentsline{toc}{chapter}{List of Abbreviations}
-\chapter*{List of Abbreviations\markboth{LIST OF ABBREVIATIONS}{LIST OF ABBREVIATIONS}}
-
-\begin{tabbing}
-\textbf{FACTOTUM}\hspace{1cm}\=Schrott\kill
-\textbf{BLAST}\>Basic Local Alignment Search Tool \\
-\textbf{...} \> ...\\
-\end{tabbing}
-
-%\setcounter{secnumdepth}{-1}
-%\section{Tables}\label{chap:App}
-\chapter{Further Tables and Figures}\label{chap:App}
-
-%\end{appendices)
-
+\chapter*{Index}
 \cleardoublepage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -201,7 +190,7 @@ Diese Arbeit beschreibt die Entwicklung einer webbasierten Benutzeroberfläche u
 
 \addcontentsline{toc}{chapter}{Bibliography}
 
-\bibliographystyle{alpha}
+\bibliographystyle{unsrt}
 \bibliography{mylit}
 %% Obige Anweisung legt fest, dass BibTeX-Datei `mylit.bib' verwendet
 %% wird. Hier koennen mehrere Dateinamen mit Kommata getrennt aufgelistet

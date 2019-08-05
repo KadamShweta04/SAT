@@ -1,64 +1,42 @@
-@article{dujmovic2004linear,
-  title={On linear layouts of graphs},
-  author={Dujmovic, Vida and Wood, David R},
-  journal={Discrete Mathematics and Theoretical Computer Science},
-  volume={6},
-  number={2},
-  year={2004},
-  publisher={DMTCS}
-}
+%% THEORY
 
-@inproceedings{Bekos2015TheBE,
+
+@article{Bekos2015TheBE,
   title={The Book Embedding Problem from a SAT-Solving Perspective},
   author={Michael A. Bekos and Michael Kaufmann and Christian Zielke},
   booktitle={Graph Drawing},
   year={2015}
 }
-
-@inproceedings{yannakakis1986four,
+@article{yannakakis1986four,
   title={Four pages are necessary and sufficient for planar graphs},
   author={Yannakakis, Mihalis},
   booktitle={Proceedings of the eighteenth annual ACM symposium on Theory of computing},
-  pages={104--108},
   year={1986},
   organization={ACM}
 }
-
-@misc{yfiles,
-	title={yFiles for HTML - API}, 
-	url={https://docs.yworks.com/yfileshtml/#/home}, 
-	journal={yFiles for HTML 2.2 Documentation}
+@article{yannakakis1989embedding,
+  title={Embedding planar graphs in four pages},
+  author={Yannakakis, Mihalis},
+  journal={Journal of Computer and System Sciences},
+  year={1989},
+  publisher={Academic Press}
 }
 
-@article{goldner1975note,
-  title={Note on a smallest nonhamiltonian maximal planar graph},
-  author={Goldner, A and Harary, Frank},
-  journal={Bull. Malaysian Math. Soc},
-  volume={6},
-  number={1},
-  pages={41--42},
-  year={1975}
-}
-
-@misc{wikipediaGraphML, 
-	title={GraphML}, 
-	url={https://de.wikipedia.org/wiki/GraphML}, 
-	journal={Wikipedia}, 
-	publisher={Wikimedia Foundation}, 
-	year={2019}, 
-	month={Apr}
-	}
-@misc{linearLayoutApi, 
-	author= "{Mirco Haug}",
-	title={Linear layout API}, 
-	url={http://sofa.fsi.uni-tuebingen.de:5555/}, 
-	journal={Linear layout API}
+%% TECH
+%HTML and CSS 
+@book{hogan_2011, 
+	place={Beijing}, 
+	title={HTML5 \& CSS3: Webentwicklung mit den Standards von morgen}, 
+	publisher={OReilly}, 
+	ISBN = {9783897213166},
+	EDITION = {1. Aufl.},
+	author={Hogan, Brian P.}, 
+	year={2011}
 } 
-
 @misc{w3c, 
 	author={W3C},
 	title={HTML 5.1 2nd Edition}, 
-	url={https://www.w3.org/TR/html51/}, 		
+	howpublished={\url{https://www.w3.org/TR/html51/}}, 		
 	journal={W3C}
 } 
 
@@ -66,22 +44,47 @@
     author = "{Wikipedia contributors}",
     title = "HTML --- {Wikipedia}{,} The Free Encyclopedia",
     year = "2019",
-    url = "https://en.wikipedia.org/w/index.php?title=HTML&oldid=906362850",
+    howpublished = {\url{https://en.wikipedia.org/w/index.php?title=HTML&oldid=906362850}},
     note = "[Online; accessed 29-July-2019]"
 }
+@misc{css-web-dokumentation, 
+	title={CSS Referenz}, 
+	howpublished={\url{https://developer.mozilla.org/de/docs/Web/CSS/CSS_Referenz }}, 
+	journal={MDN-Web-Dokumentation}
+} 
 
+%gml xml
+
+@misc{ wiki-xml,
+    author = "{Wikipedia contributors}",
+    title = "XML --- {Wikipedia}{,} The Free Encyclopedia",
+    year = "2019",
+    howpublished = {\url{https://en.wikipedia.org/w/index.php?title=XML&oldid=909225482}},
+    note = "[Online; accessed 4-August-2019]"
+}
+  
+@misc{ wiki-graphml,
+    author = "{Wikipedia contributors}",
+    title = "GraphML --- {Wikipedia}{,} The Free Encyclopedia",
+    year = "2019",
+    howpublished = {\url{https://en.wikipedia.org/w/index.php?title=GraphML&oldid=887565956}},
+    note = "[Online; accessed 4-August-2019]"
+ }
+ 
+ % JS
 @misc{wiki-js,
     author = "{Wikipedia contributors}",
     title = "JavaScript --- {Wikipedia}{,} The Free Encyclopedia",
     year = "2019",
-    url = "https://en.wikipedia.org/w/index.php?title=JavaScript&oldid=908233983",
+    howpublished = {\url{https://en.wikipedia.org/w/index.php?title=JavaScript&oldid=908233983}},
     note = "[Online; accessed 29-July-2019]"
   }
-  
+ 
+% JSON  
 @misc{mdn-web-dokumentation, 
 	author={Mozilla Corporation},
 	title={JavaScript}, 
-	url={https://developer.mozilla.org/de/docs/Web/JavaScript}, 
+	howpublished={\url{https://developer.mozilla.org/de/docs/Web/JavaScript}}, 
 	journal={MDN-Web-Dokumentation}
 } 
 
@@ -90,7 +93,72 @@
 	YEAR = {2015},
 	TITLE = {Professionell entwickeln mit JavaScript : Design, Patterns, Praxistipps - },
 	EDITION = {1. Aufl.},
-	ISBN = {978-3-836-22379-9},
+	ISBN = {9783836223799},
 	PUBLISHER = {Rheinwerk Verlag},
-	ADDRESS = {Bonn},
+	ADDRESS = {Bonn}
+}
+
+% libraries
+
+@misc{yfiles,
+	title={yFiles for HTML - API}, 
+	url={\url{https://docs.yworks.com/yfileshtml/#/home}}, 
+	journal={yFiles for HTML 2.2 Documentation},
+    note = "[Online; accessed 4-August-2019]"
+
+}
+
+
+@misc{jquery,
+	title={jQuery API Documentation},
+	howpublished={\urlhttps://api.jquery.com}},
+	author={The jQuery Foundation}
+	
+}
+	
+%% whatever, imple?	
+@misc{linearLayoutApi, 
+	author= "{Mirco Haug}",
+	title={Linear layout API}, 
+	howpublished={\url{http://sofa.fsi.uni-tuebingen.de:5555/}}, 
+	journal={Linear layout API}
+} 
+
+@article{jess,
+author = "Jessica Wolz",
+title = "Engineering Linear Layouts with SAT",
+school = "Univerity of Tübingen",
+year = "2018"
+}
+
+
+@article{kaufmann2018dispersable,
+  title={On Dispersable Book Embeddings},
+  author={Kaufmann, Michael and Pupyrev, Sergey},
+  booktitle={Graph-Theoretic Concepts in Computer Science: 44th International Workshop, WG 2018, Cottbus, Germany, June 27--29, 2018, Proceedings},
+  year={2018},
+  organization={Springer}
+}
+
+@misc{ wiki:json,
+    author = "{Wikipedia contributors}",
+    title = "JSON",
+    year = "2019",
+    howpublished = {\url{https://en.wikipedia.org/w/index.php?title=JSON&oldid=909197203}},
+    note = "[Online; accessed 4-August-2019]"
+  }
+  
+@article{di2013queue,
+  title={On the queue number of planar graphs},
+  author={Di Battista, Giuseppe and Frati, Fabrizio and Pach, J{\'a}nos},
+  journal={SIAM Journal on Computing},
+  year={2013},
+  publisher={SIAM}
+}
+
+@article{bekos2019, 
+	title={An Online Framework to Interact and Efficiently
+	Compute Linear Layouts of Graphs},
+	author={Michael A. Bekos and Mirco Haug and Michael Kaufmann and Julia Männecke},
+	year={2019}
 }
