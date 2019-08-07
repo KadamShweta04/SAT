@@ -74,7 +74,7 @@ require([
 				var currentServer = window.localStorage.getItem("currentServer") 
 				if (currentServer == null) {
 					document.getElementById("displayCurrentServer").innerHTML = "http://sofa.fsi.uni-tuebingen.de:5555/embeddings/"
-					link = "http://sofa.fsi.uni-tuebingen.de:5555/embeddings/" + embeddingID
+					link = "http://alice.uni-tuebingen.de:5555/embeddings/" + embeddingID
 				} else {
 					document.getElementById("displayCurrentServer").innerHTML = currentServer
 					link = currentServer + "/embeddings/" + embeddingID
