@@ -40,7 +40,7 @@ require([
 		let grid = null;
 
 		
-		var standardServer = "http://sofa.fsi.uni-tuebingen.de:5555/embeddings"
+		var standardServer = "http://alice.uni-tuebingen.de:5555/embeddings"
 
 		let myGraph;
 
