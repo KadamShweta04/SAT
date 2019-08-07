@@ -35,7 +35,7 @@ require([
 
 		let graph = null;
 
-		var standardServer = "http://alice.uni-tuebingen.de:5555/embeddings"
+		var standardServer = "http://alice.informatik.uni-tuebingen.de:5555/embeddings"
 
 		let gridInfo = null;
 		let grid = null;
