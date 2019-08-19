@@ -34,7 +34,7 @@ Invisible for the user each vertex and edge also is assigned a tag, a feature pr
 \subsection{Toolbar}
 On the left section of the toolbar the user can choose from submenus. The options are \textit{file}, \textit{edit}, \textit{view}, \textit{layout} as well as the about information of this page and a button to toggle the visibility of the configuration panel.
 \subsubsection{The file submenu}
-This submenu contains means to load in graphs and to save them in various formats.
+This submenu contains means to load graphs and to save them in various formats.
 \begin{tabular}{p{0.05\textwidth}p{0.95\textwidth}}
 \includegraphics[scale=0.6]{figures/icons/new.png} & Clears the canvas and configuration panel to create an entirely new instance\\
 \includegraphics[scale=0.6]{figures/icons/download.png}& Save the current graph into the users local file system\\
@@ -161,7 +161,7 @@ If exactly two vertices, say \textit{u} and \textit{v}, are selected, the user c
 It is important to note that the corresponding constraints do only show up if the selection is exclusively vertices, respectively edges. Otherwise the context menu would be too unwieldy to use efficiently. 
 \section{Linear Layouts Viewer}
 \subsection{Overview}
-The viewer is structured similarly to the editor, with a toolbar on top, the viewing area in the middle and a panel on the bottom, where the imposed constraints are displayed and the appearance of the graph can be modified for easier examination.
+The viewer is structured similarly to the editor, with a toolbar on top, the viewing area in the middle and a panel on the bottom, where the imposed constraints are displayed and the appearance of the linear layout can be modified to ease its examination.
 \begin{figure}[!h]
 \begin{center}
 \includegraphics[width=1\textwidth]{figures/figSecond/OverviewSecond.jpg}
@@ -176,21 +176,22 @@ The viewer is structured similarly to the editor, with a toolbar on top, the vie
 As the user accesses the second page, either directly or by redirection from the editor the url is checked for the hash parameter, where the id of the desired embedding should be located. If there is no id specified an error dialog shows up, otherwise an ajax-request is sent to the server.\\
 The response is a JSON-encoded object and contains the following fields \cite{linearLayoutApi}\\[12px]
 \begin{tabular}{l p{0.7\textwidth}}
-id & the id of the embedding\\
-graph & the 64-byte encoded graph that was sent to the server\\
-pages & the pages of the embedding as JSON objects in a list, each with the attributes \textit{id}, \textit{type} and \textit{layout}\\
+id & The id of the embedding\\
+graph & The 64-byte encoded graph that was sent to the server\\
+pages & The pages of the embedding as JSON objects in a list, each with the attributes \textit{id}, \textit{type} and \textit{layout}\\
 constraints & a list of constraints as JSON objects. Each constraint object has the attributes "type", "modifier" and "arguments".\\
-status & a string, either "IN\_PROGRESS" or "FINISHED", determining if the server finished the computation of the embedding\\
+status & A string, either "IN\_PROGRESS" or "FINISHED", determining if the server finished the computation of the embedding\\
 vertex order & a list of strings, where each string is the tag of a vertex. This list is ordered like the vertices need to be ordered along the spine of the linear layout\\
-satisfiable & a boolean, determining whether the graph was embeddable as proposed\\
-rawSolverResult & the string as returned by the SAT-Solver\\
+satisfiable & A boolean, determining whether the graph was embeddable as proposed\\
+rawSolverResult & The string as returned by the SAT-Solver\\
 created & a timestamp in string form, e.g. \textit{'2019-06-25T09:50:13.122499+00:00'}
 \end{tabular}\\[12pt]
-After the website received the response from the server it checks the status of the response. Should it be "IN\_PROGRESS", another request is sent after 5 seconds until the server finished computation. Then as the second step the website checks if the graph was embeddable in the way it was defined, which is stated in the field \textit{satisfiable}. If it is not embeddable a dialog shows up, allowing the user to go back to editing the graph.\\
+After the client received the response from the server it checks the status of the response. Should it be "IN\_PROGRESS", another request is sent after 5 seconds until the server finished computation. Then as the second step the website checks if the graph was embeddable in the way it was defined, which is stated in the field \textit{satisfiable}. If it is not embeddable a dialog shows up, allowing the user to go back to editing the graph (see \autoref{NoEmb}).\\
 \begin{figure}
 \begin{center}
 \includegraphics[width=\textwidth]{figures/figSecond/NotEmbeddable.jpg}
 \caption{Dialog when a graph is not embeddable as desired}
+\label{NoEmb}
 \end{center}
 \label{notSat}
 \end{figure}
@@ -198,18 +199,18 @@ After the website received the response from the server it checks the status of 
 \begin{enumerate}
 \item The graph is decoded and loaded into the viewer
 \item The vertices are ordered according to the "vertex order" field of the responded embedding
-\item The edges are divided into arrays representing each half plane of the graph, according to the "assignment" field\\
-\item Each edge is assigned the "Arc Edge Style" provided by \textit{yFiles for HTML}. In order to display the edges correctly one extra step is needed: the position of each arc is determined by the source and target vertices, that is to say edges with a source vertex right to the target vertex are displayed beyond the vertices and when the source vertex is left to the target the edge is displayed above the vertices. As the representation of a linear layout requires all edges of one page to be either above or below the spine, the source and targed vertices of the affected edges have to be switched.
-\item For each array representing a page of the embedding, all edges in this array get assigned a color. Each page is positioned aternatingly above and below the spine by changing the height attribute of the affected arcs.\\
+\item The edges are partitioned into arrays representing each half plane of the graph, according to the \textit{assignment} field\\
+\item Each edge is assigned the "Arc Edge Style" provided by \textit{yFiles for HTML}. 
+\item For each set representing a page of the embedding, all edges in this set get assigned a color. Each page is positioned aternatingly above and below the spine by changing the height attribute of the affected arcs.\\
 \end{enumerate}
 \subsection{Toolbar}
+The toolbar of the second page ???
 % mostly the same as before but less
-The toolbar of the second page is a thinned out version of the editors toolbar.\\[12pt]
-The \textbf{file} submenu does no longer allow to load in graphML files but still provides the saving and exporting options.\\[12pt]
+The \textbf{file} submenu does no longer allow to load graphML files but still provides the saving and exporting options.\\[12pt]
 The \textbf{view} tab still has the same options as before, so the user can zoom in and out, center the graph on the screen and toggling the visibility of the grid.\\
-Additionally it also provides the user with means to examine the vertex neighborhood and edge adjacencies in the graph, as explained in \autoref{NandA}.\\
+Additionally, it also provides the user with means to examine the vertex neighborhood and edge adjacencies in the graph, as explained in \autoref{NandA}.\\
 The \textit{about} dialog can still be accessed on the second page and similar to the first page the user can hide the configuration panel to enlarge the graph viewing area. The \textit{stats} button is in the same place as before, too.\\
-Where the \textit{computation} button was before there is now a \textit{back to edit} button that allows te user to either edit the original layout or the linear layout through redirecting him or her back to the editor. This redirection is explained in \autoref{BtoEdit}\\
+Where the \textit{computation} button was before there is now a \textit{back to edit} button that allows the user to either edit the original layout or the linear layout through redirecting him or her back to the editor. This redirection is explained later.
 \subsubsection{Neighborhood and adjacency dialogs}
 \label{NandA}
 The \textit{vertex neighborhood} and the \textit{edge adjacency} buttons in the \textbf{view} tab of the toolbar each open a dialog. \\
@@ -228,13 +229,13 @@ These dialogs proved to be useful to observe patterns in large embeddings, since
 
 \subsubsection{Returning to edit the graph}
 \label{BtoEdit}
-When the the "Return to edit" button is clicked a dialog as seen in \autoref{img:editDialog} opens. The user can choose to either edit the linear layout or the original embedding of the graph. After choosing, a redirection back to the editing page is triggered.
-The correct redirection is obtained again by adding hash parameters to the url. If the user choses to edit the original layout, the url gets extended by "\#or" and the id of the graph otherwise it is "\#ll" followed by the id. That way a user can also access both layouts later on and even save them as a bookmark.\\
+When the the \textit{Return to edit} button is clicked a dialog opens. The user can choose to either edit the linear layout or the original embedding of the graph. After choosing, a redirection back to the editing page is triggered.
+The correct redirection is obtained again by adding hash parameters to the url. If the user chooses to edit the original layout, the url gets extended by "\#or" and the id of the graph otherwise it is "\#ll" followed by the id. That way a user can also access both layouts later on and even save them as a bookmark.\\
 The editing page, recognizing if there is a hash parameter set, sends an ajax-request to the server similar to the viewing page. If the user wishes to edit the linear layout the same processes as described in \autoref{viewerOV} are triggered. When the original embedding is to be edited, the graph is loaded into the editor. The edges still get colored in the respective page color, in order to make examination easier, otherwise the graph remains unchanged.\\
 % displaying graph, hash system
 \subsection{The configuration panel}
 \subsubsection{Constraints}
-In the bottom part of the page, the constraints defined in the creation of the graph are displayed in a similar fashion to the editing page, except that the user cannot delete a constraint. The constraints read in from the server response.
+In the bottom part of the page, the constraints defined in the creation of the layout are displayed in a similar fashion to the editing page, except that the user cannot delete a constraint.
 \subsubsection{Page representation}
 For easier observation of the embedding, the graphs representation can be modified. Each page of the embedding can be hidden by unchecking the corresponding checkbox. Furthermore the position and color of each set of edges can be changed, the first by selecting either \textit{above} or \textit{below} in a select menu and the latter with the \textit{Colorpick} plugin\footnote{https://github.com/philzet/ColorPick.js}.
 \begin{figure}[!h]
