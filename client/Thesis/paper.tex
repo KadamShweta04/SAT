@@ -19,6 +19,7 @@
 \usepackage{xcolor}
 \usepackage{cite}
 \usepackage{listings}
+\usepackage[xindy]{imakeidx}
 \usepackage{hyperref}
 \renewcommand{\sectionautorefname}{Section}\renewcommand{\subsectionautorefname}{Subsection}
 \renewcommand{\chapterautorefname}{Chapter}
@@ -36,6 +37,7 @@
 \pagestyle{headings}
 
 \sloppy
+\makeindex
 
 \begin{document}
 
@@ -86,7 +88,6 @@ Thesis period: 16.05 - 15.09.19
 
 \pagenumbering{roman}
 \setcounter{page}{1}
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% Seite I: Zusammenfassug, Danksagung
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -94,7 +95,7 @@ Thesis period: 16.05 - 15.09.19
 
 \section*{Abstract}
 In theoretical Computer Science graph theory is an essential subject of research, and even for real-world problems graphs are of great importance as they provide the basis of many things such as electricity grids and the simulation of neuronal networks.\\
-Within graph theory linear layouts the subject of linear layouts offers many possibilities for research.\\
+Within graph theory the subject of linear layouts offers many possibilities for research.\\
 A linear layout is defined by the order of vertices in which those lay on the spine of the graph, as well as a subdivision of the edges to a number of subsets. These subsets stand for half planes arranged around the spine, on which the corresponding edges reside. The question to be answered is, in how many of these half planes a graph can be embedded under certain circumstances.\\
 This thesis describes the development of an online framework to create graphs and compute linear layouts of those.
 
@@ -162,7 +163,7 @@ Diese Arbeit beschreibt die Entwicklung einer webbasierten Benutzeroberfläche u
 \cleardoublepage
 
 %% experiments 
-\input{experiments}
+\input{poc}
 \cleardoublepage
 
 %% outlook and discussion
@@ -176,12 +177,13 @@ Diese Arbeit beschreibt die Entwicklung einer webbasierten Benutzeroberfläche u
 \appendix
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% List of abbreviations
+%%% Index
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % can be removed
-\addcontentsline{toc}{chapter}{List of Abbreviations}
-\chapter*{Index}
+\addcontentsline{toc}{chapter}{Index}
+\indexprologue{\noindent Explanations for used terms}
+\printindex
 \cleardoublepage
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -203,7 +205,7 @@ Diese Arbeit beschreibt die Entwicklung einer webbasierten Benutzeroberfläche u
 \thispagestyle{empty}
 \section*{Selbst\"andigkeitserkl\"arung}
 
-Hiermit versichere ich, dass ich die vorliegende Masterarbeit 
+Hiermit versichere ich, dass ich die vorliegende Bachelorarbeit 
 selbst\"andig und nur mit den angegebenen Hilfsmitteln angefertigt habe und dass alle Stellen, die dem Wortlaut oder dem 
 Sinne nach anderen Werken entnommen sind, durch Angaben von Quellen als 
 Entlehnung kenntlich gemacht worden sind. 
