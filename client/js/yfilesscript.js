@@ -42,6 +42,7 @@ require([
 
 		var nodesStableSize = true;
 		var allowDoubleEdges = false;
+		var treatEdgesAsDirected = false;
 
 		let myGraph;
 
@@ -141,6 +142,9 @@ require([
 									if (graphComponent.graph.contains(edge)) {
 										graphComponent.graph.remove(edge);
 									}
+									else {
+
+									}
 								},10)
 							}
 						})
@@ -151,6 +155,14 @@ require([
 
 				}
 
+				if (graphComponent.graph.contains(edge))
+				{
+				    if (treatEdgesAsDirected) {
+                        var con = new Predecessor([edge.sourceNode, edge.targetNode])
+                        constraintsArray.push(con);
+                        $("#constraintTags").tagit("createTag", con.getPrintable())
+                    }
+				}
 			})
 
 
@@ -1545,6 +1557,10 @@ require([
 
 			document.querySelector("#doubleEdges").addEventListener("click", () => {
 				allowDoubleEdges = !allowDoubleEdges;
+			})
+
+			document.querySelector("#directedEdges").addEventListener("click", () => {
+				treatEdgesAsDirected = !treatEdgesAsDirected;
 			})
 
 
