@@ -31,7 +31,7 @@ Institut f\"ur Informatik, Universit\"at T\"ubingen, T\"ubingen, Germany\\
 % ==================================================================
 \begin{document}
 \maketitle
-\linenumbers
+%\linenumbers
 % ==================================================================
 
 \begin{abstract}
@@ -70,7 +70,7 @@ In a \emph{stack} (\emph{queue}) \emph{layout} of a graph, no two edges of the s
 %
 \begin{itemize}[--]
 \item For stack layouts, the most notable result is to due Yannakakis, who back in 1986 showed that every planar graph admits a $4$-stack layout~\cite{DBLP:conf/stoc/Yannakakis86,DBLP:journals/jcss/Yannakakis89} improving a series of earlier results~\cite{DBLP:conf/stoc/BussS84,DBLP:conf/focs/Heath84,Istrail1988a}. However, a fundamental question, which still remains open in the field, is whether every planar graph admits a $3$-stack layout or whether there exists one which requires four stacks in any of its stack layouts. Note that several subfamilies of planar graphs allow for layouts with fewer than four stacks; see, e.g.,~\cite{DBLP:journals/algorithmica/BekosGR16,DBLP:journals/jct/BernhartK79,DBLP:journals/mp/CornuejolsNP83,DBLP:journals/dcg/FraysseixMP95,Ewald1973,DBLP:conf/focs/Heath84,DBLP:journals/appml/KainenO07,NC08,DBLP:conf/cocoon/RengarajanM95}. 
-\item For queue layouts, a breakthrough result is due to Dujmovi\'c et al.~\cite{constant}, who recently showed that every planar graph admits a $49$-queue layout, improving previous (poly-)logarithmic bounds~\cite{DBLP:journals/corr/BannisterDDEW18,DBLP:journals/jgaa/DujmovicF18,DBLP:journals/siamcomp/BattistaFP13}; the best-known corresponding lower bound is four~\cite{DBLP:conf/gd/AlamBG0P18}, which implies that the current gap between the two bounds is still very large. Again, several subfamilies of planar graphs allow for layouts with significantly fewer than $49$ queues; see, e.g.,~\cite{DBLP:conf/gd/AlamBG0P18,Ganley95,DBLP:journals/siamdm/HeathLR92,DBLP:journals/siamcomp/HeathR92,DBLP:conf/cocoon/RengarajanM95}.% For a survey, refer to~\cite{DBLP:journals/jct/DujmovicMW17}.
+\item For queue layouts, a breakthrough result is due to Dujmovi\'c et al.~\cite{constant}, who recently showed that every planar graph admits a $49$-queue layout, improving previous (poly-)logarithmic bounds~\cite{DBLP:journals/corr/BannisterDDEW18,DBLP:journals/jgaa/DujmovicF18,DBLP:journals/siamcomp/BattistaFP13}; the best-known corresponding lower bound is four~\cite{DBLP:conf/gd/AlamBG0P18}, which implies that the current gap between the two bounds is still very large. Again, several subfamilies of planar graphs allow for layouts with significantly fewer than $49$ queues; see, e.g.,~\cite{DBLP:conf/gd/AlamBG0P18,Ganley95,DBLP:journals/siamdm/HeathLR92,DBLP:journals/siamcomp/HeathR92,DBLP:conf/cocoon/RengarajanM95}.
 \end{itemize}
 %
 \myparagraph{Motivation} The primary motivation of this project stems from the aforementioned paper by Yannakakis, which had appeared at STOC in 1986~\cite{DBLP:conf/stoc/Yannakakis86} and contained a sketch of a proof for the existence of a planar graph that does not admit a $3$-stack layout (we provide an outline of this sketch in Section~\ref{subsec:Yannakakis}). The details of this proof, however, never appeared in a paper (in particular, the proof-sketch was not part of the subsequent journal version~\cite{DBLP:journals/jcss/Yannakakis89} of the extended abstract that had appeared at STOC~\cite{DBLP:conf/stoc/Yannakakis86}), and thus the problem of determining whether there exists a planar graph that requires four stacks in any of its stack layouts still remains unsolved, and clearly forms the most intriguing open problem~in~the~field. Note that the arguments in the proof-sketch by Yannakakis~\cite{DBLP:conf/stoc/Yannakakis86} seem to be sound (apart from the fact that some of the gadget-graphs that are central in the proof have not been properly defined), and potentially may give rise to a formal proof. 
@@ -87,13 +87,7 @@ So, in this work we wanted to dig the details of this proof-sketch, so to unders
 \label{sec:system}
 % ==================================================================
 
-Our system, as introduced in Section~\ref{sec:introduction}, consists of two main components, the client and the server sides, and introduces a series of innovations over its previous implementation~\cite{bob}. The actual code of the system is available to the community at a \texttt{github} repository (\rurl{github.com/linear-layouts/SAT}).
-%
-%\begin{center}
-%\url{https://github.com/linear-layouts/SAT}
-%\end{center} 
-%
-In the following, we describe in details the extended features that are currently supported both in the client (Section~\ref{subsec:client}) and the server side (Section~\ref{subsec:server}). 
+Our system, as introduced in Section~\ref{sec:introduction}, consists of two main components, the client and the server sides, and introduces a series of innovations over its previous implementation~\cite{bob}. The actual code of the system is available to the community at a \texttt{github} repository (\rurl{github.com/linear-layouts/SAT}). In the following, we describe in details the extended features that are currently supported both in the client (Section~\ref{subsec:client}) and the server side (Section~\ref{subsec:server}). 
 
 % ==================================================================
 \subsection{The Client Side}
@@ -107,9 +101,7 @@ In the following, we describe in details the extended features that are currentl
 	\label{fig:editingmode}
 \end{figure}
 
-The client side is web-based, developed with standard tools (e.g., \texttt{HTML}, \texttt{jQuery} and \texttt{yFiles}~\cite{DBLP:conf/gd/WieseEK00}, which is free for academic usage) and operates in two modes; the \emph{editing} and the \emph{view} (see Figs.~\ref{fig:editingmode} and~\ref{fig:viewmode}).  In the editing mode, the user creates the graph and specifies the constraints of the linear layout to be computed (if any). The graph is created through a graph editor supporting basic interaction with graphs (e.g., creation and deletion of vertices and edges, navigation over the graph, panning, zooming, e.t.c.), that we configured appropriately to meet our needs. The graph editor is accompanied with a \emph{configuration panel} 
-%(that is by default visible, but it can also be hidden to facilitate the creation of the graph; refer to the bottom part of Fig.~\ref{fig:editingmode})
-(refer to the bottom part of Fig.~\ref{fig:editingmode}), where the user can configure the type of the layout, as well as, define different constraints on it. More precisely, the following functions are currently supported:
+The client side is web-based, developed with standard tools (e.g., \texttt{HTML}, \texttt{jQuery} and \texttt{yFiles}~\cite{DBLP:conf/gd/WieseEK00}, which is free for academic usage) and operates in two modes; the \emph{editing} and the \emph{view} (see Figs.~\ref{fig:editingmode} and~\ref{fig:viewmode}).  In the editing mode, the user creates the graph and specifies the constraints of the linear layout to be computed (if any). The graph is created through a graph editor supporting basic interaction with graphs (e.g., creation and deletion of vertices and edges, navigation over the graph, panning, zooming, e.t.c.), that we configured appropriately to meet our needs. The graph editor is accompanied with a \emph{configuration panel} (refer to the bottom part of Fig.~\ref{fig:editingmode}), where the user can configure the type of the layout, as well as, define different constraints on it. More precisely, the following functions are currently supported:
 
 \myparagraph{Specification of the type of the linear layout} Through the configuration panel, the user defines the number of available \emph{pages} (i.e., stacks or queues) of the linear layout to be computed. The current implementation supports up to four pages, in total. In a subsequent step, the user defines the \emph{type} (i.e., stack or queue) of each of the pages of the linear layout. In this way, the system provides support both for stack and queue layouts, but also for \textit{mixed layouts}, in which some of the pages are stacks, while some others are queues; see, e.g,~\cite{DBLP:conf/gd/Pupyrev17}.
 
@@ -142,9 +134,7 @@ Besides the number and the type of the available pages of the linear layout, the
 \setcounter{enumi}{3}
 \item \label{r:edge-page} \textbf{Assignment of edges to the same or to different pages}: By selecting two or more edges of the graph and by right-clicking on one of them, the user is able to instruct the system to assign the selected edges to the same or to different pages of the linear layout. Note that the latter option becomes unavailable, when the number of selected edges is greater than the number of available pages of the linear layout. 
 \item \label{r:same-page} \textbf{Assignment of edges to specific pages}: In the same way as above, the user is able to assign selected edges of the graph to one of a set of specific pages of the linear layout. In contrast to Restriction R.\ref{r:edge-page}, the user here has to specify the exact pages, to which the selected pages will be assigned. 
-\item \label{r:incident} \textbf{Assignment of edges incident to vertices to specific pages}: The user is also able to assign edges to specific pages through a selection of vertices; in particular, the edges incident to these vertices. 
-%By selecting one or more vertices and by right-clicking on one of them, the user is able to assign the edges incident to the selected vertices to specific pages of the layout. In particular, 
-In the special case, in which the selected vertices are only two, say $u$ and $v$, then in the linear order of the vertices, $u$ and $v$ define two intervals; the one between $u$ and $v$, and the remaining one. In this particular case, the user is also able to apply the constrain only to the edges from $u$ and $v$ that end to only one of these two intervals. 
+\item \label{r:incident} \textbf{Assignment of edges incident to vertices to specific pages}: The user is also able to assign edges to specific pages through a selection of vertices; in particular, the edges incident to these vertices. In the special case, in which the selected vertices are only two, say $u$ and $v$, then in the linear order of the vertices, $u$ and $v$ define two intervals; the one between $u$ and $v$, and the remaining one. In this particular case, the user is also able to apply the constrain only to the edges from $u$ and $v$ that end to only one of these two intervals. 
 \end{enumerate}
 %
 \myparagraph{Additional features} The editing mode is equipped with several additional features; in the following, we name few. In order to facilitate the definition of the constraints on the different elements of the graph, the user may restrict the selection mode of the graph editor only to vertices or only to edges, depending on the type of constraints that she wish to introduce. The user is able to save both the graph and its associated constraints in a \texttt{GraphML} file for future considerations (see, e.g., \rurl{graphml.graphdrawing.org}). There exist also two options that are currently supported for exporting the constructed graph; one in \texttt{PDF} and one in \texttt{PNG} format. As side features, the editing mode is also equipped with standard layout algorithms (such as, spring-based, orthogonal and radial), while there is also support for querying the graph for standard properties (e.g., connectivity, acyclicity and planarity). 
@@ -169,14 +159,7 @@ If the user seeks in further editing the graph and its constraints, then she has
 \subsection{The Server Side}\label{subsec:server}
 % ==================================================================
 
-The server side of the system has been developed in \texttt{Python}, while for solving the SAT instances, we used the \texttt{Lingeling} solver (\rurl{fmv.jku.at/lingeling}); the source code of the server side is also contained in the \texttt{github} repository mentioned earlier. All requests that arrive to the server are stored in a database (\texttt{SQLite}), which is responsible for associating each of them with a unique id. Once the processing of a request is finished, the computed layout is stored to the database, so to be available to the client at any time. Note that the server side becomes available to multiple clients through a well-documented API available at the server's interface (\rurl{sofa.fsi.uni-tuebingen.de:5555}).
-% available at the server's interface :
-%
-%\begin{center}
-%\url{http://sofa.fsi.uni-tuebingen.de:5555}
-%\end{center}
-%
-In other words, any client, that complies with the developed interface, may communicate with the server side and request a linear layout of a given graph under a set of additional constraints that are currently supported at the server. 
+The server side of the system has been developed in \texttt{Python}, while for solving the SAT instances, we used the \texttt{Lingeling} solver (\rurl{fmv.jku.at/lingeling}); the source code of the server side is also contained in the \texttt{github} repository mentioned earlier. All requests that arrive to the server are stored in a database (\texttt{SQLite}), which is responsible for associating each of them with a unique id. Once the processing of a request is finished, the computed layout is stored to the database, so to be available to the client at any time. Note that the server side becomes available to multiple clients through a well-documented API available at the server's interface (\rurl{alice.informatik.uni-tuebingen.de:5555}). In other words, any client, that complies with the developed interface, may communicate with the server side and request a linear layout of a given graph under a set of additional constraints that are currently supported at the server. 
 
 The algorithmic core of the server side is an extension of the SAT formulation~\cite{DBLP:conf/gd/Bekos0Z15} mentioned in the introduction, featured with additional functions to overcome known limitations; in particular to support  different types of linear layouts and different types of user-specific constraints. Even though SAT formulations are of limited applicability, and therefore not so common, in graph drawing (with few notable exceptions; e.g.,~\cite{DBLP:conf/gd/BiedlBNNPR13,DBLP:conf/gd/ChimaniZ12,DBLP:conf/gd/GangeSM10}), in this particular scenario the formulation is robust enough to solve non-trivial instances in reasonable amount of time (and, as expected, its performance increases when additional constraints are imposed). In the remainder of this section, we give a short overview of the original formulation followed by a high-level description of the extensions~that~we~made. 
 
@@ -244,8 +227,6 @@ R.\ref*{r:incident}:~ & $\neg\phi_{\rho}((u,\cdot)),\forall u \in \{u_1,\ldots,u
 \end{tabular}
 \tabularafter
 
-%For security reasons, however, we have also imposed restrictions to ensure that the system is used properly. 
-
 % ==================================================================
 \section{Proof of Concept}
 \label{sec:proof-of-concept}
@@ -311,7 +292,7 @@ To check this, we created an instance of the skeleton graph with approximately $
 \item vertex A (vertex B) is a successor (predecessor, respectively) of every even-indexed vertex of the skeleton path.
 \end{inparaenum} 
 %
-If the system could not report a solution under these two constraints, then the claim would follow. However, this was not the case, as the system could easily report a solution (\rurl{algo.inf.uni-tuebingen.de/linearlayouts/linearlayout.html\#63}), which was so symmetric that we were able to generalize it to all~skeleton~graphs;~see~Fig.~\ref{fig:c1}.
+If the system could not report a solution under these two constraints, then the claim would follow. However, this was not the case, as the system could easily report a solution, which was so symmetric that we were able to generalize it to all~skeleton~graphs;~see~Fig.~\ref{fig:c1}.
 
 \begin{figure}[t]
    \centering
@@ -332,7 +313,7 @@ Under this assumption, we had to check whether two stellating vertices $a_i$ and
 \item the same holds for the partial order $\langle y_{2i-1}, b_i, a_i, y_{2i} \rangle$.
 \end{inparaenum} 
 %
-As it was the case with the first step of the proof-sketch, the system could report~a~solution (\rurl{algo.inf.uni-tuebingen.de/linearlayouts/linearlayout.html\#68}), which was again symmetric and we were able to generalize it to all stellated skeletons; see Figure~\ref{fig:c2}.
+As it was the case with the first step of the proof-sketch, the system could report~a~solution, which was again symmetric and we were able to generalize it to all stellated skeletons; see Figure~\ref{fig:c2}.
 
 \begin{figure}[t]
    \centering
