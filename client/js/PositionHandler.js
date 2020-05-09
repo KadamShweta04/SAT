@@ -28,7 +28,7 @@
  ***************************************************************************/
 'use strict'
 
-define(['yFiles/lib/umd/yfiles/view-editor'], /** @type {yfiles_namespace} */ /** typeof yfiles */ yfiles => {
+define(['yFiles/lib/umd/view-editor'], /** @type {yfiles_namespace} */ /** typeof yfiles */ yfiles => {
   /**
    * A position handler that moves a given rectangle.
    */
