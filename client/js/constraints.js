@@ -57,6 +57,18 @@ class Predecessor extends Constraint {
 
 }
 
+class TreatGraphDirected extends Constraint {
+	constructor(_objects) {
+		super("TREAT_GRAPH_DIRECTED",_objects)
+
+		this.printable = "TreatGraphAsDirected" //(" + this.objects.toString() + ")"
+	}
+
+	updatePrintable() {
+		this.printable = "TreatGraphAsDirected" //(" + this.objects.toString() + ")"
+	}
+}
+
 class Consecutive extends Constraint {
 	constructor(_objects) {
 		super("NODES_CONSECUTIVE",_objects)
@@ -83,7 +95,58 @@ class SetAsFirst extends Constraint {
 
 }
 
+class SetAsLast extends Constraint {
+	constructor(_objects) {
+		super("NODES_SET_LAST",_objects)
 
+		this.printable = "setLast(" + this.objects.toString() + ")"
+	}
+
+	updatePrintable() {
+		this.printable = "setLast(" + this.objects.toString() + ")"
+	}
+
+}
+
+
+
+class SamePageForIncidentEdgesOf extends Constraint {
+	constructor(_objects) {
+		super("EDGES_SAME_PAGES_INCIDENT_NODE",_objects)
+
+		this.printable = "samePageForIncidentEdgesOf(" + this.objects.toString() + ")"
+	}
+
+	updatePrintable() {
+		this.printable = "samePageForIncidentEdgesOf(" + this.objects.toString() + ")"
+	}
+
+}
+
+
+class DifferentPagesForIncidentEdgesOf extends Constraint {
+	constructor(_objects) {
+		super("EDGES_DIFFERENT_PAGES_INCIDENT_NODE",_objects)
+
+		this.printable = "differentPagesForIncidentEdgesOf(" + this.objects.toString() + ")"
+	}
+
+	updatePrintable() {
+		this.printable = "differentPagesForIncidentEdgesOf(" + this.objects.toString() + ")"
+	}
+}
+
+
+class IncidentEdgesOfVertexTo extends Constraint {
+	constructor(_objects) {
+		super("EDGES_ON_PAGES_INCIDENT_NODE",_objects)
+		this.printable = "incidentEdgesOfVertexTo(" + this.objects[0].toString()  + " | " + this.objects[1].toString() + ")"
+	}
+
+	updatePrintable() {
+		this.printable = "incidentEdgesOfVertexTo(" + this.objects[0].toString()  + " | " + this.objects[1].toString() + ")"
+	}
+}
 
 class SamePage extends Constraint {
 	constructor(_objects) {
@@ -91,9 +154,6 @@ class SamePage extends Constraint {
 
 		this.printable = "samePage(" + this.objects.toString() + ")"
 	}
-
-
-
 
 	updatePrintable() {
 		this.printable = "samePage(" + this.objects.toString() + ")"
@@ -107,8 +167,6 @@ class DifferentPages extends Constraint {
 
 		this.printable ="differentPages(" + this.objects.toString() + ")"
 	}
-
-
 
 	updatePrintable() {
 		this.printable = "differentPages(" + this.objects.toString() + ")"

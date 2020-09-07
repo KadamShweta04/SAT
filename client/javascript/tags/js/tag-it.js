@@ -599,6 +599,15 @@
 			this.removeTag(toRemove, animate);
 		},
 
+		removeTagByIndex: function(indexByUser, animate) {
+		    var that = this;
+			this._tags().each(function(index, tag) {
+			    if (indexByUser == index){
+                    that.removeTag(tag, animate);
+			    }
+			});
+		},
+
 		removeAll: function() {
 			// Removes all tags.
 			var that = this;
@@ -617,7 +626,18 @@
 			this.createTag(newTagLabel)
 
 		},
-		
+
+		updateTagByIndex: function(index, tagLabel, newTagLabel, animate) {
+			var toUpdate = this._findTagByIndex(index)
+			if (toUpdate == null) {
+				throw "No such tag exists with the name '" + tagLabel + "'"
+			}
+
+			this.removeTagByIndex(tagLabel)
+			this.createTag(newTagLabel)
+
+		},
+
 		
 		updateTagNew: function(tagLabel, newTagLabel, animate) {
 			var toUpdate = this._findTagByLabel(tagLabel)

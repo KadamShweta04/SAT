@@ -85,6 +85,35 @@ function findRelatedConstraints(name) {
 	return tagsToDelete;
 }
 
+
+function findRelatedConstraintsDeluxeByIndex(item) {
+	var arr = constraintsArray;
+
+	var constrToDelete = []
+	var constrIndexes = []
+    var index = 0
+
+	arr.forEach(function(constr) {
+		if (constr.getObjects().includes(item)) {
+			constrToDelete.push(constr)
+            constrIndexes.push(index)
+
+		} else if (Array.isArray(constr.objects[0])) {
+			let i;
+			for(i=0; i<constr.getObjects().length; i++) {
+				if (constr.objects[i].includes(item)) {
+					constrToDelete.push(constr)
+                    constrIndexes.push(index)
+
+				}
+			}
+		}
+		index = index + 1
+	})
+	return constrIndexes
+}
+
+
 function findRelatedConstraintsDeluxe(item) {
 	var arr = constraintsArray;
 
@@ -144,23 +173,47 @@ function deleteRelatedConstraintsDeluxe(item) {
 	var arr = constraintsArray;
 
 	var constrToDelete = []
-
+    var constrIndexToDelete = []
+    var index = 0
 	arr.forEach(function(constr) {
-		if (constr.objects.includes(item)) {
+		if (constr.objects.includes(item) && constr.type != "TREAT_GRAPH_DIRECTED") {
 			constrToDelete.push(constr)
+			constrIndexToDelete.push(index)
 		} else if (Array.isArray(constr.objects[0])) {
 			let i;
 			for(i=0; i<constr.objects.length; i++) {
-				if (constr.objects[i].includes(item)) {
+				if (constr.objects[i].includes(item) && constr.type != "TREAT_GRAPH_DIRECTED") {
 					constrToDelete.push(constr)
+					constrIndexToDelete.push(index)
 				}
 			}
 		}
+		index = index + 1
 	})
 
-	constrToDelete.forEach(function(constr){
-		$("#constraintTags").tagit("removeTagByLabel", constr.getPrintable())
-	})
+    let p;
+    for(p=0; p<constrIndexToDelete.length; p++){
+        constrIndexToDelete[p] = constrIndexToDelete[p] - p
+    }
+
+    let q;
+    for(q=0; q<constrIndexToDelete.length; q++){
+        var k = constrIndexToDelete[q]
+        var temp1 = constraintsArray.slice(0,k)
+        var temp2 = constraintsArray.slice(k+1, constraintsArray.length)
+        constraintsArray = temp1.concat(temp2)
+    }
+
+    // remove ui constraints
+    constrIndexToDelete.forEach(function(j) {
+        $("#constraintTags").tagit("instance").tagList.children("li").toArray()[j].remove()
+        //$("#constraintTags").tagit("removeTagByIndex", j, true)
+    })
+
+
+    //constrToDelete.forEach(function(constr){
+	//	$("#constraintTags").tagit("removeTagByLabel", constr.getPrintable())
+	//})
 }
 
 function deleteAllConstraints() {
@@ -238,7 +291,56 @@ function handlePageCheckbox(k) {
 		}
 	}
 
+
 }
+
+
+
+function fillAssignDialogForNodes(graphComponent) {
+	var avPages = [1];
+
+	let k;
+	for(k=2; k<=numberOfPages; k++) {
+		if ($("#page" + k).prop("checked")) {
+			avPages.push(k);
+		}
+	}
+
+	avPages.forEach( function(i) {
+		$("#pageDialog").append(
+				'<input type="checkbox" id="assignToPage'+i+'"> <label for="assignToPage'+i+'">Page '+i+'</label><br>'
+		)
+		$("#assignToPage"+i).checkboxradio();
+	})
+
+
+	$("#pageDialog").append('<button id="assignPages" class="ui-button ui-widget ui-corner-all">Assign</button>')
+
+
+
+	$("#assignPages").click(function() {
+
+		var selPages = [];
+		let k;
+		for (k=1; k<=numberOfPages; k++) {
+			if ($("#assignToPage" + k).prop("checked")) {
+				selPages.push("P"+k)
+			}
+		}
+
+        selectedNode = graphComponent.selection.selectedNodes.toArray()[0]
+		if (selPages.length != 0) {
+			let constr = new IncidentEdgesOfVertexTo([[selectedNode], selPages])
+			constraintsArray.push(constr);
+			$("#constraintTags").tagit("createTag", constr.getPrintable())
+		}
+		$("#pageDialog").dialog("close")
+
+	})
+}
+
+
+
 
 
 function fillAssignDialog() {
@@ -364,6 +466,12 @@ $( function() {
 		}
 	});
 
+	$("#cancelledNotificationDialog").dialog({
+		autoOpen: false,
+		resizable: false,
+		width: 400,
+	})
+
 	$("#imageDialog").dialog( {
 		autoOpen: false,
 		resizable: false,
@@ -481,7 +589,7 @@ $( function() {
 	})
 	
 	$("#statsDialog").dialog({
-		width: 300,
+		width: 'auto',
 		resizable: false,
 		autoOpen: false,
 		modal: true,open: function( event, ui ) {
@@ -642,7 +750,7 @@ $( function() {
 			// do something special
 			//alert(ui.tagLabel)
 
-
+/*
 			let i;
 			for (i=0; i<constraintsArray.length; i++){
 				if (constraintsArray[i].getPrintable() == ui.tagLabel) {
@@ -653,7 +761,11 @@ $( function() {
 					constraintsArray = temp1.concat(temp2) 
 				}
 			}
-
+*/
+            var i = ui.tag.index()
+            var temp1 = constraintsArray.slice(0,i)
+            var temp2 = constraintsArray.slice(i+1, constraintsArray.length)
+            constraintsArray = temp1.concat(temp2)
 		}
 	});
 

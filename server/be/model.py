@@ -243,7 +243,8 @@ def static_encode_consecutivity(precedes, v1, v2) -> List[List[int]]:
     between v1 and v2
 
     :param precedes: precedes[i, j] <=> vertex i precedes vertex j
-    :param v1: the index of the first vertex
+    :param v1: the index of the
+     vertex
     :param v2: the index of the second vertex
     :return: the generated clauses
         """
@@ -264,11 +265,52 @@ def static_encode_first_vertex(precedes, v) -> List[List[int]]:
     :param v: the index of the vertex to be the first
         """
     clauses = []
+    print(f'Precedes {precedes}') # TODO: Nikadi de
     for w in range(precedes.shape[0]):
         if w == v:
             continue
         clauses.append([precedes[v, w]])
+    print(f"Clauses {clauses}") # TODO: Nikadi de
     return clauses
+
+
+def static_encode_last_vertex(precedes, v) -> List[List[int]]:
+    """
+    Encodes that the given vertex is last.
+
+    :param precedes: precedes[i, j] <=> vertex i precedes vertex j
+    :param v: the index of the vertex to be the last
+        """
+    clauses = []
+    for w in range(precedes.shape[0]):
+        if w == v:
+            continue
+        clauses.append([precedes[w, v]])
+    print(f"Clauses {clauses}")  # TODO: Nikadi de
+    return clauses
+
+
+def static_encode_treat_graph_directed(precedes, edges) -> List[List[int]]:
+    """
+    Encodes that the graph is directed.
+
+    :param precedes: precedes[i, j] <=> vertex i precedes vertex j
+    :param edges: np array
+        """
+    clauses = []
+
+    for edge in edges:
+        src = edge[1]
+        des = edge[2]
+        clauses.append([precedes[src, des]])
+
+    # for w in range(precedes.shape[0]):
+    #     if w == v:
+    #         continue
+    #     clauses.append([precedes[w, v]])
+    print(f"Clauses {clauses}")  # TODO: Nikadi de
+    return clauses
+
 
 
 def static_encode_stack_page(precedes: ndarray, edge_to_page: ndarray, edges: ndarray, p: int) -> List[List[int]]:
@@ -537,6 +579,18 @@ class SatModel(object):
             else:
                 abort(501, "Page type {} is currently not implemented".format(page['type']))
 
+    def __get_incident_edges(self, node_tag, directed_edges=False):
+        incident_edges = set()
+        if directed_edges:
+            for e in self.edges:
+                if e.target == node_tag:
+                    incident_edges.add(e.id)
+        else:
+            for e in self.edges:
+                if e.source == node_tag or e.target == node_tag:
+                    incident_edges.add(e.id)
+        return incident_edges
+
     def add_additional_constraints(self):
         """
         Adds the clauses to encode the given additional constraints.
@@ -549,7 +603,17 @@ class SatModel(object):
             arguments = constraint['arguments']
             modifier = constraint.get('modifier')
 
-            if constraint['type'] == 'EDGES_ON_PAGES':
+            if constraint['type'] == 'EDGES_ON_PAGES_INCIDENT_NODE':
+                if not modifier:
+                    abort(400, "EDGES_ON_PAGES_INCIDENT_NODE constraints need the modifier set")
+                node_tag = arguments[0]
+                incident_edges = list(self.__get_incident_edges(node_tag))
+                for e in incident_edges:
+                    clause = []
+                    for p in constraint['modifier']:
+                        clause.append(self._edge_to_page[self._page_id_to_idx[p], self._edge_id_to_idx[e]])
+                    clauses.append(clause)
+            elif constraint['type'] == 'EDGES_ON_PAGES':
                 if not modifier:
                     abort(400, "EDGES_ON_PAGES constraints need the modifier set")
                 for e in arguments:
@@ -557,6 +621,27 @@ class SatModel(object):
                     for p in constraint['modifier']:
                         clause.append(self._edge_to_page[self._page_id_to_idx[p], self._edge_id_to_idx[e]])
                     clauses.append(clause)
+
+            elif constraint['type'] == 'EDGES_SAME_PAGES_INCIDENT_NODE':
+                node_tag = arguments[0]
+                incident_edges = self.__get_incident_edges(node_tag)
+
+                e_idxs = [self._edge_id_to_idx[e_id] for e_id in incident_edges]
+                for e in range(len(e_idxs)):
+                    if e == 0:
+                        continue
+                    clauses.extend(static_encode_same_page(self._edge_to_page, e_idxs[e - 1], e_idxs[e]))
+
+            elif constraint['type'] == 'EDGES_DIFFERENT_PAGES_INCIDENT_NODE':
+                node_tag = arguments[0]
+                incident_edges = list(self.__get_incident_edges(node_tag))
+                for e, ignore1 in enumerate(incident_edges):
+                    for f in range(e):
+                        if e == f:
+                            continue
+                        clauses.extend(static_encode_different_pages(self._edge_to_page,
+                                                                     self._edge_id_to_idx[incident_edges[e]],
+                                                                     self._edge_id_to_idx[incident_edges[f]]))
 
             elif constraint['type'] == 'EDGES_SAME_PAGES':
                 e_idxs = [self._edge_id_to_idx[e_id] for e_id in arguments]
@@ -668,10 +753,26 @@ class SatModel(object):
                 clauses.extend(static_encode_consecutivity(self._precedes,
                                                            self._node_id_to_idx[arguments[0]],
                                                            self._node_id_to_idx[arguments[1]]))
+
             elif constraint['type'] == 'NODES_SET_FIRST':
                 if len(arguments) != 1:
                     abort(400, "The NODES_SET_FIRST constraint only allows exactly one argument")
                 clauses.extend(static_encode_first_vertex(self._precedes, self._node_id_to_idx[arguments[0]]))
+
+            elif constraint['type'] == 'NODES_SET_LAST':
+                if len(arguments) != 1:
+                    abort(400, "The NODES_SET_LAST constraint only allows exactly one argument")
+                clauses.extend(static_encode_last_vertex(self._precedes, self._node_id_to_idx[arguments[0]]))
+                # clauses.extend(static_encode_last_vertex(self._precedes, self._node_id_to_idx[arguments[0]]))
+
+            elif constraint['type'] == 'TREAT_GRAPH_DIRECTED':
+                edges = np.array([
+                    [self._edge_id_to_idx[e.id],
+                     self._node_id_to_idx[e.source],
+                     self._node_id_to_idx[e.target]] for
+                    e in self.edges])
+                clauses.extend(static_encode_treat_graph_directed(self._precedes, edges))
+                # clauses.extend(static_encode_last_vertex(self._precedes, self._node_id_to_idx[arguments[0]]))
 
             else:
                 raise abort(500, "The given constraint {} is not implemented yet".format(constraint['type']))

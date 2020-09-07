@@ -36,19 +36,28 @@ require([
 		let graph = null;
 
 		var standardServer = "http://alice.informatik.uni-tuebingen.de:5555/embeddings"
+		//var standardServer = "http://0.0.0.0:5555/embeddings"
 
 		let gridInfo = null;
 		let grid = null;
 
+//        var offsetClipboardNode = null;
+        var numberOfCopiedNodes = 0;
+        var numberOfCopiedEdges = 0;
+
 		var nodesStableSize = true;
 		var allowDoubleEdges = false;
 		var treatEdgesAsDirected = false;
-
+		var removedTagManually = false;
+        var constraintsArrayOfClipboard = [];
+        var nodesIndexPositionInClipboardUsingTag = {};
+        var edgesIndexPositionInClipboardUsingTag = {};
 		let myGraph;
 
 		let clientSidePdfExport= null;
 		let clientSideImageExport =null;
-
+        var totalNumberOfNodesDuringCopy = 0
+        var totalNumberOfEdgesDuringCopy = 0
 		var pagesArray = [[],[],[],[]]
 		let analyzer = null;
 
@@ -58,6 +67,15 @@ require([
 			graphComponent.inputMode = new yfiles.input.GraphEditorInputMode()
 			const createEdgeInputMode = graphComponent.inputMode.createEdgeInputMode
 
+
+        var showCancelNotice = localStorage.getItem("showCancelNotice");
+        if (showCancelNotice === "true") {
+        // # open dialog
+        localStorage.setItem("showCancelNotice", "false");
+        console.log("Hopeful!")
+        $("#infoMessage").append("The task has been cancelled but the corresponding process may still run until the administrator terminates it.");
+        $("#cancelledNotificationDialog").dialog("open");
+        }
 
 			/* zooming only when ctrl is held*/
 			graphComponent.mouseWheelBehavior =
@@ -154,15 +172,6 @@ require([
 					}
 
 				}
-
-				if (graphComponent.graph.contains(edge))
-				{
-				    if (treatEdgesAsDirected) {
-                        var con = new Predecessor([edge.sourceNode, edge.targetNode])
-                        constraintsArray.push(con);
-                        $("#constraintTags").tagit("createTag", con.getPrintable())
-                    }
-				}
 			})
 
 
@@ -213,42 +222,20 @@ require([
 			 *
 			 */
 
-			graphComponent.inputMode.addLabelTextChangedListener((sender, args) => {
-
+            graphComponent.inputMode.addLabelTextChangedListener((sender, args) => {
 				// iterate over all connected constraints and update these tags
-				var constr = findRelatedConstraintsDeluxe(args.item.owner)
-				constr.forEach(function(c) {
-					var obj = c.getObjects()
-
-					var printable = c.getPrintable()
-					c.updatePrintable()
-
-					if (c instanceof Predecessor) {
-						$("#constraintTags").tagit("updateTag", printable, c.getPrintable())
-
-					} else if (c instanceof Consecutive) {
-                        $("#constraintTags").tagit("updateTag", printable, c.getPrintable())
-
-                    } else if (c instanceof SetAsFirst) {
-                        $("#constraintTags").tagit("updateTag", printable, c.getPrintable())
-
-                    } else if (c instanceof SamePage) {
-						$("#constraintTags").tagit("updateTag", printable, c.getPrintable())
-
-					} else if (c instanceof DifferentPages) {
-                        $("#constraintTags").tagit("updateTag", printable, c.getPrintable())
-
-                    } else if (c instanceof NotAllInSamePage) {
-                        $("#constraintTags").tagit("updateTag", printable, c.getPrintable())
-
-                    } else if (c instanceof AssignedTo) {
-						$("#constraintTags").tagit("updateTag", printable, c.getPrintable())
-
-					} else {console.log("error")}
-
-				})
-
-
+				var constraintsArrayIndexes = findRelatedConstraintsDeluxeByIndex(args.item.owner)
+                let constrIndex;
+                constraintsArrayIndexes.forEach(function(ci){
+                    constraintsArray[ci].updatePrintable()
+                    var liTagChildren = $("#constraintTags").tagit("instance").tagList.children("li").toArray()[ci].children
+                    let childrenIndex
+                    for(childrenIndex=0; childrenIndex < liTagChildren.length; childrenIndex++){
+                        if (liTagChildren[childrenIndex].tagName == "SPAN") {
+                            liTagChildren[childrenIndex].textContent = constraintsArray[ci].getPrintable()
+                        }
+                    }
+                })
 			})
 
 			//displaying current server
@@ -265,8 +252,6 @@ require([
 
 			configureDeletion();
 			registerCommands();
-
-
 
 			// check if there is a hash location, if yes display graph with #id
 			if (location.hash != "") {
@@ -322,13 +307,264 @@ require([
 
 
 			}
-
 		}
 
+        function setDifference(setA, setB) {
+            let _difference = new Set(setA)
+            for (let elem of setB) {
+                _difference.delete(elem)
+            }
+            return _difference
+        }
+
+        function removeEdgeFromArray(e, edges) {
+            let i
+            var newEdges = []
+            for(i=0; i<edges.length; i++){
+                if(edges[i].tag != e.tag){
+                    newEdges.push(edges[i])
+                }
+            }
+            return newEdges
+        }
+
+        // Get edges from clipboard (when they are copied)
+        function getClipboardEdges(){
+            var clipboardNodes = graphComponent.selection.selectedNodes.toArray()
+            var clipboardEdges = []
+            var edges = graphComponent.graph.edges.toArray()
+            var tempEdgesSelected = graphComponent.selection.selectedEdges.toArray()
+            edges.forEach(function(e){
+                if (clipboardNodes.includes(e.sourceNode) && clipboardNodes.includes(e.targetNode)){
+                    clipboardEdges.push(e)
+                    tempEdgesSelected = removeEdgeFromArray(e, tempEdgesSelected)
+                }
+            })
+            return clipboardEdges.concat(tempEdgesSelected)
+        }
+
+        // Copy all the constraints in constraintsArrayOfClipboard
+        function copyOfConstraintsInClipboard() {
+            constraintsArrayOfClipboard = []
+            numberOfCopiedNodes = 0
+			numberOfCopiedEdges = 0
+            totalNumberOfNodesDuringCopy = 0
+			totalNumberOfEdgesDuringCopy = 0
+            var clipboardNodes = graphComponent.selection.selectedNodes.toArray()
+            numberOfCopiedNodes = clipboardNodes.length
+            var clipboardNodesTagsSet = new Set()
+            var i = 0
+            var sortedClipboardNodesTags = []
+
+            clipboardNodes.forEach(function(n) {
+                    clipboardNodesTagsSet.add(n.tag);
+                    sortedClipboardNodesTags.push(n.tag);
+                }
+            )
+            sortedClipboardNodesTags.sort()
+            sortedClipboardNodesTags.forEach(function(t) {
+                nodesIndexPositionInClipboardUsingTag[t] = i
+                i = i + 1
+            })
+
+
+            var clipboardEdges = getClipboardEdges()
+            numberOfCopiedEdges = clipboardEdges.length
+            var clipboardEdgesTagsSet = new Set()
+            var j = 0
+            clipboardEdges.forEach(function(e){
+                clipboardEdgesTagsSet.add(e.tag);
+                edgesIndexPositionInClipboardUsingTag[e.tag] = j;
+                j = j + 1
+            })
+
+            constraintsArray.forEach(function(c){
+                if (["NODES_SET_FIRST", "NODES_SET_LAST", "NODES_PREDECESSOR", "NODES_CONSECUTIVE",
+                 "NODES_REQUIRE_PARTIAL_ORDER", "NODES_FORBID_PARTIAL_ORDER", "EDGES_SAME_PAGES_INCIDENT_NODE",
+                 "EDGES_DIFFERENT_PAGES_INCIDENT_NODE"].includes(c.type)){
+                    var constraintsNodesTagsSet = new Set();
+                    c.objects.forEach(function(n){
+                        constraintsNodesTagsSet.add(n.tag)
+                    })
+
+                    var setResult = setDifference(constraintsNodesTagsSet, clipboardNodesTagsSet)
+                    if (setResult.size == 0){
+                        constraintsArrayOfClipboard.push(c)
+                    }
+                }
+                else if (["EDGES_FROM_NODES_ON_PAGES", "EDGES_TO_SUB_ARC_ON_PAGES", "EDGES_ON_PAGES_INCIDENT_NODE"].includes(c.type)){
+                    var constraintsNodesTagsSet = new Set();
+                    c.objects[0].forEach(function(n){
+                        constraintsNodesTagsSet.add(n.tag)
+                    })
+
+                    var setResult = setDifference(constraintsNodesTagsSet, clipboardNodesTagsSet)
+                    if (setResult.size == 0){
+                        constraintsArrayOfClipboard.push(c)
+                    }
+                }
+                else if (["EDGES_SAME_PAGES", "EDGES_DIFFERENT_PAGES", "NOT_ALL_IN_SAME_PAGE"].includes(c.type)){
+                    var constraintsEdgesTagsSet = new Set();
+                    c.objects.forEach(function(e){
+                        constraintsEdgesTagsSet.add(e.tag)
+                    })
+
+                    var setResult = setDifference(constraintsEdgesTagsSet, clipboardEdgesTagsSet)
+                    if (setResult.size == 0){
+                        constraintsArrayOfClipboard.push(c)
+                    }
+                }
+                else if (["EDGES_ON_PAGES"].includes(c.type)){
+                    var constraintsEdgesTagsSet = new Set();
+                    c.objects[0].forEach(function(e){
+                        constraintsEdgesTagsSet.add(e.tag)
+                    })
+
+                    var setResult = setDifference(constraintsEdgesTagsSet, clipboardEdgesTagsSet)
+                    if (setResult.size == 0){
+                        constraintsArrayOfClipboard.push(c)
+                    }
+                }
+            })
+        }
+
+        // Get pasted nodes and edges  by index
+        function getPastedNodeUsingBaseIndex(nodeBase, tag, nodes){
+            var pastedNodeIndex = nodeBase + nodesIndexPositionInClipboardUsingTag[tag]
+            var pastedConstraintNode = nodes[pastedNodeIndex]
+            return pastedConstraintNode
+        }
+
+        function getPastedEdgeUsingBaseIndex(edgeBase, tag, edges){
+            var pastedEdgeIndex = edgeBase + edgesIndexPositionInClipboardUsingTag[tag]
+            var pastedConstraintEdge = edges[pastedEdgeIndex]
+            return pastedConstraintEdge
+        }
+
+        function isConstraintRelatedToNodes(constraintEnum){
+            var constraintsEnumRelatedToNodes = ["EDGES_ON_PAGES_INCIDENT_NODE","EDGES_DIFFERENT_PAGES_INCIDENT_NODE",
+            "EDGES_SAME_PAGES_INCIDENT_NODE",
+            "EDGES_TO_SUB_ARC_ON_PAGES","EDGES_FROM_NODES_ON_PAGES",
+            "NODES_FORBID_PARTIAL_ORDER","NODES_CONSECUTIVE",
+            "NODES_REQUIRE_PARTIAL_ORDER","NODES_SET_FIRST","NODES_SET_LAST","NODES_PREDECESSOR"]
+            if(constraintsEnumRelatedToNodes.includes(constraintEnum)){
+                return true
+            }
+            return false
+        }
+
+        function makeConstraintUsingEnum(constraintEnum, constraintArguments){
+            var constraint = null
+            switch(constraintEnum)
+            {
+                case "NODES_SET_FIRST": constraint = new SetAsFirst(constraintArguments)
+                break;
+                case "NODES_SET_LAST": constraint = new SetAsLast(constraintArguments)
+                break;
+                case "NODES_PREDECESSOR": constraint = new Predecessor(constraintArguments)
+                break;
+                case "NODES_CONSECUTIVE": constraint = new Consecutive(constraintArguments)
+                break;
+                case "NODES_REQUIRE_PARTIAL_ORDER": constraint = new RequirePartialOrder(constraintArguments)
+                break;
+                case "NODES_FORBID_PARTIAL_ORDER": constraint = new ForbidPartialOrder(constraintArguments)
+                break;
+                case "EDGES_FROM_NODES_ON_PAGES": constraint = new RestrictEdgesFrom(constraintArguments)
+                break;
+                case "EDGES_TO_SUB_ARC_ON_PAGES": constraint = new RestrictEdgesToArc(constraintArguments)
+                break;
+                case "EDGES_ON_PAGES": constraint = new AssignedTo(constraintArguments)
+                break;
+                case "EDGES_SAME_PAGES": constraint = new SamePage(constraintArguments)
+                break;
+                case "EDGES_DIFFERENT_PAGES": constraint = new DifferentPages(constraintArguments)
+                break;
+                case "NOT_ALL_IN_SAME_PAGE": constraint = new NotAllInSamePage(constraintArguments)
+                break;
+                case "EDGES_SAME_PAGES_INCIDENT_NODE": constraint = new SamePageForIncidentEdgesOf(constraintArguments)
+                break;
+                case "EDGES_DIFFERENT_PAGES_INCIDENT_NODE": constraint = new DifferentPagesForIncidentEdgesOf(constraintArguments)
+                break;
+                case "EDGES_ON_PAGES_INCIDENT_NODE": constraint = new IncidentEdgesOfVertexTo(constraintArguments)
+                break;
+             }
+            if (constraint != null) {
+                constraintsArray.push(constraint)
+                $("#constraintTags").tagit("createTag", constraint.getPrintable())
+            }
+       }
+
+        function computationAfterPaste() {
+                console.log("Computation After Paste Started");
+
+                // Edge Corrections
+                var edges = graphComponent.graph.edges.toArray();
+					edges.forEach(function(e) {
+						e.tag = e.sourceNode.tag + "-(0)-" + e.targetNode.tag
+                    }
+                )
+
+                // All the nodes in the graph currently
+                var nodes = graphComponent.graph.nodes.toArray()
+                var totalNumberOfNodesAfterPaste = nodes.length // total number of nodes after paste
+                // Calculate base index from where new nodes are numbered after paste
+                var base = totalNumberOfNodesAfterPaste - numberOfCopiedNodes
+
+                // All the edges in the graph currently
+                var edges = graphComponent.graph.edges.toArray()
+                var totalNumberOfEdgesAfterPaste = edges.length // total number of edges after paste
+                // Calculate base index from where new edges are numbered after paste
+                var edgeBase = totalNumberOfEdgesAfterPaste - numberOfCopiedEdges
+
+                constraintsArrayOfClipboard.forEach(function(c) {
+                    var tempArray = []
+                    var args = []
+                    switch(c.type) {
+                        case "NODES_SET_FIRST":
+                        case "NODES_SET_LAST":
+                        case "EDGES_SAME_PAGES_INCIDENT_NODE":
+                        case "EDGES_DIFFERENT_PAGES_INCIDENT_NODE":
+                        case "NODES_PREDECESSOR":
+                        case "NODES_CONSECUTIVE":
+                        case "NODES_REQUIRE_PARTIAL_ORDER":
+                        case "NODES_FORBID_PARTIAL_ORDER":
+                        case "EDGES_SAME_PAGES":
+                        case "EDGES_DIFFERENT_PAGES":
+                        case "NOT_ALL_IN_SAME_PAGE":
+                                c.objects.forEach(function(n){
+                                    if(isConstraintRelatedToNodes(c.type)){
+                                        tempArray.push(getPastedNodeUsingBaseIndex(base,n.tag,nodes))
+                                    }
+                                    else{
+                                        tempArray.push(getPastedEdgeUsingBaseIndex(edgeBase,e.tag,edges))
+                                    }
+                                })
+                                makeConstraintUsingEnum(c.type, tempArray)
+                             break;
+                        case "EDGES_FROM_NODES_ON_PAGES":
+                        case "EDGES_TO_SUB_ARC_ON_PAGES":
+                        case "EDGES_ON_PAGES":
+                        case "EDGES_ON_PAGES_INCIDENT_NODE":
+                            c.objects[0].forEach(function(n){
+                                if(isConstraintRelatedToNodes(c.type)){
+                                    tempArray.push(getPastedNodeUsingBaseIndex(base, n.tag, nodes))
+                                }
+                                else {
+                                    tempArray.push(getPastedEdgeUsingBaseIndex(edgeBase, e.tag, edges))
+                                }
+                            })
+                            args = [tempArray, c.objects[1]]
+                            makeConstraintUsingEnum(c.type, args)
+                            break;
+                    }
+                    }
+                )
+        }
 
 		/*
 		 * creates new labels for nodes or edges
 		 */
+
 		function getNextLabel(item) {
 			if (item == "node") {
 				var max = -1;
@@ -353,10 +589,10 @@ require([
 			}
 		}
 
-
 		/*
 		 * creates tags for nodes
 		 */
+
 		function getNextTag() {
 			var max = -1;
 			graphComponent.graph.nodes.forEach(function(n) {
@@ -367,13 +603,12 @@ require([
 			return max+1;
 		}
 
-
-
 		/*
 		 *
 		 * this function configures the standard deletion to first check if any constraints are affected and if there are, rechecks if deletion is desired
 		 *
 		 */
+
 		function configureDeletion() {
 
 			// change command binding of deleting to first showing
@@ -417,10 +652,6 @@ require([
 
 		}
 
-
-
-
-
 		/*
 		 *
 		 * changes which elements should be selected by marquee selection
@@ -438,10 +669,6 @@ require([
 			}
 
 		}
-
-
-
-
 
 		/*
 		 *
@@ -487,8 +714,6 @@ require([
 
 			var avPages = [1];
 
-
-
 			if (graphComponent.selection.selectedNodes.size > 0 && graphComponent.selection.selectedEdges.size >0){
 				// do nothing
 			} else if (graphComponent.selection.selectedEdges.size == 1) {
@@ -505,6 +730,26 @@ require([
                     constraintsArray.push(constr)
                     $("#constraintTags").tagit("createTag", constr.getPrintable())
                 });
+                contextMenu.addMenuItem('Set as last in the order', () => {
+
+                    let constr = new SetAsLast(graphComponent.selection.selectedNodes.toArray());
+                    constraintsArray.push(constr)
+                    $("#constraintTags").tagit("createTag", constr.getPrintable())
+                });
+
+                contextMenu.addMenuItem('Assign all edges incident to this vertex to the same page', () => {
+                    let constr = new SamePageForIncidentEdgesOf(graphComponent.selection.selectedNodes.toArray());
+                    constraintsArray.push(constr)
+                    $("#constraintTags").tagit("createTag", constr.getPrintable())
+                });
+
+                contextMenu.addMenuItem('Assign all edges incident to this vertex to different pages', () => {
+                    let constr = new DifferentPagesForIncidentEdgesOf(graphComponent.selection.selectedNodes.toArray());
+                    constraintsArray.push(constr)
+                    $("#constraintTags").tagit("createTag", constr.getPrintable())
+                });
+                contextMenu.addMenuItem('Assign all edges incident to this vertex to...', () => $( "#pageDialog" ).dialog( "open" ),  fillAssignDialogForNodes(graphComponent));
+
 
 			} else if (graphComponent.selection.selectedNodes.size == 2) {
 				var nodesArr = graphComponent.selection.selectedNodes.toArray();
@@ -605,7 +850,6 @@ require([
                 }
 			}
 		}
-
 
 		/*
 		 * For the constraint "restrict edges of..." this function populates the dialog that shows up
@@ -710,10 +954,9 @@ require([
 		}
 
 		/*
-		 *
 		 *  For the partial order constraint this function fills the dialog that shows up
-		 *
 		 */
+
 		function fillOrderDialog() {
 			let miniGraphComponent = new yfiles.view.GraphComponent("#miniGraphComponent");
 			miniGraphComponent.inputMode = new yfiles.input.GraphViewerInputMode()
@@ -752,11 +995,8 @@ require([
 
 		}
 
-
 		/*
-		 *
 		 * this initializes the grid snapping
-		 *
 		 */
 
 		function initializeSnapping() {
@@ -773,12 +1013,8 @@ require([
 			graphComponent.inputMode.snapContext = graphSnapContext
 		}
 
-
-
 		/*
-		 *
 		 * this initializes the grid
-		 *
 		 */
 
 		function initializeGrid() {
@@ -820,11 +1056,8 @@ require([
 
 		}
 
-
 		/*
-		 *
 		 * this sets the defaults for nodes and edges
-		 *
 		 */
 
 		function initializeGraphDefaults(){
@@ -840,8 +1073,6 @@ require([
 				stroke: 'white',
 			})
 
-
-
 			/*
 			 * edge style
 			 */
@@ -850,18 +1081,12 @@ require([
 				targetArrow: yfiles.styles.IArrow.NONE
 			})
 
-
-
-
-
-
 		}
 
 		/*
-		 *
 		 * checks how many pages are available for the lin layout
-		 *
 		 */
+
 		function getAvailablePages() {
 			var avPages = [1];
 
@@ -876,9 +1101,7 @@ require([
 		}
 
 		/*
-		 *
 		 * deserializes the constraints
-		 *
 		 */
 
 		function deserialize(string) {
@@ -896,6 +1119,14 @@ require([
 				})
 
 				var con = new Predecessor(objItems)
+				constraintsArray.push(con);
+
+				break;
+			case "TREAT_GRAPH_DIRECTED":
+				objString = objects;
+				var objString = objects.split(",")
+				var objItems = ["1"];
+				var con = new TreatGraphDirected(objItems)
 				constraintsArray.push(con);
 				$("#constraintTags").tagit("createTag", con.getPrintable() )
 
@@ -928,7 +1159,50 @@ require([
                     $("#constraintTags").tagit("createTag", con.getPrintable() )
 
                     break;
-			case "EDGES_SAME_PAGES":
+            case "EDGES_SAME_PAGES_INCIDENT_NODE":
+                    var objString = objects.split(",")
+
+                    var objItems = [];
+
+                    objString.forEach(function(os) {
+                        objItems = objItems.concat(findObjectByTag(os, "node"))
+                    })
+
+                    var con = new SamePageForIncidentEdgesOf(objItems)
+                    constraintsArray.push(con);
+                    $("#constraintTags").tagit("createTag", con.getPrintable() )
+
+                    break;
+            case "EDGES_DIFFERENT_PAGES_INCIDENT_NODE":
+                    var objString = objects.split(",")
+
+                    var objItems = [];
+
+                    objString.forEach(function(os) {
+                        objItems = objItems.concat(findObjectByTag(os, "node"))
+                    })
+
+                    var con = new DifferentPagesForIncidentEdgesOf(objItems)
+                    constraintsArray.push(con);
+                    $("#constraintTags").tagit("createTag", con.getPrintable() )
+
+                    break;
+           case "NODES_SET_LAST":
+
+                    var objString = objects.split(",")
+
+                    var objItems = [];
+
+                   objString.forEach(function(os) {
+                       objItems = objItems.concat(findObjectByTag(os, "node"))
+                    })
+
+                    var con = new SetAsLast(objItems)
+                    constraintsArray.push(con);
+                    $("#constraintTags").tagit("createTag", con.getPrintable() )
+
+                    break;
+		    case "EDGES_SAME_PAGES":
 				objString = objects;
 				var objString = objects.split(",")
 				var objItems = [];
@@ -942,7 +1216,7 @@ require([
 				$("#constraintTags").tagit("createTag", con.getPrintable() )
 
 				break;
-                case "EDGES_DIFFERENT_PAGES":
+            case "EDGES_DIFFERENT_PAGES":
                     var objString = objects.split(",")
                     var objItems = [];
 
@@ -1028,6 +1302,23 @@ require([
 				$("#constraintTags").tagit("createTag", con.getPrintable())
 
 				break;
+			case "EDGES_ON_PAGES_INCIDENT_NODE":
+				var objString = filterStringByTag(objects, "objectsA")[0]
+				objString = objString.split(",")
+				var pages = filterStringByTag(objects, "objectsB")[0]
+				pages = pages.split(",")
+
+				var objItems = [];
+
+				objString.forEach(function(os) {
+					objItems = objItems.concat(findObjectByTag(os, "node"))
+				})
+
+				var con = new IncidentEdgesOfVertexTo([objItems, pages])
+				constraintsArray.push(con)
+				$("#constraintTags").tagit("createTag", con.getPrintable())
+
+				break;
 			case "EDGES_TO_SUB_ARC_ON_PAGES":
 				var objString = filterStringByTag(objects, "objectsA")[0]
 				objString = objString.split(",")
@@ -1048,34 +1339,6 @@ require([
 				break;
 			}
 		}
-
-
-		/*
-		 *
-		 * FINDS YOU THE OBJECT OF THE GRAPH WITH NAME "X" OF TYPE "Y"
-		 *
-		 * TODO i think this is useless
-
-
-		function findObjectByName(name, type) {
-			var toSearchIn;
-
-			if (type == "node") {
-				toSearchIn = graphComponent.graph.nodes.toArray();
-			} else if (type == "edge") {
-				toSearchIn = graphComponent.graph.edges.toArray();
-			}
-
-			var y = null;
-
-			toSearchIn.forEach(function(i) {
-				if (i.labels.toArray()[0].text == name) {
-					y = i;
-				}
-			})
-			return y;
-
-		} */
 
 		function findObjectByTag(tag, type) {
 			var toSearchIn;
@@ -1098,9 +1361,7 @@ require([
 		}
 
 		/*
-		 *
 		 * PARSES THE FILE YOU LOAD IN
-		 *
 		 */
 
 		function readFile(e) {
@@ -1109,8 +1370,10 @@ require([
 				return;
 			}
 			var reader = new FileReader();
+		//	var senddata = new Object();
 			reader.onload = function(e) {
-				myGraph = e.target.result;
+		//		senddata.
+		myGraph = e.target.result;
 
 				// reset all settings:
 
@@ -1144,9 +1407,6 @@ require([
 					}
 
 				} else {
-
-
-
 
 					// load in pages
 					pages.forEach(function(page) {
@@ -1184,9 +1444,6 @@ require([
 					})
 				}
 
-
-
-
 				// load in graph
 				graphMLIOHandler
 				.readFromGraphMLText(graphComponent.graph, myGraph)
@@ -1195,18 +1452,13 @@ require([
 
 					checkLabelsAndTags();
 
-
 					// took out a timeout, seems to work fine
 					constraints.forEach(function(c){
 						deserialize(c)
 					})
-
 				})
-
-
 			};
 			reader.readAsText(file);
-
 		}
 
 		/*
@@ -1241,11 +1493,10 @@ require([
 
 
 		/*
-		 *
 		 * saves a graph as graphml including pages, page constraints, page types and further constraints
 		 * parameter: filename, string
-		 *
 		 */
+
 		function saveFile(filename) {
 			if (filename == "") {
 				filename = "unnamed"
@@ -1282,19 +1533,13 @@ require([
 				FileSaveSupport.save(myGraph, filename+".graphml")
 
 			}, 1);
-
-
 		}
 
-
-
 		/*
-		 *
 		 * this function connects the html-buttons with their functionalities
-		 *
 		 */
-		function registerCommands(){
 
+		function registerCommands(){
 
 			/*
 			 * file tab
@@ -1311,11 +1556,9 @@ require([
 
 			document.getElementById('OpenButton').addEventListener('change', readFile, false);
 
-
-			document.querySelector("#SaveDialogButton").addEventListener("click", () => {
+            document.querySelector("#SaveDialogButton").addEventListener("click", () => {
 				$("#saveDialog").dialog("open")
 			})
-
 
 			document.querySelector("#saveButton").addEventListener("click", () => {
 				saveFile($("#fileName").val());
@@ -1373,8 +1616,6 @@ require([
 			 * edit tab
 			 */
 
-
-
 			document.querySelector("#UndoButton").addEventListener("click", () => {
 				yfiles.input.ICommand.UNDO.execute({target: graphComponent});
 			})
@@ -1387,6 +1628,7 @@ require([
 				yfiles.input.ICommand.SELECT_ALL.execute({target: graphComponent});
 			})
 
+            graphComponent.clipboard.addElementsCopiedListener(copyOfConstraintsInClipboard);
 
 			document.querySelector("#CopyButton").addEventListener("click", () => {
 				yfiles.input.ICommand.COPY.execute({target: graphComponent});
@@ -1394,14 +1636,17 @@ require([
 
 			document.querySelector("#CutButton").addEventListener("click", () => {
 				yfiles.input.ICommand.CUT.execute({target: graphComponent});
+
 			})
 
+            graphComponent.clipboard.addElementsPastedListener(computationAfterPaste);
+
 			document.querySelector("#PasteButton").addEventListener("click", () => {
-				yfiles.input.ICommand.PASTE.execute({target: graphComponent});
+                yfiles.input.ICommand.PASTE.execute({target: graphComponent});
+				console.log("trying to call listenener");
 			})
 
 			document.querySelector("#DeleteButton").addEventListener("click", () => {
-				//
 				yfiles.input.ICommand.DELETE.execute({target: graphComponent});
 
 			})
@@ -1422,6 +1667,7 @@ require([
 				var delItems = selection.toArray();
 				delItems = delItems.concat(adjEdges)
 
+
 				delItems.forEach(function(item){
 					deleteRelatedConstraintsDeluxe(item);
 				})
@@ -1433,8 +1679,6 @@ require([
 			document.querySelector("#noDontDelete").addEventListener("click", () => {
 				$("#deleteDialog").dialog("close");
 			})
-
-
 
 			/*
 			 * view tab
@@ -1452,7 +1696,6 @@ require([
 				yfiles.input.ICommand.FIT_GRAPH_BOUNDS.execute({target: graphComponent});
 			})
 
-
 			document.querySelector('#GridButton').addEventListener("click", () => {
 				grid.visible = !grid.visible;
 				if (grid.visible) {
@@ -1463,8 +1706,6 @@ require([
 				graphComponent.invalidate();
 
 			})
-
-
 
 			document.querySelector('#marqueeAll').addEventListener("click", () => {
 				changeSelectionMode('all')
@@ -1561,8 +1802,50 @@ require([
 
 			document.querySelector("#directedEdges").addEventListener("click", () => {
 				treatEdgesAsDirected = !treatEdgesAsDirected;
-			})
+				if(treatEdgesAsDirected)
+				{
+    				var con = new TreatGraphDirected([graphComponent.graph.nodes.toArray()[0]]);
+                    constraintsArray.push(con);
+                    $("#constraintTags").tagit("createTag", con.getPrintable())
+                    $("#constraintTags").tagit({
+                        afterTagRemoved: function(event, ui) {
+                            if (ui.tagLabel == "TreatGraphAsDirected") {
+                                removedTagManually = !removedTagManually
+                                if(removedTagManually){
+                                   treatEdgesAsDirected = true;
+                                   document.getElementById('directedEdges').click();
+                                   resetDefaultEdgesStyle(false)
+                                    //document.getElementById('directedEdges').checked
+                                    //$("#directedEdges").prop("checked", false);
+                                   removedTagManually = false;
+                                }
+                            }
+                        }
+                    });
 
+                    resetDefaultEdgesStyle(true);
+                }
+                else {
+                    var con = new TreatGraphDirected(["1"])
+                    //constraintsArray = [];
+                    var newConstraintsArray = []
+                    let t;
+                    for(t=0; t<constraintsArray.length; t++){
+                        if (constraintsArray[t].type !="TREAT_GRAPH_DIRECTED") {
+                            newConstraintsArray.push(constraintsArray[t])
+                        }
+                    }
+                    constraintsArray = newConstraintsArray
+                    try {
+                        $("#constraintTags").tagit("removeTagByLabel", con.getPrintable())
+                        removedTagManually = true;
+                    }
+                    catch(error) {
+                        removedTagManually = false;
+                    }
+                    resetDefaultEdgesStyle(false);
+                }
+            })
 
 			document.querySelector("#stellation").addEventListener("click", () => {
 
@@ -1596,7 +1879,7 @@ require([
 								const e = graphComponent.graph.createEdge({
 									source: source,
 									target: stellate,
-									tag: source.tag+"-"+stellate.tag
+									tag: source.tag+"-(0)-"+stellate.tag
 								});
 								graphComponent.graph.addLabel(e, getNextLabel("edge").toString())
 								x = x + source.layout.center.x;
@@ -1635,8 +1918,6 @@ require([
 					graphComponent.graph.setNodeCenter(stellate, new yfiles.geometry.Point(x, y));
 				}
 			})
-
-
 
 			document.querySelector("#threeStellation").addEventListener("click", () => {
 				var selectedNodes = graphComponent.selection.selectedNodes.toArray();
@@ -1729,9 +2010,6 @@ require([
 									tag: source.tag + "-(0)-" + edgesToNewNodes[i][1].tag
 								})
 								graphComponent.graph.addLabel(eb, getNextLabel("edge").toString())
-
-
-
 								i++;
 							})
 
@@ -1816,8 +2094,6 @@ require([
 				}
 			})
 
-
-
 			document.querySelector("#edgeStellation").addEventListener("click", () => {
 				var selectedEdges = graphComponent.selection.selectedEdges.toArray();
 				var selectedNodes = graphComponent.selection.selectedNodes.toArray();
@@ -1836,12 +2112,6 @@ require([
 				}
 
 			})
-
-
-
-
-
-
 
 			/*Submit Dialog Button*/
 			document.querySelector("#submitButton").addEventListener("click", () => {
@@ -1878,9 +2148,6 @@ require([
 				$("#wentWrong").dialog("close")
 				$("#loadingDiv").hide()
 			})
-
-
-
 
 			/*Export Dialog*/
 
@@ -1949,7 +2216,7 @@ require([
 				var isPlanar =  yfiles.algorithms.PlanarEmbedding.isPlanar(ygraph)
 				var isConnected = yfiles.algorithms.GraphChecker.isConnected(ygraph)
 
-				var cyclePath = yfiles.algorithms.Cycles.findCycle(ygraph, false)
+				var cyclePath = yfiles.algorithms.Cycles.findCycle(ygraph, treatEdgesAsDirected)
 				var isAcyclic;
 				if (cyclePath.size == 0) {
 					isAcyclic = true;
@@ -1974,13 +2241,47 @@ require([
 				document.getElementById("isBipartite").innerHTML = isBipartite
 				if (isBipartite) {document.getElementById("isBipartite").style.color = "green"} else {document.getElementById("isBipartite").style.color = "red"}
 
+                if(treatEdgesAsDirected){
+                    document.getElementById("reducedTr").style.display = "table-row";
+                    document.getElementById("reducedTr").style.verticalAlign = "top";
+
+                    try{
+                        const resultTransitiveReduction = new yfiles.analysis.TransitiveReduction().run(graphComponent.graph);
+                        if(resultTransitiveReduction.edgesToRemove.size > 0) {
+                            // reducible
+                            var isReduced = false;
+                            document.getElementById("isReduced").style.color = "red";
+
+                            var isReducedOutputStr = isReduced + "<br><br>";
+                            for (const edge of resultTransitiveReduction.edgesToRemove) {
+                                  isReducedOutputStr = isReducedOutputStr + "Edge("+ edge.sourceNode +" ,"+ edge.targetNode +") is transitive<br>"
+                            }
+                            document.getElementById("isReduced").innerHTML = isReducedOutputStr;
+                        }
+                        else{
+                            // not reducible
+                            var isReduced = true;
+                            document.getElementById("isReduced").style.color = "green";
+                            document.getElementById("isReduced").innerHTML = isReduced;
+                        }
+
+                    }
+                    catch(error) {
+                         // not reducible
+                        var isReduced = true;
+                        document.getElementById("isReduced").style.color = "green";
+                        document.getElementById("isReduced").innerHTML = isReduced;
+                    }
+                }
+                else{
+                    document.getElementById("reducedTr").style.display = "none";
+                }
 
 				$("#statsDialog").dialog("open")
 			})
 
 
 		}
-
 
 		/*
 		 * This function stellates an edge, meaning that it places a node somewhere above or below the edge and connects source and target of the edge with two new edges
@@ -2016,7 +2317,7 @@ require([
 
 			var edge2Label = getNextLabel("edge");
 			graphComponent.graph.addLabel(edge2, edge2Label.toString())
-			edge1.tag = edge2.sourceNode.tag + "-(0)-" + edge2.targetNode.tag
+			edge2.tag = edge2.sourceNode.tag + "-(0)-" + edge2.targetNode.tag
 		}
 
 		/*
@@ -2029,6 +2330,29 @@ require([
 			})
 		}
 
+        function resetToPolylineStyleWithArrow() {
+			graphComponent.graph.edges.forEach(edge => {
+				graphComponent.graph.setStyle(edge, new yfiles.styles.PolylineEdgeStyle({
+				         targetArrow: yfiles.styles.IArrow.DEFAULT
+				    }
+				))
+			})
+		}
+
+		function resetDefaultEdgesStyle(needArrow){
+		    if(needArrow){
+                graphComponent.graph.edgeDefaults.style = new yfiles.styles.PolylineEdgeStyle({
+                    targetArrow: yfiles.styles.IArrow.DEFAULT
+                })
+                resetToPolylineStyleWithArrow();
+		    }
+		    else{
+                graphComponent.graph.edgeDefaults.style = new yfiles.styles.PolylineEdgeStyle({
+                    targetArrow: yfiles.styles.IArrow.NONE
+                })
+                resetToPolylineStyle();
+		    }
+		}
 
 		/*
 		 *  Sends the data created by "createDataForCalculation" to the current (!) server and forwards the user to the view page
@@ -2077,9 +2401,6 @@ require([
 
 				$.ajax(settings);
 
-
-
-
 			},2)
 
 		}
@@ -2098,7 +2419,7 @@ require([
 			var constraints = []
 			constraintsArray.forEach(function(c) {
 
-				if (c.type =="EDGES_ON_PAGES") {
+				if (c.type =="EDGES_ON_PAGES" || c.type == "EDGES_ON_PAGES_INCIDENT_NODE") {
 
 					var constraintArguments = []
 					c.getObjects()[0].forEach(function(o) {
@@ -2180,8 +2501,6 @@ require([
 			return data;
 		}
 
-
-
 		/*
 		 * After a redirection to #ll+id this function interprets the graph as a linear layout
 		 */
@@ -2201,13 +2520,15 @@ require([
 						var height = gn.layout.height;
 						var width = gn.layout.width;
 						graphComponent.graph.setNodeLayout(gn, new yfiles.geometry.Rect(position, 0, width, height))
+
 					}
+
 				})
 				position = position + 200;
+
 			})
 
-
-			// rearranging the edges if necessary to have the arcs of the linear layout in the right orientation (swapping source and target if necessary)
+	// rearranging the edges if necessary to have the arcs of the linear layout in the right orientation (swapping source and target if necessary)
 
 			var edges = graphComponent.graph.edges.toArray()
 			edges.forEach(function(e) {
@@ -2253,10 +2574,7 @@ require([
 				var arrayLocation = a.page.slice(1)
 				arrayLocation = arrayLocation-1;
 
-
-
 				// TODO change tags here NOT NECESSARY
-
 
 				var edges = graphComponent.graph.edges.toArray()
 				edges.forEach(function(e) {
@@ -2270,7 +2588,6 @@ require([
 				})
 			})
 
-
 			// assigns the colors to the edges for easier observation
 
 			var colors = ["#FF0000", "#0000FF", "#00FF00", "#000000"]
@@ -2278,10 +2595,19 @@ require([
 			for (i = 0; i< 4; i++) {
 				pagesArray[i].forEach(function(e) {
 					if (i % 2 != 0) {
-						graphComponent.graph.setStyle(e, createArcStyle(getArcHeight(e), colors[i]))
+					    if(treatEdgesAsDirected) {
+    						graphComponent.graph.setStyle(e, createArcStyleWithArrows(getArcHeight(e), colors[i]))
+					    }
+					    else{
+    						graphComponent.graph.setStyle(e, createArcStyle(getArcHeight(e), colors[i]))
+					    }
 					} else {
-						graphComponent.graph.setStyle(e, createArcStyle(-getArcHeight(e), colors[i]))
-
+                        if(treatEdgesAsDirected) {
+    						graphComponent.graph.setStyle(e, createArcStyleWithArrows(-getArcHeight(e), colors[i]))
+					    }
+					    else{
+    						graphComponent.graph.setStyle(e, createArcStyle(-getArcHeight(e), colors[i]))
+					    }
 					}
 				})
 			}
@@ -2289,7 +2615,6 @@ require([
 
 			// interpret constraints
 			loadConstraintsFromJSON(object.constraints)
-
 
 			// updates the pages with constraints
 			var pages = object.pages
@@ -2327,7 +2652,6 @@ require([
 			graphComponent.fitGraphBounds();
 		}
 
-
 		/*
 		 * creates the Arc Edge Style for a linear layout
 		 */
@@ -2339,6 +2663,13 @@ require([
 		}
 
 
+		function createArcStyleWithArrows(height, color) {
+			return new yfiles.styles.ArcEdgeStyle({
+				height: height,
+				stroke: color,
+				targetArrow: true
+			})
+		}
 
 		/*
 		 * calculates individual arc height for each edge
@@ -2352,8 +2683,6 @@ require([
 			return Math.abs(distance/5)
 		}
 
-
-
 		/*
 		 * After a redirection to #or+id this function displays the graph and registers constraints etc.
 		 */
@@ -2362,7 +2691,6 @@ require([
 
 			// load in the constraints and pages
 			loadConstraintsFromJSON(object.constraints)
-
 
 			// updates pages and page constraints
 			var pages = object.pages
@@ -2420,19 +2748,33 @@ require([
 					var colors = ["#FF0000", "#0000FF", "#00FF00", "#000000"]
 					let i;
 					for (i = 0; i< 4; i++) {
-						pagesArray[i].forEach(function(e) {
+					    if(treatEdgesAsDirected) {
+					        pagesArray[i].forEach(function(e) {
 							var polyStyle = new yfiles.styles.PolylineEdgeStyle({
-								stroke: colors[i]
+								stroke: colors[i],
+                                targetArrow: yfiles.styles.IArrow.DEFAULT,
+//                                targetArrow: true
 							})
 
 							graphComponent.graph.setStyle(e, polyStyle)
-						})
+						    })
+					    }
+					    else {
+					        pagesArray[i].forEach(function(e) {
+							var polyStyle = new yfiles.styles.PolylineEdgeStyle({
+								stroke: colors[i],
+                                targetArrow: yfiles.styles.IArrow.NONE
+							})
+
+							graphComponent.graph.setStyle(e, polyStyle)
+						    })
+					    }
+
 					}
 				},20)
 
 			}
 		}
-
 
 		// translates constraints in json to constraints usable by the gui
 		function loadConstraintsFromJSON(constraints) {
@@ -2465,6 +2807,15 @@ require([
 					$("#constraintTags").tagit("createTag", con.getPrintable())
 
 					break;
+
+					case "TREAT_GRAPH_DIRECTED":
+
+                        treatEdgesAsDirected = false;
+                        document.getElementById('directedEdges').click();
+                        window.sessionStorage.setItem("directedEdgesStatus", document.getElementById('directedEdges').checked);
+
+    					break;
+
                     case "NODES_CONSECUTIVE":
                         var objItems = []
 
@@ -2493,6 +2844,54 @@ require([
                         })
 
                         var con = new SetAsFirst(objItems)
+                        constraintsArray.push(con);
+                        $("#constraintTags").tagit("createTag", con.getPrintable() )
+
+                        break;
+                    case "EDGES_SAME_PAGES_INCIDENT_NODE":
+                        var objItems = []
+
+                        c.arguments.forEach(function(a) {
+                            graphComponent.graph.nodes.toArray().forEach(function(n) {
+                                if (n.tag == a) {
+                                    objItems.push(n)
+                                }
+                            })
+                        })
+
+                        var con = new SamePageForIncidentEdgesOf(objItems)
+                        constraintsArray.push(con);
+                        $("#constraintTags").tagit("createTag", con.getPrintable() )
+
+                        break;
+                    case "EDGES_DIFFERENT_PAGES_INCIDENT_NODE":
+                        var objItems = []
+
+                        c.arguments.forEach(function(a) {
+                            graphComponent.graph.nodes.toArray().forEach(function(n) {
+                                if (n.tag == a) {
+                                    objItems.push(n)
+                                }
+                            })
+                        })
+
+                        var con = new DifferentPagesForIncidentEdgesOf(objItems)
+                        constraintsArray.push(con);
+                        $("#constraintTags").tagit("createTag", con.getPrintable() )
+
+                        break;
+                    case "NODES_SET_LAST":
+                        var objItems = []
+
+                        c.arguments.forEach(function(a) {
+                            graphComponent.graph.nodes.toArray().forEach(function(n) {
+                                if (n.tag == a) {
+                                    objItems.push(n)
+                                }
+                            })
+                        })
+
+                        var con = new SetAsLast(objItems)
                         constraintsArray.push(con);
                         $("#constraintTags").tagit("createTag", con.getPrintable() )
 
@@ -2608,6 +3007,21 @@ require([
 					$("#constraintTags").tagit("createTag", con.getPrintable())
 
 					break;
+				case "EDGES_ON_PAGES_INCIDENT_NODE":
+					var objItems = []
+
+					c.arguments.forEach(function(a) {
+						graphComponent.graph.nodes.toArray().forEach(function(n) {
+							if (n.tag == a) {
+								objItems.push(n)
+							}
+						})
+					})
+					var con = new IncidentEdgesOfVertexTo([objItems, c.modifier])
+					constraintsArray.push(con)
+					$("#constraintTags").tagit("createTag", con.getPrintable())
+
+					break;
 				case "EDGES_TO_SUB_ARC_ON_PAGES":
 					var objItems = []
 
@@ -2626,13 +3040,9 @@ require([
 
 					break;
 				}
-
-
-
 			})
 		}
 
-
 		// run main method
-		run();
+		run()
 	})
