@@ -2634,5 +2634,5 @@ require([
 
 
 		// run main method
-		run()
+		run();
 	})
