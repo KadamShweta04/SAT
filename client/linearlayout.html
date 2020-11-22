@@ -35,6 +35,11 @@
 .picker:hover {
 	transform: scale(1.1);
 }
+
+#constraintTags li {
+ cursor: pointer;
+}
+
 </style>
 
 </head>
@@ -66,6 +71,11 @@
 						<button id="viewSettings"></button>
 						<label for="viewSettings">View</label><span></span>
 					</div>
+					<div class="extraButton">
+						<button id="layoutSettings"></button>
+						<label for="layoutSettings">Layout</label><span></span>
+					</div>
+
 					<div class="extraButton">
 						<button id="about"></button>
 						<label for="about">About</label><span></span>
@@ -112,6 +122,14 @@
 						src="./style/icons/edge_neighborhood_24px.svg"></label><span></span>
 				</div>
 
+				<div id="layout">
+					<button id="lineLayoutButton"></button>
+					<label for="lineLayoutButton" id="lineLayoutButtonLabel">Linear</label><span></span>
+					<button id="circLayoutButton"></button>
+					<label for="circLayoutButton" id="circLayoutButtonLabel">Circular</label><span></span>
+					<button id="consLayoutButton"></button>
+					<label for="consLayoutButton" id="consLayoutButtonLabel">Constrained</label><span></span>
+				</div>
 
 				<div id="rightTools">
 					<button class="ui-button ui-widget ui-corner-all"
@@ -192,13 +210,14 @@
 	
 	<div id="statsDialog" title="Stats">
 	<table style="font-weight: bold">
-	<tr><td width="150px">Vertices:</td><td id="nrOfVertices"></td></tr>
+	<tr><td width="200px">Vertices:</td><td id="nrOfVertices"></td></tr>
 	<tr><td>Edges:</td><td id="nrOfEdges"></td></tr>
 	<tr><td>Planar:</td><td id="isPlanar"></td></tr>
 	<tr><td>Connected:</td><td id="isConnected"></td></tr>
 	<tr><td>Acyclic:</td><td id="isAcyclic"></td></tr>
 	<tr><td>Tree:</td><td id="isTree"></td></tr>
 	<tr><td>Bipartite:</td><td id="isBipartite"></td></tr>
+		<tr id="reducedTr" style="display:none"><td>Reduced:</td><td id="isReduced"></td></tr>
 	</table>
 	</div>
 	
@@ -239,6 +258,10 @@
 	<p><button class="ui-button ui-widget ui-corner-all" id="yesBackToEdit2">Back to edit</button>
 	</div>
 
+	<div id="cancelledNotificationDialog" title="Notice">
+	<p id="infoMessage"> </p>
+	<p><button class="ui-button ui-widget ui-corner-all" id="yesBackToEdit3">Back to edit</button>
+	</div>
 
 	<!--  Necessary  -->
 
