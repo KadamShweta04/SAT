@@ -3,6 +3,8 @@ import datetime
 import multiprocessing
 import signal
 import subprocess
+import csv
+import os.path
 from typing import List
 
 from dateutil.parser import parse
@@ -96,6 +98,7 @@ class App:
                   description='Through this API one can request for a linear layout of a graph in graphml format. \n'
                               'The actual computation of the linear layout is done using SAT solving. '
                               'The instances are solved using [lingeling](http://fmv.jku.at/lingeling/)\n'
+                              ''
                               'See https://github.com/linear-layouts/SAT for more information'
                   )
 
@@ -155,6 +158,8 @@ class App:
                                       arguments: the node ids to be before 
                                       modifier: the node ids to be after
                                       
+                                      TREAT_GRAPH_DIRECTED: Treat the graph according to direction
+                                      
                                       NODES_ABSOLUTE_ORDER: deprecated. see NODES_REQUIRE_ABSOLUTE_ORDER
                                       
                                       NODES_REQUIRE_ABSOLUTE_ORDER: The given nodes have to be in exactly the given 
@@ -179,6 +184,25 @@ class App:
                                       NODES_SET_FIRST: The given node has to be the first in any order.
                                       arguments: the node to be the first
                                       modifier: none  
+                                      
+                                      NODES_SET_LAST: The given node has to be the last in any order.
+                                      arguments: the node to be the last
+                                      modifier: none 
+                                      
+                                      
+                                      EDGES_SAME_PAGES_INCIDENT_NODE: All edges incident to this vertex should be on same page.
+                                      arguments: the incident node
+                                      modifier: none  
+                                      
+                                      
+                                      EDGES_DIFFERENT_PAGES_INCIDENT_NODE: All edges incident to this vertex should be on different pages.
+                                      arguments: the incident node
+                                      modifier: none  
+                                      
+                                      
+                                      EDGES_ON_PAGES_INCIDENT_NODE: All edges incident to this vertex should be on mentioned pages.
+                                      arguments: the incident node
+                                      modifier: none  
                                       """,
                                                              enum=[
                                                                  "EDGES_ON_PAGES",
@@ -188,12 +212,17 @@ class App:
                                                                  "EDGES_TO_SUB_ARC_ON_PAGES",
                                                                  "EDGES_FROM_NODES_ON_PAGES",
                                                                  "NODES_PREDECESSOR",
+                                                                 "TREAT_GRAPH_DIRECTED",
                                                                  "NODES_ABSOLUTE_ORDER",
                                                                  "NODES_REQUIRE_ABSOLUTE_ORDER",
                                                                  "NODES_REQUIRE_PARTIAL_ORDER",
                                                                  "NODES_FORBID_PARTIAL_ORDER",
                                                                  "NODES_CONSECUTIVE",
-                                                                 "NODES_SET_FIRST"
+                                                                 "NODES_SET_FIRST",
+                                                                 "NODES_SET_LAST",
+                                                                 "EDGES_SAME_PAGES_INCIDENT_NODE",
+                                                                 "EDGES_DIFFERENT_PAGES_INCIDENT_NODE",
+                                                                 "EDGES_ON_PAGES_INCIDENT_NODE"
                                                              ],
                                                              example="NODES_PREDECESSOR",
                                                              required=True),
@@ -231,7 +260,7 @@ class App:
                 'pages': fields.List(fields.Nested(page_schema), min_items=1, required=True, unique=True),
                 'constraints': fields.List(fields.Nested(constraint_schema)),
                 'status': fields.String(description='The current processing status of the computation',
-                                        enum=['IN_PROGRESS', 'FINISHED', 'FAILED'], readonly=True),
+                                        enum=['IN_PROGRESS', 'FINISHED', 'FAILED', 'CANCELLED'], readonly=True),
                 'assignments': fields.List(fields.Nested(assigment_schema), readonly=True,
                                            description='A list of edge to page assignments'),
                 'vertex_order': fields.List(fields.String, readonly=True,
@@ -301,13 +330,16 @@ class App:
                     try:
                         graph_str = base64.b64decode(b64_graph_str)
                         node_ids, edges = get_nodes_and_edges_from_graph(graph_str)
+                        # node_ids ==> List(str)
+                        # edges ==> List(Edge)
+
                     except Exception as e:
                         app.logger.exception(e)
                         raise BadRequest("The graph string has to be a base64 encoded graphml string! "
                                          "The exact error was: " + str(e))
 
-                    len_nodes = len(node_ids)
-                    len_edges = len(edges)
+                    len_nodes = len(node_ids) # Number of nodes
+                    len_edges = len(edges) # Number of edges
 
                     if len_edges > 1900 or len_nodes > 600:
                         raise BadRequest(
@@ -315,6 +347,7 @@ class App:
                             "edges. Your graph has {} vertices and {} edges which exceed the limit."
                             "".format(len_nodes, len_edges))
 
+                    # Check if self loops are present! We do not support self loops
                     for e in edges:
                         if e.source == e.target:
                             raise BadRequest(
@@ -346,7 +379,7 @@ class App:
                               "The following id were recognized as duplicate {}".format(duplicate_page_ids))
 
                     entity['status'] = 'IN_PROGRESS'
-                    entity = data_store.insert_new_element(entity)
+                    entity = data_store.insert_new_element(entity) # entity id is returned here
 
                     # validate graph not empty
                     if len(page_ids) == 0 or len_edges == 0 or len_nodes == 0:
@@ -408,10 +441,34 @@ class App:
                 element = data_store.get_by_id(id)
                 if not element:
                     raise NotFound("The given id {} was not present in the data store".format(id))
+
+                cancel_id = str(id)
+                cancel_file_path = 'cancel.txt'
+
+                # Check if file exists. Create cancel.txt if file doesn't exist
+                if not os.path.exists(cancel_file_path):
+                    open(cancel_file_path, 'w').close()
+
+                cancel_ids = []
+                with open(cancel_file_path, 'r') as f:
+                    csv_reader = csv.reader(f, delimiter=',')
+                    cancel_ids = [row[0] for row in csv_reader]
+
+                if cancel_id not in cancel_ids:
+                    with open(cancel_file_path, 'a') as f:
+                        csv_writer = csv.writer(f, delimiter=',')
+                        csv_writer.writerow([cancel_id])
+                    # cancel_ids.append(cancel_id)
+                    # with open(cancel_file_path, 'w') as f:
+                    #     csv_writer = csv.writer(f, delimiter=',')
+                    #     for cid in cancel_ids:
+                    #         csv_writer.writerow([cid])
+
                 j_tmp = [j for j in jobs if str(j.id) == str(id)]
                 if len(j_tmp) == 1:
                     j_tmp[0].future.cancel()
-                    element['status'] = 'FAILED'
+                    # element['status'] = 'FAILED'
+                    element['status'] = 'CANCELLED'
                     element['message'] = 'The job was cancelled by user'
                     data_store.update_entry(id, element)
                     jobs.remove(j_tmp[0])
