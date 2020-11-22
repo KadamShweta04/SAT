@@ -26,17 +26,26 @@ $( function() {
 
 	$("#file").hide()
 	$("#view").hide()
+	$("#layout").hide()
 	$("#greyDiv").hide()
 
 
 	$("#fileSettings").click(function() {
 		$("#file").fadeToggle();
 		$("#view").hide();
+		$("#layout").hide();
 	})
 
 	$("#viewSettings").click(function() {
 		$("#view").fadeToggle();
 		$("#file").hide();
+		$("#layout").hide();
+	})
+
+	$("#layoutSettings").click(function() {
+		$("#layout").fadeToggle();
+		$("#file").hide();
+		$("#view").hide();
 	})
 
 
@@ -58,6 +67,12 @@ $( function() {
 	})
 	
 	$("#failedComputationDialog").dialog({
+		autoOpen: false,
+		resizable: false,
+		width: 400,
+	})
+
+$("#cancelledNotificationDialog").dialog({
 		autoOpen: false,
 		resizable: false,
 		width: 400,
@@ -124,7 +139,7 @@ $( function() {
 	})
 	
 	$("#statsDialog").dialog({
-		width: 300,
+		width: 'auto',
 		resizable: false,
 		autoOpen: false,
 		modal: true,open: function( event, ui ) {
